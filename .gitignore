@@ -1,21 +1,8 @@
-﻿# Dependencies
-node_modules/
+﻿node_modules/
 .env
 .env.local
 .env.*.local
-
-# Build
+*.log
 dist/
 build/
-
-# Logs
-*.log
-npm-debug.log*
-
-# OS
 .DS_Store
-.DS_Store?
-
-# IDE
-.vscode/
-.idea/
