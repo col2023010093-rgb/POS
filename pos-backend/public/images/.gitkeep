@@ -1,0 +1,5 @@
+# Place product image files here (e.g., pizza1.jpg, salad1.jpg, etc.)
+# 
+# The API will serve these files at: http://localhost:4000/images/{filename}
+# 
+# File naming should match the 'image' field in product records
