@@ -1,8 +1,15 @@
-﻿node_modules/
+﻿# Dependencies
+node_modules/
 .env
 .env.local
 .env.*.local
-*.log
+
+# Build
 dist/
 build/
+
+# Logs
+*.log
+
+# OS
 .DS_Store
