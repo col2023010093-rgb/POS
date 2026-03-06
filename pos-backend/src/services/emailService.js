@@ -7,8 +7,45 @@ const transporter = nodemailer.createTransport({
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
+  },
+  tls: {
+    rejectUnauthorized: false  // ← Add this to bypass SSL certificate check
   }
 });
+
+// ✅ Email verification function
+const sendVerificationEmail = async (email, code) => {
+  const mailOptions = {
+    from: process.env.EMAIL_FROM,
+    to: email,
+    subject: 'Verify Your Email - Texas Joe\'s House of Ribs',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h2 style="color: #ff6b35;">Welcome to Texas Joe's!</h2>
+        <p>Thank you for creating an account. Please verify your email address to get started.</p>
+        
+        <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
+          <p style="font-size: 14px; color: #666; margin-bottom: 10px;">Your verification code is:</p>
+          <h1 style="color: #d32f2f; font-size: 42px; letter-spacing: 12px; margin: 10px 0; font-family: monospace;">${code}</h1>
+          <p style="font-size: 12px; color: #999; margin-top: 10px;">This code expires in 10 minutes</p>
+        </div>
+
+        <p style="color: #666; font-size: 14px;">If you didn't create this account, please ignore this email.</p>
+        
+        <p style="margin-top: 30px;">Best regards,<br><strong>Texas Joe's Team</strong></p>
+      </div>
+    `
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`✅ Verification email sent to ${email}`);
+    return true;
+  } catch (error) {
+    console.error('❌ Verification email failed:', error);
+    throw error;
+  }
+};
 
 const sendOrderConfirmation = async (order, user) => {
   const itemsList = order.items.map(item => 
@@ -83,6 +120,7 @@ const sendOrderStatusUpdate = async (order, user) => {
 };
 
 module.exports = {
+  sendVerificationEmail,  // ← Add this
   sendOrderConfirmation,
   sendOrderStatusUpdate
 };

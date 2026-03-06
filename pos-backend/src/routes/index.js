@@ -70,4 +70,7 @@ try {
   console.log('⚠️ Payment controller error:', err.message);
 }
 
+const paymentRoutes = require('./payments');
+router.use('/api/payments', paymentRoutes);
+
 module.exports = router;

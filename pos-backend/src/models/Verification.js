@@ -4,19 +4,12 @@ const verificationSchema = new mongoose.Schema({
   email: {
     type: String,
     required: true,
-    unique: true,
-    lowercase: true
+    unique: true,  // ✅ One verification per email
+    lowercase: true,
+    trim: true
   },
   code: {
     type: String,
-    required: true
-  },
-  firstName: String,
-  lastName: String,
-  password: String,
-  phone: String,
-  expires: {
-    type: Date,
     required: true
   },
   lastCodeSentAt: {
@@ -26,7 +19,7 @@ const verificationSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now,
-    expires: 600 // Auto-delete after 10 minutes
+    expires: 600  // ✅ Auto-delete after 10 minutes (TTL index)
   }
 });
 

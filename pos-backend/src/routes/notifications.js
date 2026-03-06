@@ -1,25 +1,60 @@
 const express = require('express');
 const router = express.Router();
-const notificationController = require('../controllers/notificationController');
+const auth = require('../middleware/auth');
+const Notification = require('../models/Notification');
 
-// ✅ Import auth middleware
-const authImport = require('../middleware/auth');
-const auth = typeof authImport === 'function'
-  ? authImport
-  : authImport?.verifyToken || authImport?.authenticate || authImport?.default;
+// ✅ Get notifications
+router.get('/', auth, async (req, res) => {
+  try {
+    const notifications = await Notification.find({ userId: req.user.id })
+      .sort({ createdAt: -1 })
+      .limit(20);
+    
+    res.json(notifications);
+  } catch (error) {
+    console.error('❌ Error fetching notifications:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
 
-// ✅ All notification routes require authentication
-router.use(auth);
+// ✅ Mark as read
+router.patch('/:id/read', auth, async (req, res) => {
+  try {
+    const notification = await Notification.findByIdAndUpdate(
+      req.params.id,
+      { read: true },
+      { new: true }
+    );
+    res.json(notification);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
 
-// ✅ Get user notifications
-router.get('/', notificationController.getNotifications);
+// ✅ Create notification (emit via socket)
+router.post('/', auth, async (req, res) => {
+  try {
+    const { title, message, type, relatedId } = req.body;
 
-// ✅ Mark notification as read
-router.patch('/:id/read', notificationController.markAsRead);
+    const notification = new Notification({
+      userId: req.user.id,
+      title,
+      message,
+      type,
+      relatedId,
+      read: false
+    });
 
-// ✅ Delete notification (optional)
-router.delete('/:id', notificationController.deleteNotification || ((req, res) => {
-  res.status(501).json({ message: 'Delete not implemented' });
-}));
+    await notification.save();
+
+    // ✅ Emit to user via socket
+    const io = req.app.get('io');
+    io.to(`user_${req.user.id}`).emit('notification', notification);
+
+    res.status(201).json(notification);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
 
 module.exports = router;

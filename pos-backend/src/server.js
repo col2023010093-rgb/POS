@@ -1,4 +1,6 @@
 const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const mongoose = require('mongoose');
@@ -6,65 +8,85 @@ const mongoose = require('mongoose');
 dotenv.config();
 
 const app = express();
+const server = http.createServer(app);
 
-// Middleware
-app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'http://localhost:5173',
-    'https://your-vercel-frontend.vercel.app'
-  ],
-  credentials: true
-}));
-
+app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
 app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
-// MongoDB Connection
-if (process.env.MONGODB_URI) {
-  mongoose.connect(process.env.MONGODB_URI, {
+// ✅ mount socket.io on same HTTP server
+const io = new Server(server, {
+  cors: { origin: 'http://localhost:5173', credentials: true },
+  path: '/socket.io'
+});
+
+io.on('connection', (socket) => {
+  console.log('socket connected:', socket.id);
+});
+
+app.set('io', io);
+
+// ✅ MongoDB Connection (Using MONGODB_URI)
+const mongoUri = process.env.MONGODB_URI;
+
+if (mongoUri) {
+  console.log('🔗 Connecting to MongoDB...');
+  console.log('📍 URI:', mongoUri);
+  
+  mongoose.connect(mongoUri, {
     useNewUrlParser: true,
     useUnifiedTopology: true
   })
-  .then(() => console.log('✅ MongoDB connected'))
-  .catch(err => console.error('❌ MongoDB error:', err));
+    .then(() => {
+      console.log('✅ MongoDB connected successfully');
+    })
+    .catch(err => {
+      console.error('❌ MongoDB connection error:', err.message);
+    });
+} else {
+  console.error('❌ MONGODB_URI not configured in .env');
 }
 
-// Routes
+// ✅ Serve static files for product images
+app.use('/images', express.static('public/images', { 
+  setHeaders: (res, path) => {
+    res.set('Cache-Control', 'public, max-age=3600');
+  }
+}));
+
+// ✅ Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/products', require('./routes/products'));
-app.use('/api/orders', require('./routes/index'));
+app.use('/api/orders', require('./routes/orders')); // ✅ Change from 'index' to 'orders'
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/reservations', require('./routes/reservations'));
 app.use('/api/admin', require('./routes/admin'));
+app.use('/api/profile', require('./routes/profile')); // <-- ADD THIS LINE
 
-// Health check endpoint
+// ✅ Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ status: '✅ Server is running', time: new Date() });
+  const mongoStatus = mongoose.connection.readyState === 1 ? '✅ connected' : '❌ disconnected';
+  res.json({ 
+    status: '✅ Server is running',
+    mongodb: mongoStatus,
+    time: new Date().toISOString()
+  });
 });
 
-// Root endpoint
+// ✅ Root endpoint
 app.get('/', (req, res) => {
   res.json({ message: 'POS Backend API', version: '1.0.0' });
 });
 
-// 404 handler
-app.use((req, res) => {
-  res.status(404).json({ error: 'Route not found' });
-});
-
-// Error handler
+// ✅ Error handler
 app.use((err, req, res, next) => {
   console.error('❌ Error:', err);
   res.status(500).json({ error: err.message || 'Internal server error' });
 });
 
-// Start server
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`✅ Server running on port ${PORT}`);
-  console.log(`📍 API: http://localhost:${PORT}/api`);
-  console.log(`🏥 Health check: http://localhost:${PORT}/api/health`);
-});
+// ✅ Start HTTP server (not app.listen)
+const PORT = process.env.PORT || 4000;
 
-module.exports = app;
+// ❗must be server.listen, not app.listen
+server.listen(PORT, () => {
+  console.log(`API+Socket running on ${PORT}`);
+});

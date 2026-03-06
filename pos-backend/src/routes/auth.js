@@ -1,264 +1,57 @@
 const express = require('express');
 const router = express.Router();
+const bcryptjs = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const mongoose = require('mongoose');
 const User = require('../models/User');
 const Verification = require('../models/Verification');
-const crypto = require('crypto');
-const bcrypt = require('bcrypt');
-const nodemailer = require('nodemailer');
-const jwt = require('jsonwebtoken');
+const { sendVerificationEmail } = require('../services/emailService');
 
-require('dotenv').config();
-
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  },
-  tls: {
-    rejectUnauthorized: false
-  }
-});
-
-transporter.verify((err) => {
-  if (err) console.error('❌ SMTP verify failed:', err.message);
-  else console.log('✅ SMTP ready');
-});
-
-// ✅ Register route: send verification code
-router.post('/register', async (req, res) => {
-  try {
-    let { firstName, lastName, email, password, phone } = req.body;
-
-    // ✅ Validate all required fields
-    if (!firstName || !lastName || !email || !password || !phone) {
-      return res.status(400).json({ error: 'All fields are required.' });
-    }
-
-    email = (email || '').trim().toLowerCase();
-
-    const gmailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
-    if (!gmailRegex.test(email)) {
-      return res.status(400).json({ error: 'Only Gmail addresses are allowed.' });
-    }
-
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ error: 'Email is already registered.' });
-    }
-
-    const code = crypto.randomInt(100000, 999999).toString();
-    const expires = new Date(Date.now() + 10 * 60 * 1000);
-
-    // ✅ Store user data as a nested object
-    await Verification.findOneAndUpdate(
-      { email },
-      { 
-        code, 
-        expires,
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        password: password,
-        phone: phone.trim()
-      },
-      { upsert: true, new: true }
-    );
-
-    await transporter.sendMail({
-      from: process.env.EMAIL_FROM,
-      to: email,
-      subject: 'Verification Code',
-      text: `Your verification code is: ${code}\n\nThis code expires in 10 minutes.`
-    });
-
-    console.log('✅ Verification email sent to', email);
-    return res.json({ message: 'Verification code sent' });
-  } catch (err) {
-    console.error('❌ REGISTER ERROR:', err);
-    return res.status(500).json({ error: err.message });
-  }
-});
-
-// ✅ Verify route: check code and create user
-router.post('/verify', async (req, res) => {
-  try {
-    const { email, code } = req.body;
-
-    console.log('📨 Verifying code for:', email, 'Code:', code);
-
-    if (!email || !code) {
-      return res.status(400).json({ error: 'Email and code are required' });
-    }
-
-    const record = await Verification.findOne({ email });
-
-    if (!record) {
-      return res.status(400).json({ error: 'No pending verification' });
-    }
-
-    if (new Date() > record.expires) {
-      await Verification.deleteOne({ email });
-      return res.status(400).json({ error: 'Code expired. Please register again.' });
-    }
-
-    if (record.code !== code.toString()) {
-      return res.status(400).json({ error: 'Incorrect code' });
-    }
-
-    // ✅ Hash password before saving
-    const hashedPassword = await bcrypt.hash(record.password, 10);
-
-    // ✅ Create user with all fields from verification record
-    const user = await User.create({
-      firstName: record.firstName,
-      lastName: record.lastName,
-      email: record.email,
-      password: hashedPassword,
-      phone: record.phone
-    });
-
-    console.log('✅ User created:', user._id);
-
-    // ✅ Delete verification record
-    await Verification.deleteOne({ email });
-
-    // ✅ Generate JWT token
-    const token = jwt.sign(
-      { id: user._id, email: user.email },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
-
-    console.log('✅ User verified and created:', user._id);
-
-    res.json({ 
-      message: 'Account created successfully',
-      token,
-      user: { 
-        id: user._id, 
-        firstName: user.firstName, 
-        lastName: user.lastName, 
-        email: user.email 
-      }
-    });
-
-  } catch (err) {
-    console.error('❌ VERIFY ERROR:', err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ✅ Resend route: send new code with rate limiting
-router.post('/resend', async (req, res) => {
-  try {
-    const { email } = req.body;
-
-    console.log('📤 Resending code to:', email);
-
-    if (!email) {
-      return res.status(400).json({ error: 'Email is required' });
-    }
-
-    const record = await Verification.findOne({ email });
-    if (!record) {
-      return res.status(400).json({ error: 'No pending verification' });
-    }
-
-    // ✅ Check if last code was sent less than 1 minute ago
-    const now = new Date();
-    const lastCodeSentTime = record.lastCodeSentAt || record.createdAt;
-    const timeSinceLastCode = (now - lastCodeSentTime) / 1000 / 60; // Convert to minutes
-
-    if (timeSinceLastCode < 1) {
-      const secondsToWait = Math.ceil(60 - (timeSinceLastCode * 60));
-      return res.status(429).json({ 
-        error: `Please wait ${secondsToWait} seconds before requesting a new code`,
-        retryAfter: secondsToWait
-      });
-    }
-
-    const code = crypto.randomInt(100000, 999999).toString();
-    const expires = new Date(Date.now() + 10 * 60 * 1000);
-
-    // ✅ Update with new code and track when it was sent
-    record.code = code;
-    record.expires = expires;
-    record.lastCodeSentAt = now;
-    await record.save();
-
-    await transporter.sendMail({
-      from: process.env.EMAIL_FROM,
-      to: email,
-      subject: 'Your New Verification Code',
-      text: `Your new verification code is: ${code}\n\nThis code expires in 10 minutes.`
-    });
-
-    console.log('✅ New verification code sent to:', email);
-    res.json({ 
-      message: 'New code sent to your email',
-      retryAfter: 60
-    });
-
-  } catch (err) {
-    console.error('❌ RESEND ERROR:', err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ✅ Check email availability
-router.post('/check-email', async (req, res) => {
-  try {
-    const email = (req.body.email || '').trim().toLowerCase();
-    const gmailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
-
-    if (!gmailRegex.test(email)) {
-      return res.status(400).json({ error: 'Only Gmail addresses are allowed.' });
-    }
-
-    const exists = await User.exists({ email });
-    return res.json({
-      available: !exists,
-      message: exists ? 'Email is already registered.' : 'Email is available.'
-    });
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
-  }
-});
-
-// ✅ Login route
+// ✅ LOGIN ROUTE (FIXED)
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password are required.' });
-    }
+    console.log('🔐 Login attempt:', email);
 
-    const user = await User.findOne({ email: email.toLowerCase() });
-    
+    // Find user
+    const user = await User.findOne({ email });
     if (!user) {
-      return res.status(401).json({ error: 'Invalid email or password.' });
+      console.log('❌ User not found:', email);
+      return res.status(401).json({ message: 'Invalid email or password' });
     }
 
-    const passwordMatch = await bcrypt.compare(password, user.password);
-    
-    if (!passwordMatch) {
-      return res.status(401).json({ error: 'Invalid email or password.' });
+    // Check if verified
+    if (!user.verified) {
+      console.log('❌ User not verified:', email);
+      return res.status(403).json({ 
+        error: 'Please verify your email before logging in.',
+        code: 'EMAIL_NOT_VERIFIED',
+        needsVerification: true,
+        email: email
+      });
     }
 
+    // Compare password
+    const isMatch = await user.matchPassword(password);
+    if (!isMatch) {
+      console.log('❌ Password mismatch for:', email);
+      return res.status(401).json({ message: 'Invalid email or password' });
+    }
+
+    // Create token
     const token = jwt.sign(
-      { id: user._id, email: user.email },
-      process.env.JWT_SECRET,
+      { id: user._id, email: user.email, role: user.role },
+      process.env.JWT_SECRET || 'your-secret-key',
       { expiresIn: '7d' }
     );
 
-    console.log('✅ Login successful for:', email);
+    console.log('✅ Login successful:', email);
 
-    return res.json({
-      message: 'Login successful',
+    res.json({
       token,
       user: {
-        id: user._id,
+        _id: user._id,
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
@@ -267,15 +60,318 @@ router.post('/login', async (req, res) => {
     });
 
   } catch (err) {
-    console.error('❌ LOGIN ERROR:', err);
-    return res.status(500).json({ error: err.message });
+    console.error('❌ Login error:', err);
+    res.status(500).json({ message: 'Server error during login' });
   }
 });
 
-// ✅ Test route
-router.post('/test', (req, res) => {
-  console.log('✅ Test route called!');
-  res.json({ message: 'Test route works' });
+// ✅ CHECK EMAIL AVAILABILITY
+router.post('/check-email', async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required.' });
+    }
+
+    const emailLower = email.toLowerCase().trim();
+    const user = await User.findOne({ email: emailLower });
+
+    if (user) {
+      return res.json({ 
+        available: false,
+        verified: user.verified,
+        message: user.verified 
+          ? '⚠️ Email is already registered and verified' 
+          : '⚠️ Email is registered but not verified'
+      });
+    }
+
+    return res.json({ 
+      available: true,
+      message: '✅ Email is available'
+    });
+
+  } catch (err) {
+    console.error('❌ Check email error:', err);
+    return res.status(500).json({ error: 'Failed to check email availability.' });
+  }
+});
+
+// ✅ REGISTER ROUTE (WITHOUT TRANSACTIONS)
+router.post('/register', async (req, res) => {
+  try {
+    const { firstName, lastName, email, password, phone } = req.body;
+
+    // ✅ Validate required fields
+    if (!firstName || !lastName || !email || !password) {
+      return res.status(400).json({ error: 'All required fields must be provided.' });
+    }
+
+    const emailLower = email.toLowerCase().trim();
+
+    // ✅ Check if user already exists
+    const existingUser = await User.findOne({ email: emailLower });
+
+    if (existingUser) {
+      if (existingUser.verified) {
+        return res.status(400).json({
+          error: 'This email is already registered and verified. Please login.',
+          code: 'EMAIL_VERIFIED_EXISTS'
+        });
+      } else {
+        // ✅ Delete unverified user + verification (no transaction)
+        console.log(`🗑️ Deleting unverified account for ${emailLower}`);
+        await User.deleteOne({ email: emailLower, verified: false });
+        await Verification.deleteOne({ email: emailLower });
+      }
+    }
+
+    // ✅ Create new user (NO MANUAL HASHING - let pre-save handle it)
+    const user = await User.create({
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      email: emailLower,
+      password: password,  // ✅ Plain password - pre-save hook will hash it
+      phone: phone?.trim() || '',
+      role: 'customer',
+      verified: false
+    });
+
+    // ✅ Generate 6-digit verification code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // ✅ Create verification record
+    await Verification.create({
+      email: emailLower,
+      code: code,
+      lastCodeSentAt: new Date()
+    });
+
+    console.log('✅ Registration successful for:', emailLower);
+    console.log('📧 Verification code:', code);
+
+    // ✅ Send verification email (outside transaction)
+    try {
+      await sendVerificationEmail(emailLower, code);
+    } catch (emailError) {
+      console.error('⚠️ Email failed but registration successful:', emailError.message);
+      // Don't fail registration if email fails
+    }
+
+    return res.status(201).json({
+      message: 'Registration successful. Check your email for verification code.',
+      email: emailLower
+      // code: code  // ← Remove in production
+    });
+
+  } catch (err) {
+    console.error('❌ Registration error:', {
+      message: err.message,
+      code: err.code,
+      name: err.name
+    });
+    
+    // ✅ Handle unique key violation error
+    if (err.code === 11000) {
+      return res.status(400).json({
+        error: 'This email is already registered.',
+        code: 'EMAIL_EXISTS'
+      });
+    }
+    
+    // ✅ Handle validation errors
+    if (err.name === 'ValidationError') {
+      const messages = Object.values(err.errors).map(e => e.message);
+      return res.status(400).json({
+        error: 'Validation failed: ' + messages.join(', '),
+        code: 'VALIDATION_ERROR'
+      });
+    }
+    
+    return res.status(500).json({ 
+      error: 'Registration failed. Please try again.',
+      details: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+  }
+});
+
+// ✅ VERIFY EMAIL ROUTE (WITHOUT TRANSACTIONS)
+router.post('/verify', async (req, res) => {
+  try {
+    const { email, code } = req.body;
+
+    if (!email || !code) {
+      return res.status(400).json({ error: 'Email and code are required.' });
+    }
+
+    const emailLower = email.toLowerCase().trim();
+
+    // ✅ Check verification code (TTL will handle expiration)
+    const verification = await Verification.findOne({
+      email: emailLower,
+      code: code
+    });
+
+    if (!verification) {
+      return res.status(401).json({ 
+        error: 'Invalid or expired verification code.' 
+      });
+    }
+
+    // ✅ Mark user as verified
+    const user = await User.findOneAndUpdate(
+      { email: emailLower },
+      { verified: true },
+      { new: true }
+    );
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    // ✅ Delete verification record
+    await Verification.deleteOne({ _id: verification._id });
+
+    console.log('✅ Email verified for:', emailLower);
+
+    return res.json({
+      message: 'Email verified successfully!',
+      user: {
+        id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        verified: user.verified
+      }
+    });
+
+  } catch (err) {
+    console.error('❌ Verification error:', err);
+    return res.status(500).json({ error: 'Verification failed. Please try again.' });
+  }
+});
+
+// ✅ RESEND VERIFICATION CODE (NO CHANGES NEEDED)
+router.post('/resend', async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required.' });
+    }
+
+    const emailLower = email.toLowerCase().trim();
+
+    // ✅ Check if user exists
+    const user = await User.findOne({ email: emailLower });
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    if (user.verified) {
+      return res.status(400).json({ error: 'This email is already verified.' });
+    }
+
+    // ✅ Generate new code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // ✅ Update verification record
+    await Verification.findOneAndUpdate(
+      { email: emailLower },
+      {
+        code: code,
+        lastCodeSentAt: new Date()
+      },
+      { upsert: true, new: true }
+    );
+
+    console.log('✅ Resend verification code:', code, 'for:', emailLower);
+
+    // ✅ Send email (don't fail if email fails)
+    try {
+      await sendVerificationEmail(emailLower, code);
+    } catch (emailError) {
+      console.error('⚠️ Email failed:', emailError.message);
+    }
+
+    return res.json({ 
+      message: 'Verification code sent to your email!',
+      email: emailLower
+      // code: code  // ← Remove in production
+    });
+
+  } catch (err) {
+    console.error('❌ Resend verification error:', err);
+    return res.status(500).json({ error: 'Failed to resend code. Please try again.' });
+  }
+});
+
+// ✅ TEMPORARY: Reset password route
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+    
+    const salt = await bcryptjs.genSalt(10);
+    const hashedPassword = await bcryptjs.hash(newPassword, salt);
+    
+    const user = await User.findOneAndUpdate(
+      { email: email.toLowerCase().trim() },
+      { password: hashedPassword },
+      { new: true }
+    );
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    res.json({ message: 'Password reset successfully' });
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// ✅ DELETE UNVERIFIED ACCOUNT
+router.post('/delete-unverified', async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required.' });
+    }
+
+    const emailLower = email.toLowerCase().trim();
+
+    // ✅ Check if user is unverified
+    const user = await User.findOne({ email: emailLower });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    if (user.verified) {
+      return res.status(400).json({ 
+        error: 'Cannot delete verified account. Please contact support.' 
+      });
+    }
+
+    // ✅ Delete unverified user
+    await User.deleteOne({ email: emailLower, verified: false });
+
+    // ✅ Delete verification record
+    await Verification.deleteOne({ email: emailLower });
+
+    console.log(`🗑️ Unverified account deleted: ${emailLower}`);
+
+    return res.json({ 
+      message: 'Account deleted successfully.'
+    });
+
+  } catch (err) {
+    console.error('❌ Delete account error:', err);
+    return res.status(500).json({ error: 'Failed to delete account.' });
+  }
 });
 
 module.exports = router;

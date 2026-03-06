@@ -1,27 +1,32 @@
 const express = require('express');
 const router = express.Router();
+const authMiddleware = require('../middleware/auth');
 const adminController = require('../controllers/adminController');
-const auth = require('../middleware/auth');
-const User = require('../models/User');
-const Product = require('../models/Product');
 
-// ✅ Update order status
-router.patch('/orders/:id/status', auth, adminController.updateOrderStatus);
+// ✅ Stats
+router.get('/stats', authMiddleware, adminController.getStats);
 
-// ✅ Update reservation status
-router.patch('/reservations/:id/status', auth, adminController.updateReservationStatus);
+// ✅ Orders
+router.get('/orders', authMiddleware, adminController.getAllOrders);
+router.patch('/orders/:id/status', authMiddleware, adminController.updateOrderStatus);
 
-// ✅ Admin dashboard stats
-router.get('/stats', adminController.getStats);
+// ✅ Products
+router.get('/products', authMiddleware, adminController.getAllProducts);
 
-// ✅ Admin orders management
-router.get('/orders', adminController.getAllOrders);
+// ✅ Users
+router.get('/users', authMiddleware, adminController.getAllUsers);
+router.delete('/users/:id', authMiddleware, adminController.deleteUser);
 
-// ✅ Admin users management
-router.get('/users', adminController.getAllUsers);
-router.delete('/users/:id', adminController.deleteUser);
-
-// ✅ Admin products management
-router.get('/products', adminController.getAllProducts);
+// ✅ Reservations
+router.get('/reservations', authMiddleware, async (req, res) => {
+  try {
+    const Reservation = require('../models/Reservation');
+    const reservations = await Reservation.find().sort({ createdAt: -1 });
+    res.json(reservations);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+router.patch('/reservations/:id/status', authMiddleware, adminController.updateReservationStatus);
 
 module.exports = router;
