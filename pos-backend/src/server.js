@@ -10,7 +10,6 @@ dotenv.config();
 const app = express();
 const server = http.createServer(app);
 
-app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
 app.use(express.json());
 
 // ✅ CORS: allow any origin for deployment (or set your frontend URL)
@@ -92,7 +91,7 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: err.message || 'Internal server error' });
 });
 
-// ✅ Start HTTP server (Render needs "0.0.0.0")
+// ✅ Start HTTP server (Render/Railway needs "0.0.0.0")
 const PORT = process.env.PORT || 4000;
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`API+Socket running on ${PORT}`);
