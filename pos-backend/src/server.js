@@ -13,9 +13,18 @@ const server = http.createServer(app);
 app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
 app.use(express.json());
 
+// ✅ CORS: allow any origin for deployment (or set your frontend URL)
+app.use(cors({
+  origin: true,
+  credentials: true
+}));
+
 // ✅ mount socket.io on same HTTP server
 const io = new Server(server, {
-  cors: { origin: 'http://localhost:5173', credentials: true },
+  cors: {
+    origin: true,
+    credentials: true
+  },
   path: '/socket.io'
 });
 
@@ -83,10 +92,8 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: err.message || 'Internal server error' });
 });
 
-// ✅ Start HTTP server (not app.listen)
+// ✅ Start HTTP server (Render needs "0.0.0.0")
 const PORT = process.env.PORT || 4000;
-
-// ❗must be server.listen, not app.listen
-server.listen(PORT, () => {
+server.listen(PORT, "0.0.0.0", () => {
   console.log(`API+Socket running on ${PORT}`);
 });
