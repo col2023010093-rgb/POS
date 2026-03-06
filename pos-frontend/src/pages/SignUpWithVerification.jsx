@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from '../api';  // ← Use configured API client instead of axios
 
 export default function SignUpWithVerification() {
   const [form, setForm] = useState({
@@ -16,9 +16,9 @@ export default function SignUpWithVerification() {
     setLoading(true);
     setError('');
     try {
-      await axios.post('/api/auth/register', form);
+      await api.post('/api/auth/register', form);  // ← Changed from axios to api
       setEmail(form.email);
-      setStep('verify'); // Show verification modal
+      setStep('verify');
     } catch (err) {
       setError(err.response?.data?.error || 'Registration error');
     }
@@ -30,8 +30,8 @@ export default function SignUpWithVerification() {
     setLoading(true);
     setError('');
     try {
-      await axios.post('/api/auth/verify', { email, code });
-      setStep('done'); // Account created only after verification
+      await api.post('/api/auth/verify', { email, code });  // ← Changed from axios to api
+      setStep('done');
     } catch (err) {
       setError(err.response?.data?.error || 'Verification error');
     }
@@ -42,7 +42,7 @@ export default function SignUpWithVerification() {
     setLoading(true);
     setError('');
     try {
-      await axios.post('/api/auth/resend', { email });
+      await api.post('/api/auth/resend', { email });  // ← Changed from axios to api
       setError('A new code has been sent to your email.');
     } catch (err) {
       setError(err.response?.data?.error || 'Resend error');

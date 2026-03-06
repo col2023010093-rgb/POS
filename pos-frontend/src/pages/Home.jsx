@@ -1,17 +1,25 @@
 import React, { useContext } from 'react'
 import { useNavigate } from 'react-router-dom'
 import './Home.css'
-import { MenuContext } from '../context/MenuContext'
-import ProductCard from '../components/ProductCard'
+import { useMenu } from '../context/MenuContext'
+import ProductCard from '../Components/ProductCard'
 
 const Home = () => {
   const navigate = useNavigate()
-  const { products, loading } = useContext(MenuContext)
+  const { products, loading } = useMenu()
 
-  // Get popular items from backend
-  const featuredItems = products
-    .filter(item => item.popular)
-    .slice(0, 3)
+  // ✅ Handle loading state
+  if (loading) {
+    return <div>Loading menu...</div>;
+  }
+
+  // ✅ Handle empty menu
+  if (!products || products.length === 0) {
+    return <div>No menu items available</div>;
+  }
+
+  // ✅ Now safe to filter
+  const featuredItems = products.filter(item => item.popular || item.featured)
 
   return (
     <div className="home">

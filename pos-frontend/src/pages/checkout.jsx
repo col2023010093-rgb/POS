@@ -44,8 +44,13 @@ const CheckoutContent = () => {
 
       // ✅ Cash
       if (paymentMethod === 'cash') {
-        await api.post('/orders', {
-          items: cart,
+        const res = await api.createOrder({
+          items: cart.map(item => ({
+            productId: item._id || item.productId,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+          })),
           totalAmount,
           customerId: user?._id,
           paymentMethod: 'cash',
@@ -60,9 +65,10 @@ const CheckoutContent = () => {
       // ✅ Card / Stripe
       if (!stripe || !elements) return
 
-      const { data } = await api.post('/payments/intent', { amount: totalAmount })
-      const clientSecret = data?.clientSecret ?? data?.data?.clientSecret
-      if (!clientSecret) throw new Error('No client secret')
+      const { data } = await api.createPaymentIntent({ amount: totalAmount })
+      const clientSecret = data?.clientSecret
+
+      if (!clientSecret) throw new Error('No client secret returned from server')
 
       const cardElement = elements.getElement(CardElement)
       const { error: stripeError, paymentIntent } =
@@ -73,10 +79,14 @@ const CheckoutContent = () => {
       if (stripeError) throw new Error(stripeError.message)
 
       if (paymentIntent.status === 'succeeded') {
-        await api.post('/orders', {
-          items: cart,
+        await api.createOrder({
+          items: cart.map(item => ({
+            productId: item._id || item.productId,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+          })),
           totalAmount,
-          customerId: user?._id,
           paymentMethod: 'card',
           paymentStatus: 'paid',
           paymentIntentId: paymentIntent.id,

@@ -19,8 +19,8 @@
 
 .menu-hero {
   position: relative;
-  height: 50vh;
-  min-height: 400px;
+  height: 20vh;
+  min-height: 300px;
   background: linear-gradient(135deg, #3d2914 0%, #5c3d2e 50%, #2a1810 100%);
   display: flex;
   align-items: center;

@@ -1,12 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './login.css';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
-import axios from 'axios';
 import api from '../api';
 
-// ✅ Import real images or use placeholder URLs
 import logo from "../assets/logo.png";
 import slide1 from "../assets/slide1.png";
 import slide2 from "../assets/slide2.png";
@@ -14,9 +12,9 @@ import slide3 from "../assets/slide3.png";
 import slide4 from "../assets/slide4.png";
 
 const Login = () => {
-  const { login, register } = useAuth()
+  const { login } = useAuth()
   const navigate = useNavigate()
-  const [step, setStep] = useState('login'); // 'login' | 'register' | 'verify' | 'done'
+  const [step, setStep] = useState('login');
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -36,7 +34,26 @@ const Login = () => {
   const [isRegisterActive, setIsRegisterActive] = useState(false)
   const [validationErrors, setValidationErrors] = useState({})
 
-  // ✅ Validation helpers
+  // ✅ Restore verification state on refresh
+  useEffect(() => {
+    const savedEmail = localStorage.getItem('verifyEmail');
+    if (savedEmail) {
+      setEmail(savedEmail);
+      setStep('verify');
+      setIsRegisterActive(true);
+    }
+  }, []);
+
+  // ✅ Auto-focus first code input when modal opens
+  useEffect(() => {
+    if (step === 'verify') {
+      setTimeout(() => {
+        const firstInput = document.querySelector('.code-input');
+        firstInput?.focus();
+      }, 100);
+    }
+  }, [step]);
+
   const validateEmail = (email) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     return re.test(email)
@@ -47,7 +64,7 @@ const Login = () => {
   }
 
   const validatePhone = (phone) => {
-    if (!phone) return true // phone is optional
+    if (!phone) return true
     const re = /^[0-9\-\+\(\)\s]+$/
     return re.test(phone) && phone.length >= 10
   }
@@ -56,106 +73,54 @@ const Login = () => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
     setValidationErrors((prev) => ({ ...prev, [name]: '' }))
+    setError('')
   }
 
   const handleRegisterChange = (e) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
     setValidationErrors((prev) => ({ ...prev, [name]: '' }))
+    setError('')
   }
 
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     setError('');
+    setSuccess('');
 
     try {
-      const result = await login(formData.email, formData.password);
+      console.log('📝 Submitting login form:', formData.email);
+      
+      const result = await login(formData.email.trim(), formData.password);
+      
+      console.log('📊 Login result:', result);
       
       if (result.success) {
+        console.log('✅ Login successful!');
         setSuccess('Login successful! Redirecting...');
         setTimeout(() => {
-          navigate('/'); // Redirect to home
-        }, 1000);
+          navigate('/');
+        }, 500);
       } else {
-        setError(result.error);
+        // ✅ Show specific error messages
+        if (result.code === 'EMAIL_NOT_VERIFIED') {
+          setError('⚠️ Please verify your email before logging in.');
+        } else if (result.error?.includes('not found')) {
+          setError('📧 Email address not found. Please create an account.');
+        } else if (result.error?.includes('password')) {
+          setError('🔐 Incorrect password. Please try again.');
+        } else {
+          setError(result.error || 'Login failed. Please try again.');
+        }
       }
     } catch (err) {
-      setError('Login failed');
-    }
-  }
-
-  const handleRegisterSubmit = async (e) => {
-    e.preventDefault()
-    setError('')
-    setSuccess('')
-    setValidationErrors({})
-
-    // ✅ Comprehensive validation
-    const errors = {}
-    
-    if (!formData.firstName?.trim()) {
-      errors.firstName = 'First name is required'
-    } else if (formData.firstName.trim().length < 2) {
-      errors.firstName = 'First name must be at least 2 characters'
-    }
-
-    if (!formData.lastName?.trim()) {
-      errors.lastName = 'Last name is required'
-    } else if (formData.lastName.trim().length < 2) {
-      errors.lastName = 'Last name must be at least 2 characters'
-    }
-
-    if (!formData.email) {
-      errors.email = 'Email is required'
-    } else if (!validateEmail(formData.email)) {
-      errors.email = 'Please enter a valid email'
-    }
-
-    if (!formData.password) {
-      errors.password = 'Password is required'
-    } else if (!validatePassword(formData.password)) {
-      errors.password = 'Password must be at least 6 characters'
-    }
-
-    if (!formData.confirmPassword) {
-      errors.confirmPassword = 'Please confirm your password'
-    } else if (formData.password !== formData.confirmPassword) {
-      errors.confirmPassword = 'Passwords do not match'
-    }
-
-    if (formData.phone && !validatePhone(formData.phone)) {
-      errors.phone = 'Please enter a valid phone number (at least 10 digits)'
-    }
-
-    if (Object.keys(errors).length > 0) {
-      setValidationErrors(errors)
-      return
-    }
-
-    setLoading(true)
-    try {
-      await register({
-        firstName: formData.firstName.trim(),
-        lastName: formData.lastName.trim(),
-        email: formData.email.toLowerCase(),
-        password: formData.password,
-        phone: formData.phone.trim()
-      })
-      setSuccess('Account created successfully! Redirecting to home...')
-      setTimeout(() => navigate('/'), 1500)
-    } catch (err) {
-      const errorMsg = err.response?.data?.message || 'Registration failed'
-      if (errorMsg.includes('Email')) {
-        setValidationErrors({ email: errorMsg })
-      } else {
-        setError(errorMsg)
-      }
+      console.error('❌ Unexpected error:', err);
+      setError('❌ An unexpected error occurred');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
-
-  const [emailStatus, setEmailStatus] = useState({ checking: false, available: null, message: '' });
+  };
 
   const getPasswordStrength = (password) => {
     let score = 0;
@@ -172,22 +137,6 @@ const Login = () => {
 
   const passwordStrength = getPasswordStrength(formData.password || '');
 
-  const handleEmailBlur = async () => {
-    const email = (formData.email || '').trim().toLowerCase();
-    if (!email || !validateEmail(email)) return;
-
-    try {
-      setEmailStatus({ checking: true, available: null, message: 'Checking email...' });
-      const { data } = await api.post('/api/auth/check-email', { email });
-      setEmailStatus({ checking: false, available: data.available, message: data.message });
-      if (!data.available) {
-        setValidationErrors((prev) => ({ ...prev, email: 'Email is already registered' }));
-      }
-    } catch {
-      setEmailStatus({ checking: false, available: null, message: '' });
-    }
-  };
-
   const handleRegister = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -199,7 +148,6 @@ const Login = () => {
     if (!formData.firstName?.trim()) errors.firstName = 'First name is required';
     if (!formData.lastName?.trim()) errors.lastName = 'Last name is required';
     if (!formData.email?.trim()) errors.email = 'Email is required';
-    if (!formData.phone?.trim()) errors.phone = 'Phone is required';
     if (!formData.password) errors.password = 'Password is required';
     if (!formData.confirmPassword) errors.confirmPassword = 'Confirm password is required';
 
@@ -208,8 +156,8 @@ const Login = () => {
     if (formData.password && formData.password !== formData.confirmPassword) {
       errors.confirmPassword = 'Passwords do not match';
     }
-    if (formData.password && getPasswordStrength(formData.password).score < 5) {
-      errors.password = 'Password must be strong (8+ chars, upper/lower/number/symbol)';
+    if (formData.password && getPasswordStrength(formData.password).score < 3) {
+      errors.password = 'Password must be at least medium strength';
     }
 
     if (Object.keys(errors).length > 0) {
@@ -219,29 +167,39 @@ const Login = () => {
     }
 
     try {
-      // email used check
-      const check = await api.post('/api/auth/check-email', { email: formData.email.toLowerCase() });
-      if (!check.data.available) {
-        setValidationErrors({ email: 'Email is already registered' });
-        setLoading(false);
-        return;
-      }
-
-      await api.post('/api/auth/register', {
+      const response = await api.post('/api/auth/register', {
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
-        email: formData.email.toLowerCase(),
+        email: formData.email.trim().toLowerCase(),
         password: formData.password,
-        phone: formData.phone.trim()
+        phone: formData.phone?.trim() || ''
       });
 
-      setEmail(formData.email.toLowerCase());
+      const userEmail = formData.email.trim().toLowerCase();
+      setEmail(userEmail);
+      localStorage.setItem('verifyEmail', userEmail);
+      setSuccess('');
       setStep('verify');
-      setSuccess('Verification code sent to your email.');
     } catch (err) {
-      const msg = err.response?.data?.error || 'Registration failed';
-      if (msg.toLowerCase().includes('email already')) {
-        setValidationErrors({ email: 'Email is already registered' });
+      const errorData = err.response?.data;
+      const msg = errorData?.error || 'Registration failed';
+      
+      // ✅ Handle different error types
+      if (errorData?.code === 'EMAIL_VERIFIED_EXISTS') {
+        setValidationErrors({ 
+          email: '⚠️ This email is already registered and verified. Please login instead.' 
+        });
+        // Optional: Switch to login form
+        setTimeout(() => {
+          switchToLogin();
+          setFormData(prev => ({ ...prev, email: formData.email }));
+        }, 2000);
+      } else if (errorData?.code === 'EMAIL_EXISTS') {
+        setValidationErrors({ 
+          email: '⚠️ This email is already registered. Please login.' 
+        });
+      } else if (msg.includes('email') || msg.includes('Email')) {
+        setValidationErrors({ email: msg });
       } else {
         setError(msg);
       }
@@ -252,53 +210,45 @@ const Login = () => {
 
   const handleVerify = async (e) => {
     e.preventDefault();
-    console.log('🚀 handleVerify called');
     setLoading(true);
     setError('');
     setSuccess('');
     
     try {
-      console.log('📧 Email:', email);
-      console.log('🔐 Code:', code);
-      console.log('📝 Code length:', code.length);
-      
       if (!email || !code || code.length !== 6) {
-        console.error('❌ Validation failed');
         setError('Please enter a valid 6-digit code');
         setLoading(false);
         return;
       }
       
-      console.log('🔄 Sending verification request to /api/auth/verify');
-      console.log('Payload:', { email: email.trim(), code: code.trim() });
-      
-      const response = await api.post('/api/auth/verify', { 
+      await api.post('/api/auth/verify', { 
         email: email.trim(), 
         code: code.trim()
       });
       
-      console.log('✅ Success response:', response.data);
+      localStorage.removeItem('verifyEmail');
       setSuccess('Email verified successfully!');
       setStep('done');
       
-      setTimeout(() => {
-        navigate('/');
+      // ✅ Optional: Auto-login after verification
+      setTimeout(async () => {
+        // Auto-login with the registered credentials
+        const loginResult = await login(email, formData.password);
+        if (loginResult.success) {
+          navigate('/');
+        } else {
+          // If auto-login fails, redirect to login page
+          setStep('login');
+          setIsRegisterActive(false);
+          setSuccess('Account verified! Please login.');
+        }
       }, 1500);
       
     } catch (err) {
-      console.error('🔴 Full error object:', err);
-      console.error('📍 Error status:', err.response?.status);
-      console.error('📋 Error data:', err.response?.data);
-      console.error('💬 Error message:', err.message);
-      console.error('🌐 Request URL:', err.config?.url);
-      console.error('🔌 Request method:', err.config?.method);
-      
       const errorMsg = err.response?.data?.message || 
                      err.response?.data?.error || 
-                     err.message ||
-                     'Verification failed - please check backend logs';
+                     'Verification failed';
       
-      console.error('🎯 Final error message:', errorMsg);
       setError(errorMsg);
       setCode('');
     } finally {
@@ -306,13 +256,35 @@ const Login = () => {
     }
   };
 
-  const testAPI = async () => {
-    try {
-      const response = await api.get('http://localhost:4000/health');
-      console.log('✅ Backend is reachable:', response.data);
-    } catch (err) {
-      console.error('❌ Cannot reach backend:', err.message);
-    }
+  // ✅ Reset form when switching between login/register
+  const switchToLogin = () => {
+    setIsRegisterActive(false);
+    setFormData({
+      email: '',
+      password: '',
+      firstName: '',
+      lastName: '',
+      phone: '',
+      confirmPassword: ''
+    });
+    setError('');
+    setSuccess('');
+    setValidationErrors({});
+  };
+
+  const switchToRegister = () => {
+    setIsRegisterActive(true);
+    setFormData({
+      email: '',
+      password: '',
+      firstName: '',
+      lastName: '',
+      phone: '',
+      confirmPassword: ''
+    });
+    setError('');
+    setSuccess('');
+    setValidationErrors({});
   };
 
   return (
@@ -326,14 +298,10 @@ const Login = () => {
           <form onSubmit={handleRegister}>
             <h1 className="t-sign">Create Account</h1>
             {error && (
-              <div style={{ color: '#d32f2f', fontSize: '12px', marginBottom: '10px', backgroundColor: '#ffebee', padding: '8px', borderRadius: '4px' }}>
-                ❌ {error}
-              </div>
+              <div className="login-error-message">❌ {error}</div>
             )}
             {success && (
-              <div style={{ color: '#2e7d32', fontSize: '12px', marginBottom: '10px', backgroundColor: '#e8f5e9', padding: '8px', borderRadius: '4px' }}>
-                ✅ {success}
-              </div>
+              <div className="login-success-message">✅ {success}</div>
             )}
             <p>Welcome! Create your customer account:</p>
 
@@ -345,6 +313,7 @@ const Login = () => {
                   name="firstName"
                   value={formData.firstName}
                   onChange={handleRegisterChange}
+                  autoComplete="given-name"
                   style={{ borderColor: validationErrors.firstName ? '#d32f2f' : undefined, width: '100%' }}
                 />
                 {validationErrors.firstName && (
@@ -358,6 +327,7 @@ const Login = () => {
                   name="lastName"
                   value={formData.lastName}
                   onChange={handleRegisterChange}
+                  autoComplete="family-name"
                   style={{ borderColor: validationErrors.lastName ? '#d32f2f' : undefined, width: '100%' }}
                 />
                 {validationErrors.lastName && (
@@ -373,23 +343,11 @@ const Login = () => {
                 name="email"
                 value={formData.email}
                 onChange={handleRegisterChange}
-                onBlur={handleEmailBlur}
+                autoComplete="email"
                 style={{ borderColor: validationErrors.email ? '#d32f2f' : undefined }}
               />
               {validationErrors.email && (
                 <small style={{ color: '#d32f2f', fontSize: '11px', display: 'block', marginTop: '3px' }}>⚠️ {validationErrors.email}</small>
-              )}
-              {!validationErrors.email && emailStatus.message && (
-                <small
-                  style={{
-                    color: emailStatus.available === false ? '#d32f2f' : '#2e7d32',
-                    fontSize: '11px',
-                    display: 'block',
-                    marginTop: '3px'
-                  }}
-                >
-                  {emailStatus.message}
-                </small>
               )}
             </div>
 
@@ -400,6 +358,7 @@ const Login = () => {
                 name="phone"
                 value={formData.phone}
                 onChange={handleRegisterChange}
+                autoComplete="tel"
                 style={{ borderColor: validationErrors.phone ? '#d32f2f' : undefined }}
               />
               {validationErrors.phone && (
@@ -415,6 +374,7 @@ const Login = () => {
                   name="password"
                   value={formData.password}
                   onChange={handleRegisterChange}
+                  autoComplete="new-password"
                   style={{ borderColor: validationErrors.password ? '#d32f2f' : undefined }}
                 />
                 <span className="toggle-password" onClick={() => setShowSignUpPassword(!showSignUpPassword)}>
@@ -422,7 +382,6 @@ const Login = () => {
                 </span>
               </div>
 
-              {/* Password strength indicator */}
               <div style={{ marginTop: '6px' }}>
                 <div style={{ height: '6px', background: '#eee', borderRadius: '4px', overflow: 'hidden' }}>
                   <div
@@ -451,6 +410,7 @@ const Login = () => {
                   name="confirmPassword"
                   value={formData.confirmPassword}
                   onChange={handleRegisterChange}
+                  autoComplete="new-password"
                   style={{ borderColor: validationErrors.confirmPassword ? '#d32f2f' : undefined }}
                 />
                 <span className="toggle-password" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
@@ -462,29 +422,28 @@ const Login = () => {
               )}
             </div>
 
-            <button className="btn-1st" type="submit" disabled={loading || !!success}>
+            <button className="btn-1st" type="submit" disabled={loading}>
               {loading ? 'Creating Account...' : 'Sign Up as Customer'}
             </button>
             <button
               className="btn-2nd"
               id="login"
               type="button"
-              onClick={() => {
-                setIsRegisterActive(false)
-                setError('')
-                setSuccess('')
-                setValidationErrors({})
-              }}
+              onClick={switchToLogin}
             >
               Already have account? Sign In
             </button>
           </form>
 
-{/* Add this right after your sign-up form block */}
+{/* Verification Modal */}
 {step === 'verify' && (
-  <div className="verification-modal-overlay">
+  <div className="verification-modal-overlay" onClick={(e) => {
+    if (e.target.className === 'verification-modal-overlay') {
+      // Prevent closing modal by clicking outside
+      e.stopPropagation();
+    }
+  }}>
     <div className="verification-modal">
-
       <div className="verification-header">
         <h2>Email Verification</h2>
         <p>We've sent a 6-digit code to</p>
@@ -492,24 +451,19 @@ const Login = () => {
       </div>
 
       <form onSubmit={handleVerify} className="verification-form">
-        {error && (
-          <div className="verification-error">
-            ❌ {error}
-          </div>
-        )}
-        {success && (
-          <div className="verification-success">
-            ✅ {success}
-          </div>
-        )}
+        {error && <div className="verification-error">❌ {error}</div>}
+        {success && <div className="verification-success">✅ {success}</div>}
 
         <div className="code-inputs">
           {[0, 1, 2, 3, 4, 5].map((index) => (
             <input
               key={index}
               type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
               maxLength={1}
               className="code-input"
+              autoComplete="off"
               value={code[index] || ''}
               onChange={(e) => {
                 const value = e.target.value;
@@ -530,46 +484,42 @@ const Login = () => {
                   prevInput?.focus();
                 }
               }}
+              onPaste={(e) => {
+                e.preventDefault();
+                const paste = e.clipboardData.getData('text').replace(/\D/g, '');
+                if (paste.length === 6) {
+                  setCode(paste);
+                  const inputs = e.target.parentElement.children;
+                  inputs[5]?.focus();
+                }
+              }}
               onFocus={(e) => e.target.select()}
-              autoFocus={index === 0}
             />
           ))}
         </div>
 
-        <button 
-          type="submit" 
-          className="btn-verify" 
-          disabled={loading || code.length < 6}
-        >
+        <button type="submit" className="btn-verify" disabled={loading || code.length < 6}>
           {loading ? 'Verifying...' : 'Verify Account'}
         </button>
 
         <button
           type="button"
           className="btn-resend"
-          onClick={async (e) => {
-            e.preventDefault();
+          onClick={async () => {
             setLoading(true);
             setError('');
             setSuccess('');
             try {
-              const response = await api.post('/api/auth/resend', { email });
-              
-              if (response.status === 200) {
-                setSuccess('New code sent to your email!');
-                setCode('');
-                setTimeout(() => setSuccess(''), 3000);
-              }
+              await api.post('/api/auth/resend', { email });
+              setSuccess('New code sent to your email!');
+              setCode('');
+              setTimeout(() => setSuccess(''), 3000);
             } catch (err) {
-              console.error('❌ Resend error:', err);
-              
-              // ✅ Handle rate limit error (429 status)
               if (err.response?.status === 429) {
                 const secondsToWait = err.response?.data?.retryAfter || 60;
                 setError(`Please wait ${secondsToWait} seconds before resending`);
               } else {
-                const errorMsg = err.response?.data?.error || 'Failed to resend code';
-                setError(errorMsg);
+                setError(err.response?.data?.error || 'Failed to resend code');
               }
             } finally {
               setLoading(false);
@@ -583,12 +533,45 @@ const Login = () => {
         <button
           type="button"
           className="btn-cancel"
-          onClick={() => {
-            setStep('register');
-            setCode('');
+          onClick={async () => {
+            // ✅ Ask for confirmation
+            if (!window.confirm('Are you sure you want to cancel? Your account will be deleted.')) {
+              return;
+            }
+
+            setLoading(true);
             setError('');
             setSuccess('');
+
+            try {
+              // ✅ Delete unverified account
+              await api.post('/api/auth/delete-unverified', { email });
+
+              localStorage.removeItem('verifyEmail');
+              setStep('login');
+              setCode('');
+              setError('');
+              setSuccess('');
+              setIsRegisterActive(false);
+              setFormData({
+                email: '',
+                password: '',
+                firstName: '',
+                lastName: '',
+                phone: '',
+                confirmPassword: ''
+              });
+
+              setSuccess('Account cancelled and deleted.');
+              setTimeout(() => setSuccess(''), 3000);
+            } catch (err) {
+              setError(err.response?.data?.error || 'Failed to delete account');
+              console.error('Delete error:', err);
+            } finally {
+              setLoading(false);
+            }
           }}
+          disabled={loading}
         >
           Cancel and go back
         </button>
@@ -603,16 +586,7 @@ const Login = () => {
         <div className="form-container sign-in">
           <form onSubmit={handleLoginSubmit}>
             <h1 className="t-sign">Log in to your Account</h1>
-            {error && (
-              <div style={{ color: '#d32f2f', fontSize: '12px', marginBottom: '10px', backgroundColor: '#ffebee', padding: '8px', borderRadius: '4px' }}>
-                ❌ {error}
-              </div>
-            )}
-            {success && (
-              <div style={{ color: '#2e7d32', fontSize: '12px', marginBottom: '10px', backgroundColor: '#e8f5e9', padding: '8px', borderRadius: '4px' }}>
-                ✅ {success}
-              </div>
-            )}
+            
             <p>Welcome back! Log in to your account:</p>
             
             <div>
@@ -622,10 +596,12 @@ const Login = () => {
                 name="email"
                 value={formData.email}
                 onChange={handleLoginChange}
-                style={{ borderColor: validationErrors.email ? '#d32f2f' : undefined }}
+                required
               />
-              {validationErrors.email && (
-                <small style={{ color: '#d32f2f', fontSize: '11px', display: 'block', marginTop: '3px' }}>⚠️ {validationErrors.email}</small>
+              {error && error.includes('Email') && (
+                <small style={{ color: '#d32f2f', fontSize: '11px', display: 'block', marginTop: '3px' }}>
+                  ⚠️ {error}
+                </small>
               )}
             </div>
 
@@ -637,7 +613,7 @@ const Login = () => {
                   name="password"
                   value={formData.password}
                   onChange={handleLoginChange}
-                  style={{ borderColor: validationErrors.password ? '#d32f2f' : undefined }}
+                  required
                 />
                 <span
                   className="toggle-password"
@@ -646,8 +622,10 @@ const Login = () => {
                   {showPassword ? <FaEyeSlash /> : <FaEye />}
                 </span>
               </div>
-              {validationErrors.password && (
-                <small style={{ color: '#d32f2f', fontSize: '11px', display: 'block', marginTop: '3px' }}>⚠️ {validationErrors.password}</small>
+              {error && error.includes('password') && (
+                <small style={{ color: '#d32f2f', fontSize: '11px', display: 'block', marginTop: '3px' }}>
+                  ⚠️ {error}
+                </small>
               )}
             </div>
 
@@ -656,26 +634,20 @@ const Login = () => {
                 Forgot your password?
               </a>
             </div>
-            <button className="btn-1st" type="submit" disabled={loading || !!success}>
-              {loading ? 'Signing in...' : 'Sign In'}
+            <button className="btn-1st" type="submit" disabled={loading}>
+              {loading ? 'Signing in...' : 'SIGN IN'}
             </button>
             <button
               className="btn-2nd"
-              id="register"
               type="button"
-              onClick={() => {
-                setIsRegisterActive(true)
-                setError('')
-                setSuccess('')
-                setValidationErrors({})
-              }}
+              onClick={switchToRegister}
             >
-              Create an Account
+              CREATE AN ACCOUNT
             </button>
           </form>
         </div>
 
-        {/* Toggle Section */}
+        {/* Toggle Section - keeping your existing code */}
         <div className="toggle-container">
           <div className="toggle">
             <div className="toggle-panel toggle-right">
@@ -716,22 +688,10 @@ const Login = () => {
               <div className="ImageSlider">
                 <div className="wrapper">
                   <div className="wrapper-holder">
-                    <div
-                      className="slide"
-                      style={{ backgroundImage: `url(${slide1})` }}
-                    ></div>
-                    <div
-                      className="slide"
-                      style={{ backgroundImage: `url(${slide2})` }}
-                    ></div>
-                    <div
-                      className="slide"
-                      style={{ backgroundImage: `url(${slide3})` }}
-                    ></div>
-                    <div
-                      className="slide"
-                      style={{ backgroundImage: `url(${slide4})` }}
-                    ></div>
+                    <div className="slide" style={{ backgroundImage: `url(${slide1})` }}></div>
+                    <div className="slide" style={{ backgroundImage: `url(${slide2})` }}></div>
+                    <div className="slide" style={{ backgroundImage: `url(${slide3})` }}></div>
+                    <div className="slide" style={{ backgroundImage: `url(${slide4})` }}></div>
                   </div>
                 </div>
 

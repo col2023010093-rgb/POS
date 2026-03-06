@@ -1,47 +1,40 @@
-import React, { useState } from 'react';
-import { useCart } from '../context/CartContext';
+import React from 'react';
 import './ProductCard.css';
-import { getImageSrc } from '../utils/image';
 
-const ProductCard = ({ product }) => {
-  const { addToCart } = useCart();
-  const [imageError, setImageError] = useState(false);
-
-  const handleAddToCart = () => {
-    addToCart(product, 1);
-    alert(`${product.name} added to cart!`);
-  };
-
-  const handleImageError = () => {
-    setImageError(true);
-  };
-
+const ProductCard = ({ item, onAddToCart }) => {
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+  
   return (
     <div className="product-card">
       <div className="product-image">
-        {product.image && !imageError ? (
+        {item.image ? (
           <img 
-            src={getImageSrc(product.image)} 
-            alt={product.name}
-            onError={handleImageError}
+            src={`${API_URL}${item.image}`} 
+            alt={item.name}
+            onError={(e) => {
+              e.target.src = 'https://via.placeholder.com/300x200?text=No+Image';
+            }}
           />
         ) : (
-          <div className="image-placeholder">🍖</div>
+          <div className="no-image">📷 No Image</div>
         )}
+        {item.popular && <span className="badge-popular">Popular</span>}
       </div>
       <div className="product-info">
-        <h3>{product.name}</h3>
-        <p className="description">{product.description}</p>
-        {product.ingredients && (
-          <p className="ingredients">Ingredients: {product.ingredients.join(', ')}</p>
-        )}
+        <h3>{item.name}</h3>
+        <p className="description">{item.description}</p>
+        <div className="product-meta">
+          <span className="prep-time">⏱️ {item.prepTime}</span>
+          <span className="category">{item.category}</span>
+        </div>
         <div className="product-footer">
-          <span className="price">₱{product.price.toFixed(2)}</span>
+          <span className="price">${item.price.toFixed(2)}</span>
           <button 
             className="btn-add-cart"
-            onClick={handleAddToCart}
+            onClick={() => onAddToCart(item)}
+            disabled={!item.inStock}
           >
-            Add to Cart
+            {item.inStock ? 'Add to Cart' : 'Out of Stock'}
           </button>
         </div>
       </div>

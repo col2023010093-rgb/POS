@@ -1,63 +1,61 @@
-import { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useState, useContext, useEffect } from 'react';
 import api from '../api';
 
-export const AuthContext = createContext();
-
-// ✅ Add this hook export
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
-  }
-  return context;
-};
+const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // Load token from localStorage on mount
+  // ✅ Load token on mount
   useEffect(() => {
     const savedToken = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
-    if (savedToken && savedUser) {
+    if (savedToken) {
       setToken(savedToken);
-      setUser(JSON.parse(savedUser));
+      if (savedUser) {
+        setUser(JSON.parse(savedUser));
+      }
       api.defaults.headers.common['Authorization'] = `Bearer ${savedToken}`;
     }
+    setLoading(false);
   }, []);
 
   const login = async (email, password) => {
-    setLoading(true);
     try {
+      console.log('🔐 Logging in:', email);
       const response = await api.post('/api/auth/login', { email, password });
+      
       const { token, user } = response.data;
+      console.log('✅ Login successful');
 
+      // ✅ Save to localStorage
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
+      
+      // ✅ Set auth header
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
       setToken(token);
       setUser(user);
 
-      return { success: true, user };
-    } catch (err) {
-      return { success: false, error: err.response?.data?.error || 'Login failed' };
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const register = async (userData) => {
-    setLoading(true);
-    try {
-      const response = await api.post('/api/auth/register', userData);
-      return { success: true, message: response.data.message };
-    } catch (err) {
-      return { success: false, error: err.response?.data?.error || 'Registration failed' };
-    } finally {
-      setLoading(false);
+      return { 
+        success: true, 
+        user,
+        token 
+      };
+    } catch (error) {
+      console.error('❌ Login error:', error.response?.data);
+      
+      const errorData = error.response?.data || {};
+      
+      return { 
+        success: false,
+        error: errorData.message || 'Login failed',
+        code: errorData.code,
+        needsVerification: errorData.needsVerification
+      };
     }
   };
 
@@ -70,8 +68,10 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, token, login, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );
 };
+
+export const useAuth = () => useContext(AuthContext);

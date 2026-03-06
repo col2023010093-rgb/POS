@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { FaTimes, FaMinus, FaPlus, FaClock, FaFire } from 'react-icons/fa'
 import { getImageSrc } from '../../utils/image'
 
-const MenuModal = ({ item, isOpen, onClose, onAddToCart }) => {
+const MenuModal = ({ item, isOpen, onClose, onAddToCart, isOutOfStock = false }) => {
   const [quantity, setQuantity] = useState(1)
   const [isClosing, setIsClosing] = useState(false)
 
@@ -22,6 +22,7 @@ const MenuModal = ({ item, isOpen, onClose, onAddToCart }) => {
   }
 
   const handleAddToOrder = () => {
+    if (isOutOfStock) return
     onAddToCart(item, quantity)
     handleClose()
   }
@@ -43,14 +44,12 @@ const MenuModal = ({ item, isOpen, onClose, onAddToCart }) => {
       onClick={handleOverlayClick}
     >
       <div className={`modal-container ${isOpen && !isClosing ? 'active' : ''} ${isClosing ? 'closing' : ''}`}>
-        {/* Close Button */}
         <button className="modal-close" onClick={handleClose}>
           <FaTimes />
         </button>
 
         {item && (
           <>
-            {/* Modal Header with Image */}
             <div className="modal-header">
               <div className="modal-image">
                 {item.image ? (
@@ -64,14 +63,15 @@ const MenuModal = ({ item, isOpen, onClose, onAddToCart }) => {
                 )}
               </div>
               <div className="modal-header-overlay"></div>
-              {item.popular && (
+              {item.popular && !isOutOfStock && (
                 <div className="modal-badge">🔥 Best Seller</div>
+              )}
+              {isOutOfStock && (
+                <div className="modal-badge out-of-stock-badge">Out of Stock</div>
               )}
             </div>
 
-            {/* Modal Content */}
             <div className="modal-content">
-              {/* Title and Price */}
               <div className="modal-title-section">
                 <h2 className="modal-title">{item.name}</h2>
                 <div className="modal-price">
@@ -79,7 +79,12 @@ const MenuModal = ({ item, isOpen, onClose, onAddToCart }) => {
                 </div>
               </div>
 
-              {/* Meta Info */}
+              {isOutOfStock && (
+                <div className="stock-alert" role="alert">
+                  ⚠️ This item is currently out of stock and cannot be ordered.
+                </div>
+              )}
+
               <div className="modal-meta">
                 {item.prepTime && (
                   <div className="meta-item">
@@ -95,10 +100,8 @@ const MenuModal = ({ item, isOpen, onClose, onAddToCart }) => {
                 )}
               </div>
 
-              {/* Description */}
               <p className="modal-description">{item.description}</p>
 
-              {/* Tags */}
               {item.tags && item.tags.length > 0 && (
                 <div className="modal-tags">
                   {item.tags.map((tag, index) => (
@@ -109,7 +112,6 @@ const MenuModal = ({ item, isOpen, onClose, onAddToCart }) => {
                 </div>
               )}
 
-              {/* Ingredients */}
               {item.ingredients && item.ingredients.length > 0 && (
                 <div className="modal-ingredients">
                   <h4>Ingredients</h4>
@@ -121,14 +123,13 @@ const MenuModal = ({ item, isOpen, onClose, onAddToCart }) => {
                 </div>
               )}
 
-              {/* Quantity Selector */}
               <div className="modal-quantity-section">
                 <span className="quantity-label">Quantity</span>
                 <div className="quantity-selector">
                   <button 
                     className="quantity-btn"
                     onClick={decrementQuantity}
-                    disabled={quantity <= 1}
+                    disabled={quantity <= 1 || isOutOfStock}
                   >
                     <FaMinus />
                   </button>
@@ -136,16 +137,26 @@ const MenuModal = ({ item, isOpen, onClose, onAddToCart }) => {
                   <button 
                     className="quantity-btn"
                     onClick={incrementQuantity}
+                    disabled={isOutOfStock}
                   >
                     <FaPlus />
                   </button>
                 </div>
               </div>
 
-              {/* Add to Order Button */}
-              <button className="modal-add-btn" onClick={handleAddToOrder}>
-                <span>Add to Order</span>
-                <span className="btn-price">${(item.price * quantity).toFixed(2)}</span>
+              <button
+                className={`modal-add-btn ${isOutOfStock ? 'disabled' : ''}`}
+                onClick={handleAddToOrder}
+                disabled={isOutOfStock}
+              >
+                {isOutOfStock ? (
+                  <span>Unavailable</span>
+                ) : (
+                  <>
+                    <span>Add to Order</span>
+                    <span className="btn-price">₱{(item.price * quantity).toFixed(2)}</span>
+                  </>
+                )}
               </button>
             </div>
           </>

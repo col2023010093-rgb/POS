@@ -1,0 +1,14 @@
+/* ...existing code... */
+
+.out-of-stock-badge {
+  background: #dc2626 !important;
+  color: #fff !important;
+}
+
+.menu-item-card.out-of-stock {
+  opacity: 0.7;
+}
+
+.menu-item-card.out-of-stock .item-img {
+  filter: grayscale(50%);
+}

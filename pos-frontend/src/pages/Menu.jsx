@@ -25,7 +25,7 @@ const Menu = () => {
 
   useEffect(() => {
     const load = async () => {
-      const response = await api.getProducts()
+      const response = await api.get('/api/products')
       const data = Array.isArray(response.data) ? response.data : []
       setItems(data)
       const cats = Array.from(new Set(data.map(p => p.category).filter(Boolean)))
@@ -54,6 +54,38 @@ const Menu = () => {
 
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0)
   const totalPrice = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+
+  // ✅ STOCK HELPERS
+  const getStock = (item) => {
+    const raw = item?.stock
+    const n = Number(raw)
+    return Number.isFinite(n) ? n : null // null = no stock limit provided
+  }
+
+  const isOutOfStock = (item) => {
+    const stock = getStock(item)
+    return stock !== null && stock <= 0
+  }
+
+  const getCartQty = (itemId) => {
+    const found = cart.find(c => c._id === itemId)
+    return found ? found.quantity : 0
+  }
+
+  const canAddToCart = (item, qtyToAdd = 1) => {
+    if (isOutOfStock(item)) return false
+    const stock = getStock(item)
+    if (stock === null) return true
+    return getCartQty(item._id) + qtyToAdd <= stock
+  }
+
+  const handleAddToCart = (item, qty = 1) => {
+    if (!canAddToCart(item, qty)) {
+      alert(isOutOfStock(item) ? '❌ This item is out of stock.' : '⚠️ Not enough stock available.')
+      return
+    }
+    addToCart(item, qty)
+  }
 
   return (
     <div className={`menu-page ${isLoaded ? 'loaded' : ''}`}>
@@ -120,8 +152,9 @@ const Menu = () => {
               key={item._id}
               item={item}
               index={index}
-              onAddToCart={(itm, qty) => addToCart(itm, qty)}
+              onAddToCart={(itm, qty) => handleAddToCart(itm, qty)}
               onItemClick={openModal}
+              isOutOfStock={isOutOfStock(item)}
             />
           ))}
         </div>
@@ -140,7 +173,8 @@ const Menu = () => {
         item={selectedItem}
         isOpen={showModal}
         onClose={closeModal}
-        onAddToCart={(itm, qty) => addToCart(itm, qty)}
+        onAddToCart={(itm, qty) => handleAddToCart(itm, qty)}
+        isOutOfStock={selectedItem ? isOutOfStock(selectedItem) : false}
       />
 
       {/* Cart Sidebar */}
@@ -158,24 +192,29 @@ const Menu = () => {
               <p>Your cart is empty</p>
             </div>
           ) : (
-            cart.map(item => (
-              <div key={item._id} className="cart-item">
-                <img
-                  src={getImageSrc(item.image)}
-                  alt={item.name}
-                  style={{ width: 40, height: 40, borderRadius: 4, objectFit: 'cover' }}
-                />
-                <div className="cart-item-details">
-                  <h4>{item.name}</h4>
-                  <p>₱{item.price.toFixed(2)}</p>
+            cart.map(item => {
+              const stock = getStock(item)
+              const atMax = stock !== null && item.quantity >= stock
+              return (
+                <div key={item._id} className="cart-item">
+                  <img
+                    src={getImageSrc(item.image)}
+                    alt={item.name}
+                    style={{ width: 40, height: 40, borderRadius: 4, objectFit: 'cover' }}
+                  />
+                  <div className="cart-item-details">
+                    <h4>{item.name}</h4>
+                    <p>₱{item.price.toFixed(2)}</p>
+                  </div>
+                  <div className="cart-item-quantity">
+                    <button onClick={() => updateQuantity(item._id, item.quantity - 1)}>-</button>
+                    <span>{item.quantity}</span>
+                    <button onClick={() => updateQuantity(item._id, item.quantity + 1)}>+</button>
+                  </div>
+                  {atMax && <span className="stock-warning">⚠️ Out of stock</span>}
                 </div>
-                <div className="cart-item-quantity">
-                  <button onClick={() => updateQuantity(item._id, item.quantity - 1)}>-</button>
-                  <span>{item.quantity}</span>
-                  <button onClick={() => updateQuantity(item._id, item.quantity + 1)}>+</button>
-                </div>
-              </div>
-            ))
+              )
+            })
           )}
         </div>
         {cart.length > 0 && (

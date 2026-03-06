@@ -1,9 +1,10 @@
 import axios from 'axios';
 
-const API_BASE = 'http://localhost:4000/api';
+export const API_BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:4000';
+export const IMAGE_BASE_URL = API_BASE_URL;
 
 const apiClient = axios.create({
-  baseURL: API_BASE,
+  baseURL: API_BASE_URL,
   headers: { 'Content-Type': 'application/json' }
 });
 
@@ -44,43 +45,45 @@ export const api = {
   getMe: () => apiClient.get('/auth/me').catch(() => ({ data: null })),
 
   // ========== Products ==========
-  getProducts: () => apiClient.get('/products'),
-  createProduct: (data) => apiClient.post('/products', data),
-  updateProduct: (id, data) => apiClient.patch(`/products/${id}`, data),
-  deleteProduct: (id) => apiClient.delete(`/products/${id}`),
+  getProducts: () => apiClient.get('/api/products'),
+  createProduct: (data) => apiClient.post('/api/products', data),
+  updateProduct: (id, data) => apiClient.patch(`/api/products/${id}`, data),
+  deleteProduct: (id) => apiClient.delete(`/api/products/${id}`),
 
   // ========== Orders ==========
-  getOrders: () => apiClient.get('/orders'),
-  createOrder: (data) => apiClient.post('/orders', data),
-  getOrderById: (id) => apiClient.get(`/orders/${id}`),
+  getOrders: () => apiClient.get('/api/orders'),
+  createOrder: (data) => apiClient.post('/api/orders', data),
+  getOrderById: (id) => apiClient.get(`/api/orders/${id}`),
 
   // ========== Payments ==========
-  createPaymentIntent: (data) => apiClient.post('/payments/intent', data),
-  confirmPayment: (data) => apiClient.post('/payments/confirm', data),
-
-  // ========== Admin - Stats & Analytics ==========
-  getStats: () => apiClient.get('/admin/stats'),
-  getAllOrders: () => apiClient.get('/admin/orders'),
-  getAllUsers: () => apiClient.get('/admin/users'),
-  getAdminProducts: () => apiClient.get('/admin/products'),
-  updateOrderStatus: (id, status) => apiClient.patch(`/admin/orders/${id}/status`, { status }),
-  deleteUser: (id) => apiClient.delete(`/admin/users/${id}`),
+  createPaymentIntent: (data) => apiClient.post('/api/payments/intent', data),
+  confirmPayment: (data) => apiClient.post('/api/payments/confirm', data),
 
   // ========== Notifications ==========
-  getNotifications: () => apiClient.get('/notifications').catch(() => ({ data: [] })),
-  markNotificationRead: (id) => apiClient.patch(`/notifications/${id}/read`),
+  getNotifications: () => apiClient.get('/api/notifications').catch(() => ({ data: [] })),
+  markNotificationRead: (id) => apiClient.patch(`/api/notifications/${id}/read`),
 
   // ========== Reservations ==========
-  createReservation: (data) => apiClient.post('/reservations', data),
-  getReservations: () => apiClient.get('/reservations'),
-  updateReservation: (id, data) => apiClient.patch(`/reservations/${id}`, data),
-  deleteReservation: (id) => apiClient.delete(`/reservations/${id}`)
+  createReservation: (data) => apiClient.post('/api/reservations', data),
+  getReservations: () => apiClient.get('/api/reservations'),
+  updateReservation: (id, data) => apiClient.patch(`/api/reservations/${id}`, data),
+  deleteReservation: (id) => apiClient.delete(`/api/reservations/${id}`),
+
+  // ========== Admin ==========
+  getStats: () => apiClient.get('/api/admin/stats'),
+  getAllOrders: () => apiClient.get('/api/admin/orders'),
+  getAllUsers: () => apiClient.get('/api/admin/users'),
+  deleteUser: (id) => apiClient.delete(`/api/admin/users/${id}`),
+  getAdminProducts: () => apiClient.get('/api/admin/products'),
+  getAdminReservations: () => apiClient.get('/api/admin/reservations'),
+  updateOrderStatus: (id, status) => apiClient.patch(`/api/admin/orders/${id}/status`, { status }),
+  updateReservationStatus: (id, status) => apiClient.patch(`/api/admin/reservations/${id}/status`, { status }),
 };
 
 export const updateOrderStatus = (orderId, status) =>
-  apiClient.patch(`/admin/orders/${orderId}/status`, { status })
+  apiClient.patch(`/api/admin/orders/${orderId}/status`, { status })
 
 export const updateReservationStatus = (reservationId, status) =>
-  apiClient.patch(`/admin/reservations/${reservationId}/status`, { status })
+  apiClient.patch(`/api/admin/reservations/${reservationId}/status`, { status })
 
 export default api;
