@@ -1,0 +1,15 @@
+[33m1cc24b3[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m HEAD@{0}: pull: Fast-forward
+[33m31e6c81[m HEAD@{1}: commit: add missing router file
+[33m391a5ac[m HEAD@{2}: commit: update project files
+[33m00cb945[m HEAD@{3}: commit: update project files
+[33m92e4342[m HEAD@{4}: commit: Remove node_modules from git tracking
+[33m3ed547d[m HEAD@{5}: commit: Add missing bcryptjs dependency
+[33mbb0facd[m HEAD@{6}: commit: Add server.js entry point
+[33md8e63f1[m HEAD@{7}: commit: Add railway.json and fix package.json
+[33m2d4c2d6[m HEAD@{8}: commit: Fix package.json start script
+[33mcb07000[m HEAD@{9}: filter-branch: rewrite
+[33m23e1fed[m HEAD@{10}: commit: Remove .env files from git - add to gitignore
+[33m77cdd27[m HEAD@{11}: Branch: renamed refs/heads/main to refs/heads/main
+[33m77cdd27[m HEAD@{13}: commit: Remove .env files and secrets from git tracking
+[33mb1464fb[m HEAD@{14}: Branch: renamed refs/heads/main to refs/heads/main
+[33mb1464fb[m HEAD@{16}: commit (initial): Initial commit
