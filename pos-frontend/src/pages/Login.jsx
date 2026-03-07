@@ -554,23 +554,17 @@ const Login = () => {
 
           {/* ── Verification Modal ──────────────────────────────────────── */}
           {step === 'verify' && (
-            <div
-              className="verification-modal-overlay"
-              style={{ display:'flex', justifyContent:'center', alignItems:'center',
-                       position:'fixed', top:0, left:0, width:'100vw', height:'100vh' }}
-            >
-              <div className="verification-modal fp-modal">
-
+            <div className="verification-modal-overlay">
+              <div className="verification-modal">
                 <div className="verification-header">
-                  <div className="fp-icon" aria-hidden="true">✉️</div>
                   <h2>Email Verification</h2>
                   <p>We've sent a 6-digit code to</p>
                   <span className="verification-email">{verifyEmail}</span>
                 </div>
 
-                <form onSubmit={handleVerify} className="verification-form" noValidate>
-                  {error   && <div className="verification-error" role="alert">❌ {error}</div>}
-                  {success && <div className="verification-success" role="status">✅ {success}</div>}
+                <form onSubmit={handleVerify} className="verification-form">
+                  {error   && <div className="verification-error">❌ {error}</div>}
+                  {success && <div className="verification-success">✅ {success}</div>}
 
                   <div className="code-inputs">
                     {[0, 1, 2, 3, 4, 5].map(index => (
@@ -605,10 +599,7 @@ const Login = () => {
                   </div>
 
                   <button type="submit" className="btn-verify" disabled={loading || code.length < 6}>
-                    {loading
-                      ? <span className="btn-loading"><span className="spinner" aria-hidden="true" /> Verifying…</span>
-                      : 'Verify Account'
-                    }
+                    {loading ? 'Verifying…' : 'Verify Account'}
                   </button>
 
                   <button
