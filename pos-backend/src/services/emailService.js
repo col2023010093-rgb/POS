@@ -115,6 +115,45 @@ const sendOrderStatusUpdate = async (order, user) => {
   }
 };
 
+// ✅ Password reset
+const sendPasswordResetEmail = async (email, firstName, code) => {
+  try {
+    await resend.emails.send({
+      from    : FROM_EMAIL,
+      to      : email,
+      subject : "Password Reset Code - Texas Joe's House of Ribs",
+      html    : `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h2 style="color: #8B4513;">Texas Joe's — Password Reset</h2>
+          <p>Howdy ${firstName},</p>
+          <p>We received a request to reset your password. Use the code below:</p>
+
+          <div style="background: #fdf6ec; border: 2px solid #c8862a; padding: 24px;
+                      border-radius: 10px; margin: 24px 0; text-align: center;">
+            <p style="font-size: 13px; color: #7a5c2e; margin-bottom: 8px;">Your password reset code:</p>
+            <h1 style="color: #8B1A1A; font-size: 46px; letter-spacing: 14px;
+                       margin: 8px 0; font-family: monospace;">${code}</h1>
+            <p style="font-size: 12px; color: #999; margin-top: 8px;">
+              This code expires in <strong>15 minutes</strong>
+            </p>
+          </div>
+
+          <p style="color: #666; font-size: 13px;">
+            If you didn't request a password reset, you can safely ignore this email.
+            Your password will <strong>not</strong> be changed.
+          </p>
+          <p style="margin-top: 28px;">— Texas Joe's Team 🤠</p>
+        </div>
+      `
+    });
+    console.log(`✅ Password reset email sent to ${email}`);
+    return true;
+  } catch (error) {
+    console.error('❌ Password reset email failed:', error);
+    throw error;
+  }
+};
+
 module.exports = {
   sendVerificationEmail,
   sendOrderConfirmation,
