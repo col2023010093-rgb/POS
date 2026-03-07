@@ -5,6 +5,7 @@ import api from '../api';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import './login.css';
 import ForgotPasswordModal from './ForgotPasswordModal';
+import EmailVerificationModal from './EmailVerificationModal';
 
 import logo   from '../assets/logo.png';
 import slide1 from '../assets/slide1.png';
@@ -195,7 +196,6 @@ const Login = () => {
 
   // ── Verification state ────────────────────────────────────────────────────
   const [verifyEmail, setVerifyEmail] = useState('');
-  const [code,        setCode]        = useState('');
 
   // ── Redirect if already logged in ────────────────────────────────────────
   useEffect(() => {
@@ -212,12 +212,7 @@ const Login = () => {
     }
   }, []);
 
-  // ── Auto-focus first code input ───────────────────────────────────────────
-  useEffect(() => {
-    if (step === 'verify') {
-      setTimeout(() => document.querySelector('.code-input')?.focus(), 100);
-    }
-  }, [step]);
+  // Auto-focus handled inside EmailVerificationModal
 
   // ── Lockout countdown ─────────────────────────────────────────────────────
   useEffect(() => {
@@ -360,39 +355,7 @@ const Login = () => {
     }
   };
 
-  const handleVerify = async (e) => {
-    e.preventDefault();
-    if (!verifyEmail || !code || code.length !== 6) {
-      setError('Please enter the full 6-digit code.');
-      return;
-    }
-    setLoading(true);
-    setError('');
-    setSuccess('');
-
-    try {
-      await api.post('/api/auth/verify', { email: verifyEmail.trim(), code: code.trim() });
-      localStorage.removeItem('verifyEmail');
-      setSuccess('Email verified successfully!');
-      setStep('done');
-
-      setTimeout(async () => {
-        const loginResult = await login(verifyEmail, formData.password);
-        if (loginResult.success) {
-          navigate('/');
-        } else {
-          setStep('login');
-          setIsRegisterActive(false);
-          setSuccess('Account verified! Please sign in.');
-        }
-      }, 1500);
-    } catch (err) {
-      setError(err.response?.data?.message || err.response?.data?.error || 'Verification failed.');
-      setCode('');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // handleVerify moved to EmailVerificationModal component
 
   const switchToLogin = () => {
     setIsRegisterActive(false);
@@ -552,108 +515,31 @@ const Login = () => {
             </button>
           </form>
 
-          {/* ── Verification Modal ──────────────────────────────────────── */}
+          {/* ── Email Verification Modal ─────────────────────────────────── */}
           {step === 'verify' && (
-            <div
-              className="verification-modal-overlay"
-              style={{ display:'flex', justifyContent:'center', alignItems:'center',
-                       position:'fixed', top:0, left:0, width:'100vw', height:'100vh' }}
-            >
-              <div className="verification-modal fp-modal">
-
-                <div className="verification-header">
-                  <div className="fp-icon" aria-hidden="true">✉️</div>
-                  <h2>Email Verification</h2>
-                  <p>We've sent a 6-digit code to</p>
-                  <span className="verification-email">{verifyEmail}</span>
-                </div>
-
-                <form onSubmit={handleVerify} className="verification-form" noValidate>
-                  {error   && <div className="verification-error" role="alert">❌ {error}</div>}
-                  {success && <div className="verification-success" role="status">✅ {success}</div>}
-
-                  <div className="code-inputs">
-                    {[0, 1, 2, 3, 4, 5].map(index => (
-                      <input
-                        key={index} type="text" inputMode="numeric" pattern="[0-9]*"
-                        maxLength={1} className="code-input" autoComplete="off"
-                        value={code[index] || ''}
-                        onChange={e => {
-                          const value = e.target.value;
-                          if (!/^\d*$/.test(value)) return;
-                          const chars = code.split('');
-                          chars[index] = value;
-                          setCode(chars.join(''));
-                          if (value && index < 5)
-                            e.target.parentElement.children[index + 1]?.focus();
-                        }}
-                        onKeyDown={e => {
-                          if (e.key === 'Backspace' && !code[index] && index > 0)
-                            e.target.parentElement.children[index - 1]?.focus();
-                        }}
-                        onPaste={e => {
-                          e.preventDefault();
-                          const paste = e.clipboardData.getData('text').replace(/\D/g, '');
-                          if (paste.length === 6) {
-                            setCode(paste);
-                            e.target.parentElement.children[5]?.focus();
-                          }
-                        }}
-                        onFocus={e => e.target.select()}
-                      />
-                    ))}
-                  </div>
-
-                  <button type="submit" className="btn-verify" disabled={loading || code.length < 6}>
-                    {loading
-                      ? <span className="btn-loading"><span className="spinner" aria-hidden="true" /> Verifying…</span>
-                      : 'Verify Account'
-                    }
-                  </button>
-
-                  <button
-                    type="button" className="btn-resend" disabled={loading}
-                    onClick={async () => {
-                      setLoading(true); setError(''); setSuccess('');
-                      try {
-                        await api.post('/api/auth/resend', { email: verifyEmail });
-                        setSuccess('New code sent!');
-                        setCode('');
-                        setTimeout(() => setSuccess(''), 3000);
-                      } catch (err) {
-                        if (err.response?.status === 429) {
-                          const wait = err.response?.data?.retryAfter || 60;
-                          setError(`Please wait ${wait} seconds before resending.`);
-                        } else {
-                          setError(err.response?.data?.error || 'Failed to resend code.');
-                        }
-                      } finally { setLoading(false); }
-                    }}
-                  >
-                    Resend Code
-                  </button>
-
-                  <button
-                    type="button" className="btn-cancel" disabled={loading}
-                    onClick={async () => {
-                      if (!window.confirm('Cancel registration? Your account will be deleted.')) return;
-                      setLoading(true);
-                      try {
-                        await api.post('/api/auth/delete-unverified', { email: verifyEmail });
-                        localStorage.removeItem('verifyEmail');
-                        setStep('login'); setCode('');
-                        setIsRegisterActive(false);
-                        setFormData({ firstName: '', lastName: '', email: '', phone: '', password: '', confirmPassword: '' });
-                      } catch (err) {
-                        setError(err.response?.data?.error || 'Failed to cancel.');
-                      } finally { setLoading(false); }
-                    }}
-                  >
-                    Cancel and go back
-                  </button>
-                </form>
-              </div>
-            </div>
+            <EmailVerificationModal
+              email={verifyEmail}
+              password={formData.password}
+              onVerified={async (email, password) => {
+                setStep('login');
+                setIsRegisterActive(false);
+                localStorage.removeItem('verifyEmail');
+                // Auto-login after verification
+                const result = await login(email, password);
+                if (result.success) {
+                  navigate('/');
+                } else {
+                  setSuccess('Account verified! Please sign in.');
+                }
+              }}
+              onCancel={() => {
+                localStorage.removeItem('verifyEmail');
+                setStep('login');
+                setCode('');
+                setIsRegisterActive(false);
+                setFormData({ firstName: '', lastName: '', email: '', phone: '', password: '', confirmPassword: '' });
+              }}
+            />
           )}
         </div>
 
