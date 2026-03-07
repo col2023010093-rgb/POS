@@ -893,3 +893,164 @@
   .rv-success        { padding: 3rem 1.5rem; }
   .rv-guests__btn    { width: 44px; height: 44px; }
 }
+
+/* ── SLOT STATUS STATES ──────────────────────────────────────────────────────── */
+
+/* Past / too soon */
+.rv-times__btn--past {
+  opacity: .45;
+  cursor: not-allowed;
+  background: var(--c-border);
+  border-color: var(--c-border);
+  color: var(--c-muted);
+  text-decoration: line-through;
+}
+.rv-times__btn--past:hover { border-color: var(--c-border); color: var(--c-muted); transform: none; }
+
+/* Fully booked */
+.rv-times__btn--full {
+  opacity: .55;
+  cursor: not-allowed;
+  background: #f5e8e8;
+  border-color: #e8c0c0;
+  color: #b06060;
+  position: relative;
+}
+.rv-times__btn--full:hover { border-color: #e8c0c0; color: #b06060; transform: none; }
+
+/* Tag label inside slot */
+.rv-times__tag {
+  display: block;
+  font-size: .58rem;
+  font-weight: 700;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  margin-top: 2px;
+  opacity: .8;
+}
+
+/* Slot legend */
+.rv-slot-legend {
+  display: flex;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  margin-bottom: .9rem;
+}
+.rv-slot-legend__item {
+  display: flex;
+  align-items: center;
+  gap: .45rem;
+  font-family: var(--font-ui);
+  font-size: .72rem;
+  font-weight: 600;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+  color: var(--c-muted);
+}
+.rv-slot-legend__item::before {
+  content: '';
+  display: inline-block;
+  width: 12px; height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.rv-slot-legend__item--available::before { background: var(--c-cream); border: 1.5px solid var(--c-amber); }
+.rv-slot-legend__item--past::before      { background: var(--c-border); border: 1.5px solid var(--c-border); }
+.rv-slot-legend__item--full::before      { background: #f5e8e8;         border: 1.5px solid #e8c0c0; }
+
+/* Times header row */
+.rv-times-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .75rem;
+  margin-bottom: .5rem;
+}
+.rv-times-header .rv-field__label { margin: 0; }
+
+.rv-times-hours {
+  font-family: var(--font-ui);
+  font-size: .72rem; font-weight: 600;
+  letter-spacing: 1px; text-transform: uppercase;
+  color: var(--c-muted);
+  background: var(--c-cream);
+  border: 1px solid var(--c-border);
+  border-radius: 99px;
+  padding: .2rem .65rem;
+}
+
+.rv-times-available {
+  font-family: var(--font-ui);
+  font-size: .75rem; font-weight: 600;
+  color: #3a7a3a;
+  background: #edf7ed;
+  border: 1px solid #b8d8b8;
+  border-radius: 99px;
+  padding: .2rem .65rem;
+}
+.rv-times-available--none {
+  color: #9a4040;
+  background: #fdf0f0;
+  border-color: #e8c0c0;
+}
+
+.rv-times-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  font-family: var(--font-ui);
+  font-size: .75rem;
+  color: var(--c-muted);
+}
+
+.rv-times-hint {
+  font-family: var(--font-ui);
+  font-size: .88rem;
+  color: var(--c-muted);
+  font-style: italic;
+  padding: 1rem 0;
+}
+
+/* Small spinner variant */
+.rv-spinner--small {
+  display: inline-block;
+  width: 12px; height: 12px;
+  border: 2px solid rgba(184,120,10,.25);
+  border-top-color: var(--c-amber);
+  border-radius: 50%;
+  animation: rvSpin .7s linear infinite;
+}
+
+/* 10+ guests button hint */
+.rv-guests__btn--special {
+  border-color: var(--c-amber);
+  color: var(--c-amber);
+  font-size: .78rem;
+}
+
+/* Info-style error (not red — for the 10+ guests message) */
+.rv-field__error--info {
+  color: var(--c-amber);
+  font-weight: 500;
+}
+.rv-field__error--info a { color: var(--c-sienna); font-weight: 700; }
+
+/* API error on submit */
+.rv-field__error--submit {
+  text-align: center;
+  font-size: .9rem;
+  padding: .75rem 1rem;
+  background: #fdf0f0;
+  border-radius: var(--radius);
+  border: 1px solid #e8c0c0;
+  margin-bottom: 1rem;
+}
+
+/* Soft warning (availability fetch failed) */
+.rv-field__error--warn {
+  color: #8a6030;
+  background: rgba(184,120,10,.08);
+  border: 1px solid rgba(184,120,10,.2);
+  border-radius: var(--radius);
+  padding: .65rem .9rem;
+}
