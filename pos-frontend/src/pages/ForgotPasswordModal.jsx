@@ -165,13 +165,23 @@ const ForgotPasswordModal = ({ onClose }) => {
 
   // ── Render ───────────────────────────────────────────────────────────────
   return (
-    <div
-      className="verification-modal-overlay fp-overlay"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Forgot Password"
-      onClick={e => { if (e.target.classList.contains('fp-overlay')) onClose(); }}
-    >
+<div
+  className="verification-modal-overlay fp-overlay"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Forgot Password"
+  onClick={e => { if (e.target.classList.contains('fp-overlay')) onClose(); }}
+  style={{
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    width: '100vw',
+    height: '100vh',
+  }}
+>
       <div className="verification-modal fp-modal">
 
         {/* ══ DONE ══════════════════════════════════════════════════════ */}
