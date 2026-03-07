@@ -1549,16 +1549,130 @@
   overflow: visible;
 }
 
+/* ==========================================================================
+   VALIDATION & ERROR UI
+   ========================================================================== */
 
+.login-page .field-error {
+  display: block;
+  color: #d32f2f;
+  font-size: 11px;
+  font-weight: 500;
+  margin-top: 3px;
+  margin-bottom: 2px;
+  padding-left: 2px;
+  animation: slideDown 0.2s ease;
+}
 
+.login-page .login-error-message {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffebee;
+  border: 1px solid #ef9a9a;
+  border-left: 4px solid #d32f2f;
+  color: #b71c1c;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  width: 100%;
+  animation: slideDown 0.25s ease;
+}
 
+.login-page .login-success-message {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #e8f5e9;
+  border: 1px solid #a5d6a7;
+  border-left: 4px solid #2e7d32;
+  color: #1b5e20;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  width: 100%;
+  animation: slideDown 0.25s ease;
+}
 
+.login-page .attempts-warning {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff8e1;
+  border: 1px solid #ffc107;
+  border-left: 4px solid #f9a825;
+  color: #6d4c00;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  width: 100%;
+}
 
+.login-page .lockout-warning {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff3e0;
+  border: 1px solid #ff9800;
+  border-left: 4px solid #e65100;
+  color: #bf360c;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  width: 100%;
+  animation: pulse 1.2s ease-in-out infinite alternate;
+}
 
+.login-page .password-strength {
+  width: 100%;
+  margin-top: 4px;
+  margin-bottom: 2px;
+}
 
+.login-page .strength-bar {
+  height: 5px;
+  background: #e8ddd4;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 3px;
+}
 
+.login-page .btn-loading {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
 
+.login-page .spinner {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  border: 2px solid rgba(255, 255, 255, 0.38);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.65s linear infinite;
+  flex-shrink: 0;
+}
 
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
 
+@keyframes pulse {
+  from { opacity: 1; }
+  to   { opacity: 0.72; }
+}
 
-
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
