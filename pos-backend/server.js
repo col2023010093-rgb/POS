@@ -1,34 +1,38 @@
 const express = require('express');
 const http = require('http');
-const socketIo = require('socket.io');
+const { Server } = require('socket.io');
 const cors = require('cors');
-require('dotenv').config();
-const connectDB = require('./src/config/database');
+const dotenv = require('dotenv');
+const mongoose = require('mongoose');
+
+dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
 
-// ✅ Initialize Socket.io
-const io = socketIo(server, {
-  cors: {
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-    methods: ['GET', 'POST'],
-    credentials: true
-  }
-});
-
-// Middleware
+// CORS setup
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: process.env.FRONTEND_URL || true,
   credentials: true
 }));
 app.use(express.json());
-app.use(express.static('public'));
 
-// Connect Database
-connectDB();
+// Serve static files for product images
+app.use('/images', express.static('public/images', {
+  setHeaders: (res, path) => {
+    res.set('Cache-Control', 'public, max-age=3600');
+  }
+}));
 
-// ✅ Socket.io connection handler
+// Socket.io setup
+const io = new Server(server, {
+  cors: {
+    origin: process.env.FRONTEND_URL || true,
+    credentials: true
+  },
+  path: '/socket.io'
+});
+
 io.on('connection', (socket) => {
   console.log('✅ User connected:', socket.id);
 
@@ -43,26 +47,61 @@ io.on('connection', (socket) => {
   });
 });
 
-// Make io available to routes
 app.set('io', io);
+
+// MongoDB connection
+const mongoUri = process.env.MONGODB_URI;
+if (mongoUri) {
+  console.log('🔗 Connecting to MongoDB...');
+  mongoose.connect(mongoUri, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+  })
+    .then(() => {
+      console.log('✅ MongoDB connected successfully');
+    })
+    .catch(err => {
+      console.error('❌ MongoDB connection error:', err.message);
+    });
+} else {
+  console.error('❌ MONGODB_URI not configured in .env');
+}
 
 // Routes
 app.use('/api/auth', require('./src/routes/auth'));
 app.use('/api/products', require('./src/routes/products'));
-app.use('/api/orders', require('./src/routes/orders')); // ✅ Verify this line exists
+app.use('/api/orders', require('./src/routes/orders'));
 app.use('/api/admin', require('./src/routes/admin'));
 app.use('/api/reservations', require('./src/routes/reservations'));
 app.use('/api/notifications', require('./src/routes/notifications'));
 app.use('/api/payments', require('./src/routes/payments'));
+app.use('/api/profile', require('./src/routes/profile'));
 
-// Health check
-app.get('/', (req, res) => {
-  res.json({ message: '✅ POS API running' });
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  const mongoStatus = mongoose.connection.readyState === 1 ? '✅ connected' : '❌ disconnected';
+  res.json({
+    status: '✅ Server is running',
+    mongodb: mongoStatus,
+    time: new Date().toISOString()
+  });
 });
 
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({ message: 'POS Backend API', version: '1.0.0' });
+});
+
+// Error handler
+app.use((err, req, res, next) => {
+  console.error('❌ Error:', err);
+  res.status(500).json({ error: err.message || 'Internal server error' });
+});
+
+// Start HTTP server
 const PORT = process.env.PORT || 4000;
-server.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`🚀 API+Socket running on ${PORT}`);
   console.log(`📡 Socket.io ready for connections`);
 });
 
