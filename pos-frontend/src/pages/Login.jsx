@@ -474,130 +474,110 @@ const Login = () => {
 
         {/* ── Sign In Form ── */}
         <div className="form-container sign-in">
-          <form onSubmit={handleLoginSubmit}>
-            <h1 className="t-sign">Log in to your Account</h1>
-            
-            <p>Welcome back! Log in to your account:</p>
-            
-            <div>
-              <input
-                type="email"
-                placeholder="Email"
-                name="email"
-                value={formData.email}
-                onChange={handleLoginChange}
-                required
-              />
-              {error && error.includes('Email') && (
-                <small style={{ color: '#d32f2f', fontSize: '11px', display: 'block', marginTop: '3px' }}>
-                  ⚠️ {error}
-                </small>
-              )}
+          <form onSubmit={handleLoginSubmit} noValidate>
+            <h1 className="t-sign">Welcome Back</h1>
+            <p>Sign in to your account:</p>
+
+            {isLocked && (
+              <div className="lockout-warning">
+                <FaShieldAlt /> Account locked.{' '}
+                Try again in {Math.floor(lockoutRemaining / 60)}m {lockoutRemaining % 60}s
+              </div>
+            )}
+            {!isLocked && loginAttempts > 0 && loginAttempts < MAX_LOGIN_ATTEMPTS && (
+              <div className="attempts-warning">
+                <FaExclamationTriangle /> {attemptsLeft} attempt{attemptsLeft !== 1 ? 's' : ''} remaining before lockout
+              </div>
+            )}
+            {error && !isLocked && <div className="login-error-message"><FaExclamationTriangle /> {error}</div>}
+            {success && <div className="login-success-message">✅ {success}</div>}
+
+            <div className="field-group">
+              <div className="input-wrapper">
+                <FaEnvelope className="input-icon" />
+                <input type="email" placeholder="Email" name="email"
+                  value={formData.email} onChange={handleChange}
+                  autoComplete="email" disabled={isLocked}
+                  className={validationErrors.email ? 'input-error' : ''} />
+              </div>
+              {validationErrors.email && <small className="field-error">⚠️ {validationErrors.email}</small>}
             </div>
 
-            <div>
-              <div className="password-wrapper">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleLoginChange}
-                  required
-                />
-                <span
-                  className="toggle-password"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
+            <div className="field-group">
+              <div className="input-wrapper">
+                <FaLock className="input-icon" />
+                <input type={showPassword ? 'text' : 'password'}
+                  placeholder="Password" name="password"
+                  value={formData.password} onChange={handleChange}
+                  autoComplete="current-password" disabled={isLocked} />
+                <span className="toggle-password" onClick={() => !isLocked && setShowPassword(p => !p)}>
                   {showPassword ? <FaEyeSlash /> : <FaEye />}
                 </span>
               </div>
-              {error && error.includes('password') && (
-                <small style={{ color: '#d32f2f', fontSize: '11px', display: 'block', marginTop: '3px' }}>
-                  ⚠️ {error}
-                </small>
-              )}
             </div>
 
-            <div>
-              <a href="#" className="forgot-password">
-                Forgot your password?
-              </a>
+            <div className="forgot-row">
+              <a href="#" className="forgot-password">Forgot your password?</a>
             </div>
-            <button className="btn-1st" type="submit" disabled={loading}>
-              {loading ? 'Signing in...' : 'SIGN IN'}
+
+            <button className="btn-1st" type="submit" disabled={loading || isLocked}>
+              {loading
+                ? <span className="btn-loading"><span className="spinner" /> Signing in...</span>
+                : isLocked
+                  ? `Locked (${Math.floor(lockoutRemaining / 60)}m ${lockoutRemaining % 60}s)`
+                  : 'SIGN IN'}
             </button>
-            <button
-              className="btn-2nd"
-              type="button"
-              onClick={switchToRegister}
-            >
+            <button className="btn-2nd" type="button" onClick={switchToRegister}>
               CREATE AN ACCOUNT
             </button>
           </form>
         </div>
 
-        {/* Toggle Section - keeping your existing code */}
+        {/* ── Toggle / Slider Panel ── */}
         <div className="toggle-container">
           <div className="toggle">
             <div className="toggle-panel toggle-right">
               <h1 className="ds-sign">
-                {isRegisterActive
-                  ? 'Create Your Account!'
-                  : 'Sign In to Your Account!'}
+                {isRegisterActive ? 'Create Your Account!' : 'Sign In to Your Account!'}
               </h1>
               <div className="logo">
-                <img
-                  src={logo}
-                  alt="Restaurant Logo"
-                  className="logo-image"
-                  width={70}
-                />
+                <img src={logo} alt="Restaurant Logo" className="logo-image" width={70} />
               </div>
-
               <div className="restaurant-names">
                 <span className="line1">Texas Joe's</span>
                 <span className="line2">House of Ribs</span>
               </div>
-
               <div className="navigation-buttons">
-                <button className="btn-secondary" onClick={() => navigate('/')}>
-                  Home
-                </button>
-                <button className="btn-secondary" onClick={() => navigate('/menu')}>
-                  Menu
-                </button>
-                <button className="btn-secondary" onClick={() => navigate('/contact')}>
-                  Contact
-                </button>
-                <button className="btn-secondary" onClick={() => navigate('/about')}>
-                  About us
-                </button>
+                <button className="btn-secondary" onClick={() => navigate('/')}>Home</button>
+                <button className="btn-secondary" onClick={() => navigate('/menu')}>Menu</button>
+                <button className="btn-secondary" onClick={() => navigate('/contact')}>Contact</button>
+                <button className="btn-secondary" onClick={() => navigate('/about')}>About us</button>
               </div>
-
               <div className="ImageSlider">
                 <div className="wrapper">
-                  <div className="wrapper-holder">
-                    <div className="slide" style={{ backgroundImage: `url(${slide1})` }}></div>
-                    <div className="slide" style={{ backgroundImage: `url(${slide2})` }}></div>
-                    <div className="slide" style={{ backgroundImage: `url(${slide3})` }}></div>
-                    <div className="slide" style={{ backgroundImage: `url(${slide4})` }}></div>
+                  <div className="wrapper-holder"
+                    style={{ transform: `translateX(-${currentSlide * 100}%)`, transition: 'transform 0.6s ease-in-out' }}>
+                    {slides.map((slide, i) => (
+                      <div key={i} className="slide" style={{ backgroundImage: `url(${slide})` }} />
+                    ))}
                   </div>
                 </div>
-
                 <div className="dots-container">
-                  <a href="#slide1" className="button"></a>
-                  <a href="#slide2" className="button"></a>
-                  <a href="#slide3" className="button"></a>
-                  <a href="#slide4" className="button"></a>
+                  {slides.map((_, i) => (
+                    <button key={i}
+                      className={`button ${currentSlide === i ? 'active' : ''}`}
+                      onClick={() => setCurrentSlide(i)}
+                      aria-label={`Slide ${i + 1}`} />
+                  ))}
                 </div>
               </div>
             </div>
           </div>
         </div>
+
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Login
+export default Login;
