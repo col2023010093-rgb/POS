@@ -68,14 +68,14 @@ if (mongoUri) {
 }
 
 // Routes
-app.use('/api/auth', require('./src/routes/auth'));
-app.use('/api/products', require('./src/routes/products'));
-app.use('/api/orders', require('./src/routes/orders'));
-app.use('/api/admin', require('./src/routes/admin'));
-app.use('/api/reservations', require('./src/routes/reservations'));
-app.use('/api/notifications', require('./src/routes/notifications'));
-app.use('/api/payments', require('./src/routes/payments'));
-app.use('/api/profile', require('./src/routes/profile'));
+app.use('/api/auth', require('./src/routes/auth'));               // auth.js
+app.use('/api/products', require('./src/routes/products'));       // products.js
+app.use('/api/orders', require('./src/routes/orders'));           // orders.js
+app.use('/api/admin', require('./src/routes/admin'));             // admin.js
+app.use('/api/reservations', require('./src/routes/reservations'));// reservations.js
+app.use('/api/notifications', require('./src/routes/notifications')); // notifications.js
+app.use('/api/payments', require('./src/routes/payments'));       // payments.js
+app.use('/api/profile', require('./src/routes/profile'));         // profile.js
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
