@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import './contact.css'
+import './Contact.css'
 
 // ─── Real Texas Joe's contact info ───────────────────────────────────────────
 const CONTACT_INFO = [
