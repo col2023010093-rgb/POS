@@ -1809,3 +1809,64 @@
   border-color : #A0522D !important;
   color        : #A0522D !important;
 }
+
+/* ── Sign-up verification modal — match forgot password style ── */
+.verification-modal {
+  top: 0 !important;
+  right: 0 !important;
+  margin: auto !important;
+  background: #ffffff !important;
+  border-radius: 20px !important;
+  padding: 24px 42px 32px !important;
+}
+
+.verification-header h2 {
+  color: #3d2914 !important;
+  font-size: 24px !important;
+}
+
+.verification-header p {
+  color: #7a5c2e !important;
+}
+
+.code-input {
+  border: 2px solid #d4bfa8 !important;
+  background: #fffdf8 !important;
+  color: #3d2914 !important;
+  border-radius: 10px !important;
+}
+
+.code-input:focus {
+  border-color: #8B4513 !important;
+  box-shadow: 0 0 0 4px rgba(139, 69, 19, 0.12) !important;
+}
+
+.btn-verify {
+  background: linear-gradient(135deg, #8B4513 0%, #A0522D 100%) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 14px rgba(139, 69, 19, 0.3) !important;
+}
+
+.btn-verify:hover:not(:disabled) {
+  background: linear-gradient(135deg, #A0522D 0%, #CD853F 100%) !important;
+  box-shadow: 0 6px 20px rgba(139, 69, 19, 0.4) !important;
+}
+
+.btn-resend {
+  color: #8B4513 !important;
+  border: 2px solid #8B4513 !important;
+  border-radius: 12px !important;
+  background: transparent !important;
+}
+
+.btn-resend:hover:not(:disabled) {
+  background: #fdf6ec !important;
+  border-color: #A0522D !important;
+  color: #A0522D !important;
+}
+
+.verification-email {
+  color: #8B4513 !important;
+  background: #fdf6ec !important;
+  border: 1px solid #d4bfa8 !important;
+}
