@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import './login.css';
-import { FaEye, FaEyeSlash, FaLock, FaEnvelope, FaUser, FaPhone, FaShieldAlt, FaExclamationTriangle } from 'react-icons/fa';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import api from '../api';
 
 import logo from "../assets/logo.png";
@@ -11,191 +11,131 @@ import slide2 from "../assets/slide2.png";
 import slide3 from "../assets/slide3.png";
 import slide4 from "../assets/slide4.png";
 
-// ─── Constants ───────────────────────────────────────────────────────────────
-const MAX_LOGIN_ATTEMPTS = 5;
-const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
-const LOCKOUT_STORAGE_KEY = 'login_lockout';
-const ATTEMPTS_STORAGE_KEY = 'login_attempts';
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-const validatePhone = (phone) => {
-  if (!phone) return true;
-  return /^[0-9\-\+\(\)\s]+$/.test(phone) && phone.replace(/\D/g, '').length >= 10;
-};
-const getPasswordStrength = (password) => {
-  let score = 0;
-  if (password.length >= 8) score++;
-  if (/[A-Z]/.test(password)) score++;
-  if (/[a-z]/.test(password)) score++;
-  if (/[0-9]/.test(password)) score++;
-  if (/[^A-Za-z0-9]/.test(password)) score++;
-  if (score <= 2) return { score, label: 'Weak', color: '#d32f2f', width: '33%' };
-  if (score <= 4) return { score, label: 'Medium', color: '#f9a825', width: '66%' };
-  return { score, label: 'Strong', color: '#2e7d32', width: '100%' };
-};
-
 const Login = () => {
-  const { login } = useAuth();
-  const navigate = useNavigate();
-
-  // ─── State ─────────────────────────────────────────────────────────────────
+  const { login } = useAuth()
+  const navigate = useNavigate()
   const [step, setStep] = useState('login');
-  const [isRegisterActive, setIsRegisterActive] = useState(false);
   const [formData, setFormData] = useState({
-    email: '', password: '', firstName: '',
-    lastName: '', phone: '', confirmPassword: ''
-  });
+    email: '',
+    password: '',
+    firstName: '',
+    lastName: '',
+    phone: '',
+    confirmPassword: ''
+  })
   const [code, setCode] = useState('');
-  const [verifyEmail, setVerifyEmail] = useState('');
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [validationErrors, setValidationErrors] = useState({});
-  const [showPassword, setShowPassword] = useState(false);
-  const [showSignUpPassword, setShowSignUpPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [email, setEmail] = useState('');
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showSignUpPassword, setShowSignUpPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [isRegisterActive, setIsRegisterActive] = useState(false)
+  const [validationErrors, setValidationErrors] = useState({})
 
-  // ─── Brute Force Protection ─────────────────────────────────────────────────
-  const [loginAttempts, setLoginAttempts] = useState(() => {
-    try { return parseInt(localStorage.getItem(ATTEMPTS_STORAGE_KEY) || '0'); } catch { return 0; }
-  });
-  const [lockoutUntil, setLockoutUntil] = useState(() => {
-    try { return parseInt(localStorage.getItem(LOCKOUT_STORAGE_KEY) || '0'); } catch { return 0; }
-  });
-  const [lockoutRemaining, setLockoutRemaining] = useState(0);
-  const lockoutTimerRef = useRef(null);
-
-  // ─── Slide animation ────────────────────────────────────────────────────────
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const slides = [slide1, slide2, slide3, slide4];
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentSlide(prev => (prev + 1) % slides.length);
-    }, 3000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // ─── Lockout countdown timer ─────────────────────────────────────────────────
-  useEffect(() => {
-    const updateCountdown = () => {
-      const now = Date.now();
-      if (lockoutUntil > now) {
-        setLockoutRemaining(Math.ceil((lockoutUntil - now) / 1000));
-      } else {
-        setLockoutRemaining(0);
-        if (lockoutUntil > 0) {
-          setLockoutUntil(0);
-          setLoginAttempts(0);
-          localStorage.removeItem(LOCKOUT_STORAGE_KEY);
-          localStorage.removeItem(ATTEMPTS_STORAGE_KEY);
-        }
-      }
-    };
-    updateCountdown();
-    lockoutTimerRef.current = setInterval(updateCountdown, 1000);
-    return () => clearInterval(lockoutTimerRef.current);
-  }, [lockoutUntil]);
-
-  // ─── Restore verification state on refresh ──────────────────────────────────
+  // ✅ Restore verification state on refresh
   useEffect(() => {
     const savedEmail = localStorage.getItem('verifyEmail');
     if (savedEmail) {
-      setVerifyEmail(savedEmail);
+      setEmail(savedEmail);
       setStep('verify');
       setIsRegisterActive(true);
     }
   }, []);
 
-  // ─── Auto-focus first code input ─────────────────────────────────────────────
+  // ✅ Auto-focus first code input when modal opens
   useEffect(() => {
     if (step === 'verify') {
-      setTimeout(() => document.querySelector('.code-input')?.focus(), 100);
+      setTimeout(() => {
+        const firstInput = document.querySelector('.code-input');
+        firstInput?.focus();
+      }, 100);
     }
   }, [step]);
 
-  // ─── Handlers ───────────────────────────────────────────────────────────────
-  const handleChange = useCallback((e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    setValidationErrors(prev => ({ ...prev, [name]: '' }));
-    setError('');
-  }, []);
+  const validateEmail = (email) => {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return re.test(email)
+  }
 
-  const recordFailedAttempt = useCallback(() => {
-    const newAttempts = loginAttempts + 1;
-    setLoginAttempts(newAttempts);
-    localStorage.setItem(ATTEMPTS_STORAGE_KEY, String(newAttempts));
-    if (newAttempts >= MAX_LOGIN_ATTEMPTS) {
-      const until = Date.now() + LOCKOUT_DURATION_MS;
-      setLockoutUntil(until);
-      localStorage.setItem(LOCKOUT_STORAGE_KEY, String(until));
-    }
-    return newAttempts;
-  }, [loginAttempts]);
+  const validatePassword = (password) => {
+    return password.length >= 6
+  }
 
-  const clearAttempts = useCallback(() => {
-    setLoginAttempts(0);
-    setLockoutUntil(0);
-    localStorage.removeItem(ATTEMPTS_STORAGE_KEY);
-    localStorage.removeItem(LOCKOUT_STORAGE_KEY);
-  }, []);
+  const validatePhone = (phone) => {
+    if (!phone) return true
+    const re = /^[0-9\-\+\(\)\s]+$/
+    return re.test(phone) && phone.length >= 10
+  }
+
+  const handleLoginChange = (e) => {
+    const { name, value } = e.target
+    setFormData((prev) => ({ ...prev, [name]: value }))
+    setValidationErrors((prev) => ({ ...prev, [name]: '' }))
+    setError('')
+  }
+
+  const handleRegisterChange = (e) => {
+    const { name, value } = e.target
+    setFormData((prev) => ({ ...prev, [name]: value }))
+    setValidationErrors((prev) => ({ ...prev, [name]: '' }))
+    setError('')
+  }
 
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
     setError('');
     setSuccess('');
 
-    // ── Lockout check ──
-    if (lockoutRemaining > 0) {
-      const mins = Math.floor(lockoutRemaining / 60);
-      const secs = lockoutRemaining % 60;
-      setError(`Too many failed attempts. Try again in ${mins}m ${secs}s.`);
-      return;
-    }
-
-    // ── Basic validation ──
-    if (!formData.email.trim() || !formData.password) {
-      setError('Please enter your email and password.');
-      return;
-    }
-    if (!validateEmail(formData.email)) {
-      setValidationErrors({ email: 'Please enter a valid email address.' });
-      return;
-    }
-
-    setLoading(true);
     try {
+      console.log('📝 Submitting login form:', formData.email);
+      
       const result = await login(formData.email.trim(), formData.password);
+      
+      console.log('📊 Login result:', result);
+      
       if (result.success) {
-        clearAttempts();
+        console.log('✅ Login successful!');
         setSuccess('Login successful! Redirecting...');
-        setTimeout(() => navigate('/'), 500);
+        setTimeout(() => {
+          navigate('/');
+        }, 500);
       } else {
-        const attempts = recordFailedAttempt();
-        const remaining = MAX_LOGIN_ATTEMPTS - attempts;
-
+        // ✅ Show specific error messages
         if (result.code === 'EMAIL_NOT_VERIFIED') {
-          setError('Please verify your email before logging in.');
-        } else if (result.error?.toLowerCase().includes('not found')) {
-          setError('No account found with that email.');
-        } else if (result.error?.toLowerCase().includes('password')) {
-          setError(`Incorrect password.${remaining > 0 ? ` ${remaining} attempt${remaining !== 1 ? 's' : ''} remaining.` : ''}`);
+          setError('⚠️ Please verify your email before logging in.');
+        } else if (result.error?.includes('not found')) {
+          setError('📧 Email address not found. Please create an account.');
+        } else if (result.error?.includes('password')) {
+          setError('🔐 Incorrect password. Please try again.');
         } else {
           setError(result.error || 'Login failed. Please try again.');
         }
-
-        if (attempts >= MAX_LOGIN_ATTEMPTS) {
-          setError('Account temporarily locked for 15 minutes due to too many failed attempts.');
-        }
       }
-    } catch {
-      setError('An unexpected error occurred. Please try again.');
+    } catch (err) {
+      console.error('❌ Unexpected error:', err);
+      setError('❌ An unexpected error occurred');
     } finally {
       setLoading(false);
     }
   };
+
+  const getPasswordStrength = (password) => {
+    let score = 0;
+    if (password.length >= 8) score++;
+    if (/[A-Z]/.test(password)) score++;
+    if (/[a-z]/.test(password)) score++;
+    if (/[0-9]/.test(password)) score++;
+    if (/[^A-Za-z0-9]/.test(password)) score++;
+
+    if (score <= 2) return { score, label: 'Weak', color: '#d32f2f' };
+    if (score <= 4) return { score, label: 'Medium', color: '#f9a825' };
+    return { score, label: 'Strong', color: '#2e7d32' };
+  };
+
+  const passwordStrength = getPasswordStrength(formData.password || '');
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -208,12 +148,17 @@ const Login = () => {
     if (!formData.firstName?.trim()) errors.firstName = 'First name is required';
     if (!formData.lastName?.trim()) errors.lastName = 'Last name is required';
     if (!formData.email?.trim()) errors.email = 'Email is required';
-    else if (!validateEmail(formData.email)) errors.email = 'Please enter a valid email';
     if (!formData.password) errors.password = 'Password is required';
-    else if (getPasswordStrength(formData.password).score < 3) errors.password = 'Password must be at least medium strength';
-    if (!formData.confirmPassword) errors.confirmPassword = 'Please confirm your password';
-    else if (formData.password !== formData.confirmPassword) errors.confirmPassword = 'Passwords do not match';
+    if (!formData.confirmPassword) errors.confirmPassword = 'Confirm password is required';
+
+    if (formData.email && !validateEmail(formData.email)) errors.email = 'Please enter a valid email';
     if (formData.phone && !validatePhone(formData.phone)) errors.phone = 'Please enter a valid phone number';
+    if (formData.password && formData.password !== formData.confirmPassword) {
+      errors.confirmPassword = 'Passwords do not match';
+    }
+    if (formData.password && getPasswordStrength(formData.password).score < 3) {
+      errors.password = 'Password must be at least medium strength';
+    }
 
     if (Object.keys(errors).length > 0) {
       setValidationErrors(errors);
@@ -222,26 +167,38 @@ const Login = () => {
     }
 
     try {
-      await api.post('/api/auth/register', {
+      const response = await api.post('/api/auth/register', {
         firstName: formData.firstName.trim(),
         lastName: formData.lastName.trim(),
         email: formData.email.trim().toLowerCase(),
         password: formData.password,
         phone: formData.phone?.trim() || ''
       });
+
       const userEmail = formData.email.trim().toLowerCase();
-      setVerifyEmail(userEmail);
+      setEmail(userEmail);
       localStorage.setItem('verifyEmail', userEmail);
+      setSuccess('');
       setStep('verify');
     } catch (err) {
       const errorData = err.response?.data;
       const msg = errorData?.error || 'Registration failed';
+      
+      // ✅ Handle different error types
       if (errorData?.code === 'EMAIL_VERIFIED_EXISTS') {
-        setValidationErrors({ email: 'This email is already registered. Please sign in.' });
-        setTimeout(() => { switchToLogin(); setFormData(p => ({ ...p, email: formData.email })); }, 2000);
+        setValidationErrors({ 
+          email: '⚠️ This email is already registered and verified. Please login instead.' 
+        });
+        // Optional: Switch to login form
+        setTimeout(() => {
+          switchToLogin();
+          setFormData(prev => ({ ...prev, email: formData.email }));
+        }, 2000);
       } else if (errorData?.code === 'EMAIL_EXISTS') {
-        setValidationErrors({ email: 'This email is already registered.' });
-      } else if (msg.toLowerCase().includes('email')) {
+        setValidationErrors({ 
+          email: '⚠️ This email is already registered. Please login.' 
+        });
+      } else if (msg.includes('email') || msg.includes('Email')) {
         setValidationErrors({ email: msg });
       } else {
         setError(msg);
@@ -256,55 +213,87 @@ const Login = () => {
     setLoading(true);
     setError('');
     setSuccess('');
-    if (!verifyEmail || !code || code.length !== 6) {
-      setError('Please enter the complete 6-digit code.');
-      setLoading(false);
-      return;
-    }
+    
     try {
-      await api.post('/api/auth/verify', { email: verifyEmail.trim(), code: code.trim() });
+      if (!email || !code || code.length !== 6) {
+        setError('Please enter a valid 6-digit code');
+        setLoading(false);
+        return;
+      }
+      
+      await api.post('/api/auth/verify', { 
+        email: email.trim(), 
+        code: code.trim()
+      });
+      
       localStorage.removeItem('verifyEmail');
-      setSuccess('Email verified! Logging you in...');
+      setSuccess('Email verified successfully!');
       setStep('done');
+      
+      // ✅ Optional: Auto-login after verification
       setTimeout(async () => {
-        const loginResult = await login(verifyEmail, formData.password);
+        // Auto-login with the registered credentials
+        const loginResult = await login(email, formData.password);
         if (loginResult.success) {
           navigate('/');
         } else {
+          // If auto-login fails, redirect to login page
           setStep('login');
           setIsRegisterActive(false);
-          setSuccess('Account verified! Please sign in.');
+          setSuccess('Account verified! Please login.');
         }
       }, 1500);
+      
     } catch (err) {
-      setError(err.response?.data?.message || err.response?.data?.error || 'Verification failed. Please try again.');
+      const errorMsg = err.response?.data?.message || 
+                     err.response?.data?.error || 
+                     'Verification failed';
+      
+      setError(errorMsg);
       setCode('');
     } finally {
       setLoading(false);
     }
   };
 
+  // ✅ Reset form when switching between login/register
   const switchToLogin = () => {
     setIsRegisterActive(false);
-    setFormData({ email: '', password: '', firstName: '', lastName: '', phone: '', confirmPassword: '' });
-    setError(''); setSuccess(''); setValidationErrors({});
+    setFormData({
+      email: '',
+      password: '',
+      firstName: '',
+      lastName: '',
+      phone: '',
+      confirmPassword: ''
+    });
+    setError('');
+    setSuccess('');
+    setValidationErrors({});
   };
 
   const switchToRegister = () => {
     setIsRegisterActive(true);
-    setFormData({ email: '', password: '', firstName: '', lastName: '', phone: '', confirmPassword: '' });
-    setError(''); setSuccess(''); setValidationErrors({});
+    setFormData({
+      email: '',
+      password: '',
+      firstName: '',
+      lastName: '',
+      phone: '',
+      confirmPassword: ''
+    });
+    setError('');
+    setSuccess('');
+    setValidationErrors({});
   };
-
-  const passwordStrength = getPasswordStrength(formData.password || '');
-  const isLocked = lockoutRemaining > 0;
-  const attemptsLeft = MAX_LOGIN_ATTEMPTS - loginAttempts;
 
   return (
     <div className="login-page">
-      <div className={`container ${isRegisterActive ? 'active' : ''}`} id="container">
-
-        {/* ── Sign Up Form ── */}
+      <div
+        className={`container ${isRegisterActive ? 'active' : ''}`}
+        id="container"
+      >
+        {/* Sign Up Form */}
         <div className="form-container sign-up">
           <form onSubmit={handleRegister} noValidate>
             <h1 className="t-sign">Create Account</h1>
@@ -390,7 +379,9 @@ const Login = () => {
             </div>
 
             <button className="btn-1st" type="submit" disabled={loading}>
-              {loading ? <span className="btn-loading"><span className="spinner" /> Creating Account...</span> : 'Sign Up as Customer'}
+              {loading
+                ? <span className="btn-loading"><span className="spinner" /> Creating Account...</span>
+                : 'Sign Up as Customer'}
             </button>
             <button className="btn-2nd" type="button" onClick={switchToLogin}>
               Already have an account? Sign In
@@ -472,7 +463,7 @@ const Login = () => {
           )}
         </div>
 
-        {/* ── Sign In Form ── */}
+        {/* Sign In Form */}
         <div className="form-container sign-in">
           <form onSubmit={handleLoginSubmit} noValidate>
             <h1 className="t-sign">Welcome Back</h1>
@@ -533,7 +524,7 @@ const Login = () => {
           </form>
         </div>
 
-        {/* ── Toggle / Slider Panel ── */}
+        {/* Toggle / Slider Panel */}
         <div className="toggle-container">
           <div className="toggle">
             <div className="toggle-panel toggle-right">
@@ -577,7 +568,7 @@ const Login = () => {
 
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default Login;
+export default Login
