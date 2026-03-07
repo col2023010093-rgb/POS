@@ -13,7 +13,7 @@ const server = http.createServer(app);
 
 // CORS setup for frontend
 app.use(cors({
-  origin: process.env.FRONTEND_URL || true,
+  origin: process.env.FRONTEND_URL,
   credentials: true
 }));
 
@@ -80,6 +80,14 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: '✅ Server is running',
     mongodb: mongoStatus,
+    time: new Date().toISOString()
+  });
+});
+
+// ✅ Backend test endpoint
+app.get('/api/test', (req, res) => {
+  res.json({
+    message: '✅ Backend is reachable from frontend!',
     time: new Date().toISOString()
   });
 });

@@ -1,8 +1,12 @@
+require('dotenv').config(); // <-- Add this line
+
 const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middleware/auth');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const User = require('../models/User');
+
+console.log('Stripe Secret Key:', process.env.STRIPE_SECRET_KEY); // Debug log
 
 // Create payment intent
 router.post('/intent', authMiddleware, async (req, res) => {
