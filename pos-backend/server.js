@@ -13,7 +13,7 @@ const server = http.createServer(app);
 
 // CORS setup for frontend
 app.use(cors({
-  origin: process.env.FRONTEND_URL,
+  origin: ['https://pos-njdk.onrender.com'], // allow deployed frontend
   credentials: true
 }));
 
