@@ -1,631 +1,577 @@
-import React, { useState, useEffect } from 'react'
-import { FaCalendarAlt, FaClock, FaUsers, FaUtensils, FaPhone, FaEnvelope, FaUser, FaCheckCircle, FaInfoCircle, FaChair, FaBirthdayCake, FaGlassCheers, FaBriefcase, FaHeart } from 'react-icons/fa'
-import { GiBarbecue, GiPartyPopper } from 'react-icons/gi'
+import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import './reservation.css'
 
-const Reservation = () => {
-  const [isLoaded, setIsLoaded] = useState(false)
-  const [currentStep, setCurrentStep] = useState(1)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isSuccess, setIsSuccess] = useState(false)
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    date: '',
-    time: '',
-    guests: '2',
-    occasion: '',
-    seatingPreference: '',
-    specialRequests: ''
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const TIME_SLOTS = [
+  '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM',
+  '12:00 PM', '12:30 PM', '1:00 PM',  '1:30 PM',
+  '2:00 PM',  '5:00 PM',  '5:30 PM',  '6:00 PM',
+  '6:30 PM',  '7:00 PM',  '7:30 PM',  '8:00 PM',
+  '8:30 PM',  '9:00 PM',  '9:30 PM',
+]
+
+const GUEST_OPTIONS = ['1','2','3','4','5','6','7','8','9','10+']
+
+const OCCASIONS = [
+  { id: 'none',        label: 'None',        icon: '🍖' },
+  { id: 'birthday',   label: 'Birthday',    icon: '🎂' },
+  { id: 'anniversary',label: 'Anniversary', icon: '❤️' },
+  { id: 'business',   label: 'Business',    icon: '💼' },
+  { id: 'celebration',label: 'Celebration', icon: '🥂' },
+  { id: 'date',       label: 'Date Night',  icon: '✨' },
+]
+
+const SEATING = [
+  { id: 'indoor',  label: 'Indoor',       desc: 'Classic dining room' },
+  { id: 'patio',   label: 'Patio',        desc: 'Outdoor seating' },
+  { id: 'bar',     label: 'Bar Area',     desc: 'Casual atmosphere' },
+  { id: 'private', label: 'Private Room', desc: 'For special events' },
+]
+
+const INFO_CARDS = [
+  {
+    icon: '🕐',
+    title: 'Opening Hours',
+    content: 'Open every day · 10:30 AM – 10:00 PM',
+  },
+  {
+    icon: '📞',
+    title: 'Call Us',
+    content: 'For parties larger than 10 or special events, please call us directly.',
+    link: { href: 'tel:+639175123461', label: '0917-512-3461' },
+  },
+  {
+    icon: 'ℹ️',
+    title: 'Reservation Policy',
+    content: 'We hold reservations for 15 minutes. Please call if you\'re running late. Walk-ins are welcome based on availability.',
+  },
+]
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const getMinDate = () => new Date().toISOString().split('T')[0]
+const getMaxDate = () => {
+  const d = new Date(); d.setMonth(d.getMonth() + 3)
+  return d.toISOString().split('T')[0]
+}
+const formatDate = ds => {
+  if (!ds) return ''
+  // Parse as local date to avoid timezone shift
+  const [y, m, day] = ds.split('-').map(Number)
+  return new Date(y, m - 1, day).toLocaleDateString('en-US', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
   })
-  const [errors, setErrors] = useState({})
+}
 
-  useEffect(() => {
-    setTimeout(() => setIsLoaded(true), 100)
-  }, [])
+// ─── Shared sub-components ────────────────────────────────────────────────────
 
-  const occasions = [
-    { id: 'none', label: 'None', icon: <FaUtensils /> },
-    { id: 'birthday', label: 'Birthday', icon: <FaBirthdayCake /> },
-    { id: 'anniversary', label: 'Anniversary', icon: <FaHeart /> },
-    { id: 'business', label: 'Business', icon: <FaBriefcase /> },
-    { id: 'celebration', label: 'Celebration', icon: <FaGlassCheers /> },
-    { id: 'date', label: 'Date Night', icon: <GiPartyPopper /> }
-  ]
+const Divider = ({ light = false }) => (
+  <div className={`tj-divider${light ? ' tj-divider--light' : ''}`} aria-hidden="true">
+    <span /><span className="tj-divider__icon">✦</span><span />
+  </div>
+)
 
-  const seatingOptions = [
-    { id: 'indoor', label: 'Indoor', description: 'Classic dining room' },
-    { id: 'patio', label: 'Patio', description: 'Outdoor seating' },
-    { id: 'bar', label: 'Bar Area', description: 'Casual atmosphere' },
-    { id: 'private', label: 'Private Room', description: 'For special events' }
-  ]
+// ─── Step indicator ───────────────────────────────────────────────────────────
+const Steps = ({ current }) => (
+  <div className="rv-steps" role="list" aria-label="Reservation steps">
+    {['Date & Time', 'Your Details', 'Confirm'].map((label, i) => {
+      const n = i + 1
+      const done   = current > n
+      const active = current === n
+      return (
+        <React.Fragment key={n}>
+          <div
+            className={`rv-step${active ? ' rv-step--active' : ''}${done ? ' rv-step--done' : ''}`}
+            role="listitem"
+            aria-current={active ? 'step' : undefined}
+          >
+            <span className="rv-step__circle">
+              {done ? '✓' : n}
+            </span>
+            <span className="rv-step__label">{label}</span>
+          </div>
+          {n < 3 && <span className={`rv-step__line${done ? ' rv-step__line--done' : ''}`} aria-hidden="true" />}
+        </React.Fragment>
+      )
+    })}
+  </div>
+)
 
-  const timeSlots = [
-    '10:00 AM', '11:30 AM', '12:00 PM', '12:30 PM', '1:00 PM', '1:30 PM',
-    '2:00 PM', '5:00 PM', '5:30 PM', '6:00 PM', '6:30 PM', '7:00 PM',
-    '7:30 PM', '8:00 PM', '8:30 PM', '9:00 PM'
-  ]
+// ─── Success screen ───────────────────────────────────────────────────────────
+const SuccessScreen = ({ formData, seatingOptions, onReset }) => (
+  <div className="rv-success" role="alert" aria-live="polite">
+    <div className="rv-success__icon" aria-hidden="true">✅</div>
+    <h2 className="rv-success__title">Reservation Confirmed!</h2>
+    <p className="rv-success__msg">
+      Thank you, <strong>{formData.firstName}</strong>! Your table request has been received.
+      We'll confirm your booking shortly.
+    </p>
 
-  const guestOptions = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10+']
+    <div className="rv-success__summary">
+      <div className="rv-success__row">
+        <span>📅</span>
+        <span>{formatDate(formData.date)}</span>
+      </div>
+      <div className="rv-success__row">
+        <span>🕐</span>
+        <span>{formData.time}</span>
+      </div>
+      <div className="rv-success__row">
+        <span>👥</span>
+        <span>{formData.guests} {formData.guests === '1' ? 'Guest' : 'Guests'}</span>
+      </div>
+      {formData.seatingPreference && (
+        <div className="rv-success__row">
+          <span>🪑</span>
+          <span>{seatingOptions.find(s => s.id === formData.seatingPreference)?.label}</span>
+        </div>
+      )}
+    </div>
 
-  // Get minimum date (today)
-  const getMinDate = () => {
-    const today = new Date()
-    return today.toISOString().split('T')[0]
+    <p className="rv-success__note">
+      A confirmation email will be sent to <strong>{formData.email}</strong>.<br />
+      Estimated response: within 1 business hour.
+    </p>
+
+    <button className="btn-primary" onClick={onReset}>
+      Make Another Reservation
+    </button>
+  </div>
+)
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+const Reservation = () => {
+  const navigate = useNavigate()
+
+  const EMPTY_FORM = {
+    firstName: '', lastName: '', email: '', phone: '',
+    date: '', time: '', guests: '2',
+    occasion: '', seatingPreference: '', specialRequests: '',
   }
 
-  // Get maximum date (3 months from now)
-  const getMaxDate = () => {
-    const maxDate = new Date()
-    maxDate.setMonth(maxDate.getMonth() + 3)
-    return maxDate.toISOString().split('T')[0]
-  }
+  const [step,        setStep]        = useState(1)
+  const [formData,    setFormData]    = useState(EMPTY_FORM)
+  const [errors,      setErrors]      = useState({})
+  const [submitting,  setSubmitting]  = useState(false)
+  const [success,     setSuccess]     = useState(false)
 
-  const handleChange = (e) => {
+  // ── handlers ──
+  const handleChange = e => {
     const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
-    // Clear error when user types
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }))
-    }
+    setFormData(p => ({ ...p, [name]: value }))
+    if (errors[name]) setErrors(p => ({ ...p, [name]: '' }))
   }
 
-  const handleOptionSelect = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }))
-    }
+  const pick = (field, value) => {
+    setFormData(p => ({ ...p, [field]: value }))
+    if (errors[field]) setErrors(p => ({ ...p, [field]: '' }))
   }
 
-  const validateStep = (step) => {
-    const newErrors = {}
-
-    if (step === 1) {
-      if (!formData.date) newErrors.date = 'Please select a date'
-      if (!formData.time) newErrors.time = 'Please select a time'
-      if (!formData.guests) newErrors.guests = 'Please select number of guests'
+  // ── validation ──
+  const validate = s => {
+    const e = {}
+    if (s === 1) {
+      if (!formData.date)  e.date  = 'Please select a date.'
+      if (!formData.time)  e.time  = 'Please select a time slot.'
+      if (!formData.guests)e.guests= 'Please select number of guests.'
     }
-
-    if (step === 2) {
-      if (!formData.firstName.trim()) newErrors.firstName = 'First name is required'
-      if (!formData.lastName.trim()) newErrors.lastName = 'Last name is required'
-      if (!formData.email.trim()) {
-        newErrors.email = 'Email is required'
-      } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-        newErrors.email = 'Please enter a valid email'
-      }
-      if (!formData.phone.trim()) {
-        newErrors.phone = 'Phone number is required'
-      } else if (!/^\d{10,}$/.test(formData.phone.replace(/\D/g, ''))) {
-        newErrors.phone = 'Please enter a valid phone number'
-      }
+    if (s === 2) {
+      if (!formData.firstName.trim()) e.firstName = 'First name is required.'
+      if (!formData.lastName.trim())  e.lastName  = 'Last name is required.'
+      if (!formData.email.trim())     e.email     = 'Email is required.'
+      else if (!/\S+@\S+\.\S+/.test(formData.email)) e.email = 'Enter a valid email address.'
+      if (!formData.phone.trim())     e.phone     = 'Phone number is required.'
+      else if (!/^\d{7,}$/.test(formData.phone.replace(/\D/g,''))) e.phone = 'Enter a valid phone number.'
     }
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
+    setErrors(e)
+    return Object.keys(e).length === 0
   }
 
-  const nextStep = () => {
-    if (validateStep(currentStep)) {
-      setCurrentStep(prev => Math.min(prev + 1, 3))
-    }
-  }
+  const next = () => { if (validate(step)) setStep(s => Math.min(s + 1, 3)) }
+  const back = () => setStep(s => Math.max(s - 1, 1))
 
-  const prevStep = () => {
-    setCurrentStep(prev => Math.max(prev - 1, 1))
-  }
-
-  const handleSubmit = async (e) => {
+  const handleSubmit = async e => {
     e.preventDefault()
-    if (!validateStep(2)) return
-
-    setIsSubmitting(true)
-
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false)
-      setIsSuccess(true)
-    }, 2000)
+    if (!validate(2)) return
+    setSubmitting(true)
+    // ── Replace this timeout with your real API call ──
+    // e.g.: await fetch('/api/reservations', { method:'POST', body: JSON.stringify(formData) })
+    await new Promise(res => setTimeout(res, 1600))
+    setSubmitting(false)
+    setSuccess(true)
   }
 
-  const formatDate = (dateString) => {
-    if (!dateString) return ''
-    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }
-    return new Date(dateString).toLocaleDateString('en-US', options)
+  const reset = () => {
+    setSuccess(false); setStep(1); setFormData(EMPTY_FORM); setErrors({})
   }
 
-  if (isSuccess) {
+  // ── success screen ──
+  if (success) {
     return (
-      <div className={`reservation-page ${isLoaded ? 'loaded' : ''}`}>
-        <div className="success-container">
-          <div className="success-content">
-            <div className="success-icon">
-              <FaCheckCircle />
-            </div>
-            <h1>Reservation Confirmed!</h1>
-            <p className="success-message">
-              Thank you, {formData.firstName}! Your table has been reserved.
-            </p>
-            <div className="confirmation-details">
-              <div className="detail-item">
-                <FaCalendarAlt />
-                <span>{formatDate(formData.date)}</span>
-              </div>
-              <div className="detail-item">
-                <FaClock />
-                <span>{formData.time}</span>
-              </div>
-              <div className="detail-item">
-                <FaUsers />
-                <span>{formData.guests} {formData.guests === '1' ? 'Guest' : 'Guests'}</span>
-              </div>
-              {formData.seatingPreference && (
-                <div className="detail-item">
-                  <FaChair />
-                  <span>{seatingOptions.find(s => s.id === formData.seatingPreference)?.label}</span>
-                </div>
-              )}
-            </div>
-            <p className="confirmation-note">
-              A confirmation email has been sent to <strong>{formData.email}</strong>
-            </p>
-            <div className="success-actions">
-              <button 
-                className="btn-primary"
-                onClick={() => {
-                  setIsSuccess(false)
-                  setCurrentStep(1)
-                  setFormData({
-                    firstName: '',
-                    lastName: '',
-                    email: '',
-                    phone: '',
-                    date: '',
-                    time: '',
-                    guests: '2',
-                    occasion: '',
-                    seatingPreference: '',
-                    specialRequests: ''
-                  })
-                }}
-              >
-                Make Another Reservation
-              </button>
-            </div>
-          </div>
-          <div className="success-decoration">
-            <span className="confetti">🎉</span>
-            <span className="confetti">🍖</span>
-            <span className="confetti">✨</span>
-          </div>
+      <div className="reservation-page">
+        <div className="rv-success-wrap">
+          <SuccessScreen formData={formData} seatingOptions={SEATING} onReset={reset} />
         </div>
       </div>
     )
   }
 
   return (
-    <div className={`reservation-page ${isLoaded ? 'loaded' : ''}`}>
-      {/* Hero Section */}
-      <section className="reservation-hero">
-        <div className="hero-overlay"></div>
-        <div className="hero-content">
-          <span className="hero-badge">
-            <GiBarbecue /> Reserve Your Table
-          </span>
-          <h1 className="hero-title">Book Your BBQ Experience</h1>
-          <p className="hero-subtitle">
-            Join us for an unforgettable dining experience with authentic Texas BBQ
+    <div className="reservation-page">
+
+      {/* ══════════════════════════════════════════════════════
+          HERO
+      ══════════════════════════════════════════════════════ */}
+      <section className="rv-hero" aria-label="Book your table">
+        <div className="rv-hero__bg"      aria-hidden="true" />
+        <div className="rv-hero__overlay" aria-hidden="true" />
+        <div className="rv-hero__body">
+          <p  className="rv-hero__eyebrow">Texas Joe's · Subic Bay</p>
+          <h1 className="rv-hero__title">Reserve Your<br />Table</h1>
+          <Divider light />
+          <p className="rv-hero__sub">
+            Book your smokehouse experience — authentic slow-smoked BBQ, warm Texas hospitality.
           </p>
         </div>
-        <div className="hero-decoration">
-          <span className="floating-ember">🔥</span>
-          <span className="floating-ember">✨</span>
-          <span className="floating-ember">🔥</span>
+        <div className="rv-hero__scroll" aria-hidden="true">
+          <span className="rv-hero__scroll-line" />
+          <span className="rv-hero__scroll-text">Scroll</span>
         </div>
       </section>
 
-      {/* Reservation Form Section */}
-      <section className="reservation-section">
-        <div className="reservation-container">
-          {/* Progress Steps */}
-          <div className="progress-steps">
-            <div className={`step ${currentStep >= 1 ? 'active' : ''} ${currentStep > 1 ? 'completed' : ''}`}>
-              <div className="step-number">
-                {currentStep > 1 ? <FaCheckCircle /> : '1'}
-              </div>
-              <span className="step-label">Date & Time</span>
-            </div>
-            <div className="step-line"></div>
-            <div className={`step ${currentStep >= 2 ? 'active' : ''} ${currentStep > 2 ? 'completed' : ''}`}>
-              <div className="step-number">
-                {currentStep > 2 ? <FaCheckCircle /> : '2'}
-              </div>
-              <span className="step-label">Your Details</span>
-            </div>
-            <div className="step-line"></div>
-            <div className={`step ${currentStep >= 3 ? 'active' : ''}`}>
-              <div className="step-number">3</div>
-              <span className="step-label">Confirm</span>
-            </div>
-          </div>
+      {/* ══════════════════════════════════════════════════════
+          FORM SECTION
+      ══════════════════════════════════════════════════════ */}
+      <section className="rv-section" aria-label="Reservation form">
+        <div className="rv-container">
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="reservation-form">
-            {/* Step 1: Date & Time */}
-            <div className={`form-step ${currentStep === 1 ? 'active' : ''}`}>
-              <div className="step-header">
-                <h2>Select Date & Time</h2>
-                <p>Choose your preferred reservation details</p>
+          <Steps current={step} />
+
+          <form className="rv-form" onSubmit={handleSubmit} noValidate aria-label="Reservation form">
+
+            {/* ── STEP 1: Date & Time ─────────────────────── */}
+            <div className={`rv-form__step${step === 1 ? ' rv-form__step--active' : ''}`}
+              aria-hidden={step !== 1}>
+              <div className="rv-step-header">
+                <p className="section-label">Step 1 of 3</p>
+                <h2 className="rv-step-header__title">Select Date & Time</h2>
+                <Divider />
+                <p className="rv-step-header__sub">Choose your preferred date, time, and party size.</p>
               </div>
 
-              <div className="form-grid">
-                {/* Date Selection */}
-                <div className="form-group">
-                  <label>
-                    <FaCalendarAlt /> Select Date
-                  </label>
+              {/* Date + Guests */}
+              <div className="rv-form__row">
+                <div className={`rv-field${errors.date ? ' rv-field--error' : ''}`}>
+                  <label className="rv-field__label" htmlFor="rv-date">📅 Select Date</label>
                   <input
-                    type="date"
-                    name="date"
+                    className="rv-field__input"
+                    id="rv-date" name="date" type="date"
                     value={formData.date}
                     onChange={handleChange}
-                    min={getMinDate()}
-                    max={getMaxDate()}
-                    className={errors.date ? 'error' : ''}
+                    min={getMinDate()} max={getMaxDate()}
+                    aria-describedby={errors.date ? 'rv-date-err' : undefined}
                   />
-                  {errors.date && <span className="error-message">{errors.date}</span>}
+                  {errors.date && <span className="rv-field__error" id="rv-date-err" role="alert">{errors.date}</span>}
                 </div>
 
-                {/* Guest Count */}
-                <div className="form-group">
-                  <label>
-                    <FaUsers /> Number of Guests
-                  </label>
-                  <div className="guest-selector">
-                    {guestOptions.map(num => (
+                <div className={`rv-field${errors.guests ? ' rv-field--error' : ''}`}>
+                  <label className="rv-field__label">👥 Number of Guests</label>
+                  <div className="rv-guests">
+                    {GUEST_OPTIONS.map(n => (
                       <button
-                        key={num}
-                        type="button"
-                        className={`guest-btn ${formData.guests === num ? 'selected' : ''}`}
-                        onClick={() => handleOptionSelect('guests', num)}
-                      >
-                        {num}
-                      </button>
+                        key={n} type="button"
+                        className={`rv-guests__btn${formData.guests === n ? ' rv-guests__btn--active' : ''}`}
+                        onClick={() => pick('guests', n)}
+                        aria-pressed={formData.guests === n}
+                        aria-label={`${n} guests`}
+                      >{n}</button>
                     ))}
                   </div>
-                  {errors.guests && <span className="error-message">{errors.guests}</span>}
+                  {errors.guests && <span className="rv-field__error" role="alert">{errors.guests}</span>}
                 </div>
               </div>
 
-              {/* Time Selection */}
-              <div className="form-group full-width">
-                <label>
-                  <FaClock /> Select Time
-                </label>
-                <div className="time-slots">
-                  {timeSlots.map(time => (
+              {/* Time slots */}
+              <div className={`rv-field${errors.time ? ' rv-field--error' : ''}`}>
+                <label className="rv-field__label">🕐 Select Time</label>
+                <div className="rv-times">
+                  {TIME_SLOTS.map(t => (
                     <button
-                      key={time}
-                      type="button"
-                      className={`time-slot ${formData.time === time ? 'selected' : ''}`}
-                      onClick={() => handleOptionSelect('time', time)}
-                    >
-                      {time}
-                    </button>
+                      key={t} type="button"
+                      className={`rv-times__btn${formData.time === t ? ' rv-times__btn--active' : ''}`}
+                      onClick={() => pick('time', t)}
+                      aria-pressed={formData.time === t}
+                    >{t}</button>
                   ))}
                 </div>
-                {errors.time && <span className="error-message">{errors.time}</span>}
+                {errors.time && <span className="rv-field__error" role="alert">{errors.time}</span>}
               </div>
 
-              {/* Occasion Selection */}
-              <div className="form-group full-width">
-                <label>
-                  <GiPartyPopper /> Special Occasion (Optional)
-                </label>
-                <div className="occasion-grid">
-                  {occasions.map(occasion => (
+              {/* Occasion */}
+              <div className="rv-field">
+                <label className="rv-field__label">🎉 Special Occasion <span className="rv-field__optional">(Optional)</span></label>
+                <div className="rv-occasions">
+                  {OCCASIONS.map(o => (
                     <button
-                      key={occasion.id}
-                      type="button"
-                      className={`occasion-btn ${formData.occasion === occasion.id ? 'selected' : ''}`}
-                      onClick={() => handleOptionSelect('occasion', occasion.id)}
+                      key={o.id} type="button"
+                      className={`rv-occasions__btn${formData.occasion === o.id ? ' rv-occasions__btn--active' : ''}`}
+                      onClick={() => pick('occasion', o.id)}
+                      aria-pressed={formData.occasion === o.id}
                     >
-                      <span className="occasion-icon">{occasion.icon}</span>
-                      <span className="occasion-label">{occasion.label}</span>
+                      <span className="rv-occasions__icon" aria-hidden="true">{o.icon}</span>
+                      <span className="rv-occasions__label">{o.label}</span>
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* Seating Preference */}
-              <div className="form-group full-width">
-                <label>
-                  <FaChair /> Seating Preference (Optional)
-                </label>
-                <div className="seating-grid">
-                  {seatingOptions.map(option => (
+              {/* Seating */}
+              <div className="rv-field">
+                <label className="rv-field__label">🪑 Seating Preference <span className="rv-field__optional">(Optional)</span></label>
+                <div className="rv-seating">
+                  {SEATING.map(s => (
                     <button
-                      key={option.id}
-                      type="button"
-                      className={`seating-btn ${formData.seatingPreference === option.id ? 'selected' : ''}`}
-                      onClick={() => handleOptionSelect('seatingPreference', option.id)}
+                      key={s.id} type="button"
+                      className={`rv-seating__btn${formData.seatingPreference === s.id ? ' rv-seating__btn--active' : ''}`}
+                      onClick={() => pick('seatingPreference', s.id)}
+                      aria-pressed={formData.seatingPreference === s.id}
                     >
-                      <span className="seating-label">{option.label}</span>
-                      <span className="seating-desc">{option.description}</span>
+                      <span className="rv-seating__label">{s.label}</span>
+                      <span className="rv-seating__desc">{s.desc}</span>
                     </button>
                   ))}
                 </div>
               </div>
 
-              <div className="form-actions">
-                <button type="button" className="btn-next" onClick={nextStep}>
-                  Continue to Your Details
+              <div className="rv-form__actions">
+                <button type="button" className="btn-primary rv-form__next" onClick={next}>
+                  Continue to Your Details →
                 </button>
               </div>
             </div>
 
-            {/* Step 2: Contact Details */}
-            <div className={`form-step ${currentStep === 2 ? 'active' : ''}`}>
-              <div className="step-header">
-                <h2>Your Details</h2>
-                <p>Please provide your contact information</p>
+            {/* ── STEP 2: Contact Details ──────────────────── */}
+            <div className={`rv-form__step${step === 2 ? ' rv-form__step--active' : ''}`}
+              aria-hidden={step !== 2}>
+              <div className="rv-step-header">
+                <p className="section-label">Step 2 of 3</p>
+                <h2 className="rv-step-header__title">Your Details</h2>
+                <Divider />
+                <p className="rv-step-header__sub">How should we reach you?</p>
               </div>
 
-              <div className="form-grid">
-                <div className="form-group">
-                  <label>
-                    <FaUser /> First Name
-                  </label>
-                  <input
-                    type="text"
-                    name="firstName"
-                    value={formData.firstName}
-                    onChange={handleChange}
-                    placeholder="Enter your first name"
-                    className={errors.firstName ? 'error' : ''}
-                  />
-                  {errors.firstName && <span className="error-message">{errors.firstName}</span>}
+              <div className="rv-form__row">
+                <div className={`rv-field${errors.firstName ? ' rv-field--error' : ''}`}>
+                  <label className="rv-field__label" htmlFor="rv-fname">First Name</label>
+                  <input className="rv-field__input" id="rv-fname" name="firstName" type="text"
+                    placeholder="Juan" value={formData.firstName} onChange={handleChange}
+                    autoComplete="given-name"
+                    aria-describedby={errors.firstName ? 'rv-fname-err' : undefined} />
+                  {errors.firstName && <span className="rv-field__error" id="rv-fname-err" role="alert">{errors.firstName}</span>}
                 </div>
 
-                <div className="form-group">
-                  <label>
-                    <FaUser /> Last Name
-                  </label>
-                  <input
-                    type="text"
-                    name="lastName"
-                    value={formData.lastName}
-                    onChange={handleChange}
-                    placeholder="Enter your last name"
-                    className={errors.lastName ? 'error' : ''}
-                  />
-                  {errors.lastName && <span className="error-message">{errors.lastName}</span>}
+                <div className={`rv-field${errors.lastName ? ' rv-field--error' : ''}`}>
+                  <label className="rv-field__label" htmlFor="rv-lname">Last Name</label>
+                  <input className="rv-field__input" id="rv-lname" name="lastName" type="text"
+                    placeholder="dela Cruz" value={formData.lastName} onChange={handleChange}
+                    autoComplete="family-name"
+                    aria-describedby={errors.lastName ? 'rv-lname-err' : undefined} />
+                  {errors.lastName && <span className="rv-field__error" id="rv-lname-err" role="alert">{errors.lastName}</span>}
                 </div>
 
-                <div className="form-group">
-                  <label>
-                    <FaEnvelope /> Email Address
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    placeholder="Enter your email"
-                    className={errors.email ? 'error' : ''}
-                  />
-                  {errors.email && <span className="error-message">{errors.email}</span>}
+                <div className={`rv-field${errors.email ? ' rv-field--error' : ''}`}>
+                  <label className="rv-field__label" htmlFor="rv-email">Email Address</label>
+                  <input className="rv-field__input" id="rv-email" name="email" type="email"
+                    placeholder="you@example.com" value={formData.email} onChange={handleChange}
+                    autoComplete="email"
+                    aria-describedby={errors.email ? 'rv-email-err' : undefined} />
+                  {errors.email && <span className="rv-field__error" id="rv-email-err" role="alert">{errors.email}</span>}
                 </div>
 
-                <div className="form-group">
-                  <label>
-                    <FaPhone /> Phone Number
-                  </label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    placeholder="Enter your phone number"
-                    className={errors.phone ? 'error' : ''}
-                  />
-                  {errors.phone && <span className="error-message">{errors.phone}</span>}
+                <div className={`rv-field${errors.phone ? ' rv-field--error' : ''}`}>
+                  <label className="rv-field__label" htmlFor="rv-phone">Phone Number</label>
+                  <input className="rv-field__input" id="rv-phone" name="phone" type="tel"
+                    placeholder="0917-512-3461" value={formData.phone} onChange={handleChange}
+                    autoComplete="tel"
+                    aria-describedby={errors.phone ? 'rv-phone-err' : undefined} />
+                  {errors.phone && <span className="rv-field__error" id="rv-phone-err" role="alert">{errors.phone}</span>}
                 </div>
               </div>
 
-              <div className="form-group full-width">
-                <label>
-                  <FaInfoCircle /> Special Requests (Optional)
+              <div className="rv-field">
+                <label className="rv-field__label" htmlFor="rv-requests">
+                  Special Requests <span className="rv-field__optional">(Optional)</span>
                 </label>
-                <textarea
-                  name="specialRequests"
-                  value={formData.specialRequests}
-                  onChange={handleChange}
-                  placeholder="Any dietary restrictions, allergies, or special arrangements?"
-                  rows="4"
-                />
+                <textarea className="rv-field__input rv-field__textarea"
+                  id="rv-requests" name="specialRequests" rows={4}
+                  placeholder="Dietary restrictions, allergies, high chair needed, anniversary message, etc."
+                  value={formData.specialRequests} onChange={handleChange} />
               </div>
 
-              <div className="form-actions dual">
-                <button type="button" className="btn-back" onClick={prevStep}>
-                  Back
-                </button>
-                <button type="button" className="btn-next" onClick={nextStep}>
-                  Review Reservation
-                </button>
+              <div className="rv-form__actions rv-form__actions--dual">
+                <button type="button" className="btn-ghost-dark" onClick={back}>← Back</button>
+                <button type="button" className="btn-primary" onClick={next}>Review Reservation →</button>
               </div>
             </div>
 
-            {/* Step 3: Confirmation */}
-            <div className={`form-step ${currentStep === 3 ? 'active' : ''}`}>
-              <div className="step-header">
-                <h2>Confirm Your Reservation</h2>
-                <p>Please review your booking details</p>
+            {/* ── STEP 3: Confirm ──────────────────────────── */}
+            <div className={`rv-form__step${step === 3 ? ' rv-form__step--active' : ''}`}
+              aria-hidden={step !== 3}>
+              <div className="rv-step-header">
+                <p className="section-label">Step 3 of 3</p>
+                <h2 className="rv-step-header__title">Confirm Your Reservation</h2>
+                <Divider />
+                <p className="rv-step-header__sub">Please review your details before submitting.</p>
               </div>
 
-              <div className="confirmation-card">
-                <div className="confirmation-section">
-                  <h3>Reservation Details</h3>
-                  <div className="confirmation-grid">
-                    <div className="confirm-item">
-                      <FaCalendarAlt className="confirm-icon" />
-                      <div>
-                        <span className="confirm-label">Date</span>
-                        <span className="confirm-value">{formatDate(formData.date)}</span>
-                      </div>
+              <div className="rv-confirm">
+
+                <div className="rv-confirm__section">
+                  <h3 className="rv-confirm__heading">Reservation Details</h3>
+                  <div className="rv-confirm__grid">
+                    <div className="rv-confirm__item">
+                      <span className="rv-confirm__icon" aria-hidden="true">📅</span>
+                      <div><span className="rv-confirm__lbl">Date</span>
+                        <span className="rv-confirm__val">{formatDate(formData.date)}</span></div>
                     </div>
-                    <div className="confirm-item">
-                      <FaClock className="confirm-icon" />
-                      <div>
-                        <span className="confirm-label">Time</span>
-                        <span className="confirm-value">{formData.time}</span>
-                      </div>
+                    <div className="rv-confirm__item">
+                      <span className="rv-confirm__icon" aria-hidden="true">🕐</span>
+                      <div><span className="rv-confirm__lbl">Time</span>
+                        <span className="rv-confirm__val">{formData.time}</span></div>
                     </div>
-                    <div className="confirm-item">
-                      <FaUsers className="confirm-icon" />
-                      <div>
-                        <span className="confirm-label">Guests</span>
-                        <span className="confirm-value">{formData.guests} {formData.guests === '1' ? 'Person' : 'People'}</span>
-                      </div>
+                    <div className="rv-confirm__item">
+                      <span className="rv-confirm__icon" aria-hidden="true">👥</span>
+                      <div><span className="rv-confirm__lbl">Guests</span>
+                        <span className="rv-confirm__val">{formData.guests} {formData.guests === '1' ? 'Person' : 'People'}</span></div>
                     </div>
                     {formData.seatingPreference && (
-                      <div className="confirm-item">
-                        <FaChair className="confirm-icon" />
-                        <div>
-                          <span className="confirm-label">Seating</span>
-                          <span className="confirm-value">
-                            {seatingOptions.find(s => s.id === formData.seatingPreference)?.label}
-                          </span>
-                        </div>
+                      <div className="rv-confirm__item">
+                        <span className="rv-confirm__icon" aria-hidden="true">🪑</span>
+                        <div><span className="rv-confirm__lbl">Seating</span>
+                          <span className="rv-confirm__val">{SEATING.find(s => s.id === formData.seatingPreference)?.label}</span></div>
                       </div>
                     )}
                     {formData.occasion && formData.occasion !== 'none' && (
-                      <div className="confirm-item">
-                        <GiPartyPopper className="confirm-icon" />
-                        <div>
-                          <span className="confirm-label">Occasion</span>
-                          <span className="confirm-value">
-                            {occasions.find(o => o.id === formData.occasion)?.label}
-                          </span>
-                        </div>
+                      <div className="rv-confirm__item">
+                        <span className="rv-confirm__icon" aria-hidden="true">🎉</span>
+                        <div><span className="rv-confirm__lbl">Occasion</span>
+                          <span className="rv-confirm__val">{OCCASIONS.find(o => o.id === formData.occasion)?.label}</span></div>
                       </div>
                     )}
                   </div>
                 </div>
 
-                <div className="confirmation-section">
-                  <h3>Contact Information</h3>
-                  <div className="confirmation-grid">
-                    <div className="confirm-item">
-                      <FaUser className="confirm-icon" />
-                      <div>
-                        <span className="confirm-label">Name</span>
-                        <span className="confirm-value">{formData.firstName} {formData.lastName}</span>
-                      </div>
+                <div className="rv-confirm__section">
+                  <h3 className="rv-confirm__heading">Contact Information</h3>
+                  <div className="rv-confirm__grid">
+                    <div className="rv-confirm__item">
+                      <span className="rv-confirm__icon" aria-hidden="true">👤</span>
+                      <div><span className="rv-confirm__lbl">Name</span>
+                        <span className="rv-confirm__val">{formData.firstName} {formData.lastName}</span></div>
                     </div>
-                    <div className="confirm-item">
-                      <FaEnvelope className="confirm-icon" />
-                      <div>
-                        <span className="confirm-label">Email</span>
-                        <span className="confirm-value">{formData.email}</span>
-                      </div>
+                    <div className="rv-confirm__item">
+                      <span className="rv-confirm__icon" aria-hidden="true">✉️</span>
+                      <div><span className="rv-confirm__lbl">Email</span>
+                        <span className="rv-confirm__val">{formData.email}</span></div>
                     </div>
-                    <div className="confirm-item">
-                      <FaPhone className="confirm-icon" />
-                      <div>
-                        <span className="confirm-label">Phone</span>
-                        <span className="confirm-value">{formData.phone}</span>
-                      </div>
+                    <div className="rv-confirm__item">
+                      <span className="rv-confirm__icon" aria-hidden="true">📞</span>
+                      <div><span className="rv-confirm__lbl">Phone</span>
+                        <span className="rv-confirm__val">{formData.phone}</span></div>
                     </div>
                   </div>
                 </div>
 
                 {formData.specialRequests && (
-                  <div className="confirmation-section">
-                    <h3>Special Requests</h3>
-                    <p className="special-requests-text">{formData.specialRequests}</p>
+                  <div className="rv-confirm__section">
+                    <h3 className="rv-confirm__heading">Special Requests</h3>
+                    <p className="rv-confirm__requests">{formData.specialRequests}</p>
                   </div>
                 )}
 
-                <div className="policy-notice">
-                  <FaInfoCircle />
+                <div className="rv-confirm__policy">
+                  <span aria-hidden="true">ℹ️</span>
                   <p>
-                    Please arrive 10 minutes before your reservation time. 
-                    Reservations will be held for 15 minutes. For cancellations, 
-                    please call us at least 2 hours in advance.
+                    Please arrive 10 minutes before your reservation time.
+                    Reservations will be held for 15 minutes. For cancellations,
+                    please call us at least 2 hours in advance at{' '}
+                    <a href="tel:+639175123461">0917-512-3461</a>.
                   </p>
                 </div>
               </div>
 
-              <div className="form-actions dual">
-                <button type="button" className="btn-back" onClick={prevStep}>
-                  Back
-                </button>
-                <button 
-                  type="submit" 
-                  className={`btn-submit ${isSubmitting ? 'submitting' : ''}`}
-                  disabled={isSubmitting}
+              <div className="rv-form__actions rv-form__actions--dual">
+                <button type="button" className="btn-ghost-dark" onClick={back}>← Back</button>
+                <button
+                  type="submit"
+                  className={`btn-primary rv-form__submit${submitting ? ' rv-form__submit--loading' : ''}`}
+                  disabled={submitting}
+                  aria-busy={submitting}
                 >
-                  {isSubmitting ? (
-                    <>
-                      <span className="spinner"></span>
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      <FaCheckCircle /> Confirm Reservation
-                    </>
-                  )}
+                  {submitting
+                    ? <><span className="rv-spinner" aria-hidden="true" /> Processing…</>
+                    : '✓ Confirm Reservation'
+                  }
                 </button>
               </div>
             </div>
+
           </form>
         </div>
 
-        {/* Info Cards */}
-        <div className="info-cards">
-          <div className="info-card">
-            <div className="info-icon">
-              <FaClock />
+        {/* ── Info Cards ──────────────────────────────────── */}
+        <div className="rv-info-cards">
+          {INFO_CARDS.map((card, i) => (
+            <div className="rv-info-card" key={i}>
+              <span className="rv-info-card__icon" aria-hidden="true">{card.icon}</span>
+              <h3 className="rv-info-card__title">{card.title}</h3>
+              <p className="rv-info-card__body">{card.content}</p>
+              {card.link && (
+                <a className="rv-info-card__link" href={card.link.href}>{card.link.label}</a>
+              )}
             </div>
-            <h3>Hours of Operation</h3>
-            <ul>
-              <li><span>Every Day:</span> 10:30 AM - 10:00 PM</li>
-            </ul>
-          </div>
+          ))}
 
-          <div className="info-card">
-            <div className="info-icon">
-              <FaPhone />
-            </div>
-            <h3>Contact Us</h3>
-            <p>For parties larger than 10 or special events, please call us directly.</p>
-            <a href="tel:+1234567890" className="phone-link">(123) 456-7890</a>
-          </div>
-
-          <div className="info-card">
-            <div className="info-icon">
-              <FaInfoCircle />
-            </div>
-            <h3>Reservation Policy</h3>
-            <p>We hold reservations for 15 minutes. Please call if you're running late. Walk-ins are welcome based on availability.</p>
-          </div>
-
-          {/* New: Private Function Rooms */}
-          <div className="info-card">
-            <div className="info-icon">
-              <FaBriefcase />
-            </div>
-            <h3>Private Function Rooms</h3>
-            <p>Private function rooms are available for your next business meeting, team building event, birthday party or other event.</p>
-            <p>Table and Seating arrangements are flexible.</p>
-            <p>We have a PA system and a projector screen for your use.</p>
-            <p>We charge a 10% room charge which goes to your servers. We dedicate adequate servers exclusively for your event.</p>
+          {/* Private function rooms card — real Texas Joe's content */}
+          <div className="rv-info-card rv-info-card--featured">
+            <span className="rv-info-card__icon" aria-hidden="true">🏛️</span>
+            <h3 className="rv-info-card__title">Private Function Rooms</h3>
+            <p className="rv-info-card__body">
+              Available for business meetings, team building, birthday parties, and other events.
+              Flexible seating arrangements, PA system, and projector screen included.
+              A 10% room charge goes directly to your dedicated servers.
+            </p>
+            <button
+              className="btn-primary rv-info-card__btn"
+              onClick={() => navigate('/reservations?type=event')}
+              aria-label="Request a private event reservation"
+            >
+              Request Event Booking
+            </button>
           </div>
         </div>
       </section>
+
+      {/* ══════════════════════════════════════════════════════
+          CTA BAND
+      ══════════════════════════════════════════════════════ */}
+      <section className="rv-cta" aria-label="Explore the menu">
+        <div className="rv-cta__overlay" aria-hidden="true" />
+        <div className="rv-cta__body">
+          <p  className="section-label section-label--gold">While You're Here</p>
+          <h2 className="rv-cta__title">Browse the Menu First</h2>
+          <Divider light />
+          <p className="rv-cta__sub">
+            Know what you're ordering before you arrive — slow-smoked BBQ awaits.
+          </p>
+          <button className="btn-primary" onClick={() => navigate('/menu')}>
+            View Full Menu
+          </button>
+        </div>
+      </section>
+
     </div>
   )
 }
