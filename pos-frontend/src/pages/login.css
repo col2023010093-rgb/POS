@@ -1549,71 +1549,7 @@
   overflow: visible;
 }
 
-/* ── Add these styles to the BOTTOM of your existing login.css ── */
 
-.field-group { width: 100%; margin-bottom: 2px; }
-
-.input-wrapper {
-  position: relative; display: flex; align-items: center; width: 100%;
-}
-.input-wrapper .input-icon {
-  position: absolute; left: 12px; color: #aaa; font-size: 14px;
-  pointer-events: none; z-index: 1;
-}
-.input-wrapper input { padding-left: 36px !important; width: 100%; }
-.input-wrapper .toggle-password { position: absolute; right: 12px; }
-
-.field-error { color: #d32f2f; font-size: 11px; display: block; margin-top: 3px; margin-bottom: 4px; }
-input.input-error { border-color: #d32f2f !important; background-color: #fff8f8 !important; }
-
-.password-strength { margin-top: 6px; margin-bottom: 2px; }
-.strength-bar { height: 6px; background: #eee; border-radius: 4px; overflow: hidden; margin-bottom: 3px; }
-.strength-bar > div { height: 100%; border-radius: 4px; transition: width 0.3s ease, background 0.3s ease; }
-
-.lockout-warning {
-  display: flex; align-items: center; gap: 8px;
-  background: #fff3e0; border: 1px solid #ff9800; border-left: 4px solid #ff9800;
-  color: #e65100; padding: 10px 14px; border-radius: 6px; font-size: 13px; font-weight: 600;
-  margin-bottom: 12px; animation: pulse 1s ease-in-out infinite alternate;
-}
-@keyframes pulse { from { opacity: 1; } to { opacity: 0.7; } }
-
-.attempts-warning {
-  display: flex; align-items: center; gap: 8px;
-  background: #fff8e1; border: 1px solid #ffc107; border-left: 4px solid #ffc107;
-  color: #856404; padding: 8px 12px; border-radius: 6px; font-size: 12px; margin-bottom: 10px;
-}
-
-.login-error-message {
-  display: flex; align-items: center; gap: 8px;
-  background: #ffebee; border: 1px solid #f44336; border-left: 4px solid #f44336;
-  color: #c62828; padding: 10px 14px; border-radius: 6px; font-size: 13px; margin-bottom: 12px;
-}
-.login-success-message {
-  background: #e8f5e9; border: 1px solid #4caf50; border-left: 4px solid #4caf50;
-  color: #2e7d32; padding: 10px 14px; border-radius: 6px; font-size: 13px; margin-bottom: 12px;
-}
-
-.forgot-row { width: 100%; text-align: right; margin-bottom: 4px; }
-
-.btn-loading { display: flex; align-items: center; justify-content: center; gap: 8px; }
-.spinner {
-  width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.4);
-  border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; display: inline-block;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-
-input:disabled { opacity: 0.5; cursor: not-allowed; background: #f5f5f5 !important; }
-button:disabled { opacity: 0.6; cursor: not-allowed; }
-
-.verify-icon { font-size: 2.5rem; color: #4caf50; margin-bottom: 8px; }
-.verification-header { display: flex; flex-direction: column; align-items: center; text-align: center; margin-bottom: 16px; }
-
-.dots-container .button.active { background: white !important; transform: scale(1.3); }
-.wrapper { overflow: hidden; width: 100%; }
-.wrapper-holder { display: flex; width: 100%; }
-.wrapper-holder .slide { min-width: 100%; flex-shrink: 0; }
-// ...existing code...
 
 
 
