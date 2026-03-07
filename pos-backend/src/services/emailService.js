@@ -118,5 +118,6 @@ const sendOrderStatusUpdate = async (order, user) => {
 module.exports = {
   sendVerificationEmail,
   sendOrderConfirmation,
-  sendOrderStatusUpdate
+  sendOrderStatusUpdate,
+  sendPasswordResetEmail
 };

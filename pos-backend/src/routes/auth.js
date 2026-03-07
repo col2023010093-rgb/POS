@@ -6,6 +6,9 @@ const mongoose = require('mongoose');
 const User = require('../models/User');
 const Verification = require('../models/Verification');
 const { sendVerificationEmail } = require('../services/emailService');
+const PasswordReset = require('../models/PasswordReset');
+const crypto = require('crypto');
+const { sendPasswordResetEmail } = require('../services/emailService');
 
 // ✅ LOGIN ROUTE (FIXED)
 router.post('/login', async (req, res) => {
@@ -371,6 +374,158 @@ router.post('/delete-unverified', async (req, res) => {
   } catch (err) {
     console.error('❌ Delete account error:', err);
     return res.status(500).json({ error: 'Failed to delete account.' });
+  }
+});
+
+// ── Rate-limit store (in-memory, resets on server restart) ───────────────────
+const resetRequestMap = new Map(); // email → { count, windowStart }
+
+function isRateLimited(email) {
+  const now  = Date.now();
+  const data = resetRequestMap.get(email);
+  if (!data) return false;
+  // 3 requests per 15 minutes
+  if (now - data.windowStart > 15 * 60 * 1000) {
+    resetRequestMap.delete(email);
+    return false;
+  }
+  return data.count >= 3;
+}
+
+function recordResetRequest(email) {
+  const now  = Date.now();
+  const data = resetRequestMap.get(email);
+  if (!data || now - data.windowStart > 15 * 60 * 1000) {
+    resetRequestMap.set(email, { count: 1, windowStart: now });
+  } else {
+    data.count += 1;
+  }
+}
+
+// ── POST /api/auth/forgot-password ───────────────────────────────────────────
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email || typeof email !== 'string') {
+      // Return 200 anyway — don't reveal which inputs fail
+      return res.json({ message: 'If that email exists, a reset code has been sent.' });
+    }
+
+    const emailLower = email.toLowerCase().trim();
+
+    // ✅ Rate limit per email address
+    if (isRateLimited(emailLower)) {
+      return res.status(429).json({
+        error      : 'Too many reset requests. Please wait 15 minutes.',
+        retryAfter : 900
+      });
+    }
+
+    recordResetRequest(emailLower);
+
+    // ✅ Silently bail if user not found — don't reveal to caller
+    const user = await User.findOne({ email: emailLower, verified: true });
+    if (!user) {
+      return res.json({ message: 'If that email exists, a reset code has been sent.' });
+    }
+
+    // ✅ Invalidate any previous reset codes for this email
+    await PasswordReset.deleteMany({ email: emailLower });
+
+    // ✅ Generate a cryptographically secure 6-digit code
+    const code = crypto.randomInt(100000, 999999).toString();
+
+    // ✅ Store hashed code (never store plaintext reset codes)
+    const hashedCode = crypto.createHash('sha256').update(code).digest('hex');
+
+    await PasswordReset.create({
+      email     : emailLower,
+      code      : hashedCode,
+      expiresAt : new Date(Date.now() + 15 * 60 * 1000), // 15 minutes
+      used      : false,
+    });
+
+    console.log(`📧 Password reset code for ${emailLower}: ${code}`);
+
+    // ✅ Send email via Resend (using your existing emailService)
+    try {
+      await sendPasswordResetEmail(emailLower, user.firstName, code);
+    } catch (emailErr) {
+      console.error('⚠️ Reset email failed:', emailErr.message);
+      // Don't fail the request — code was saved, user can try again
+    }
+
+    return res.json({ message: 'If that email exists, a reset code has been sent.' });
+
+  } catch (err) {
+    console.error('❌ Forgot password error:', err);
+    // Return 200 even on server error to prevent enumeration
+    return res.json({ message: 'If that email exists, a reset code has been sent.' });
+  }
+});
+
+// ── POST /api/auth/reset-password ────────────────────────────────────────────
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { email, code, newPassword } = req.body;
+
+    // ✅ Validate all required fields
+    if (!email || !code || !newPassword) {
+      return res.status(400).json({ error: 'Email, code, and new password are required.' });
+    }
+
+    if (typeof newPassword !== 'string' || newPassword.length < 8) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters.' });
+    }
+
+    const emailLower = email.toLowerCase().trim();
+
+    // ✅ Hash the submitted code to compare against stored hash
+    const hashedCode = crypto.createHash('sha256').update(code.trim()).digest('hex');
+
+    // ✅ Find matching, unexpired, unused reset record
+    const resetRecord = await PasswordReset.findOne({
+      email : emailLower,
+      code  : hashedCode,
+      used  : false,
+    });
+
+    if (!resetRecord) {
+      return res.status(400).json({ error: 'Invalid or expired reset code.' });
+    }
+
+    // ✅ Check expiry
+    if (new Date() > resetRecord.expiresAt) {
+      await PasswordReset.deleteOne({ _id: resetRecord._id });
+      return res.status(400).json({ error: 'Reset code has expired. Please request a new one.' });
+    }
+
+    // ✅ Find user
+    const user = await User.findOne({ email: emailLower });
+    if (!user) {
+      return res.status(400).json({ error: 'Invalid or expired reset code.' });
+    }
+
+    // ✅ Hash new password and save
+    const salt           = await bcryptjs.genSalt(12);
+    const hashedPassword = await bcryptjs.hash(newPassword, salt);
+
+    await User.findByIdAndUpdate(user._id, { password: hashedPassword });
+
+    // ✅ Mark code as used (then delete — single-use enforced)
+    await PasswordReset.deleteOne({ _id: resetRecord._id });
+
+    // ✅ Invalidate any remaining reset codes for this user
+    await PasswordReset.deleteMany({ email: emailLower });
+
+    console.log(`✅ Password reset successful for: ${emailLower}`);
+
+    return res.json({ message: 'Password reset successfully.' });
+
+  } catch (err) {
+    console.error('❌ Reset password error:', err);
+    return res.status(500).json({ error: 'Password reset failed. Please try again.' });
   }
 });
 
