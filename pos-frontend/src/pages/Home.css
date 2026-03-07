@@ -1,6 +1,6 @@
 /* ─────────────────────────────────────────────────────────────────────────────
    Texas Joe's — Home Page Stylesheet
-   Font: Cormorant Garamond (display) + DM Sans (UI)
+   Font: Oswald (display) + DM Sans (UI)
    Theme: Dark leather & warm gold — professional steakhouse
 ───────────────────────────────────────────────────────────────────────────── */
 
@@ -251,7 +251,6 @@ button                    { font-family: inherit; }
 }
 
 .hero__title {
-  font-display: 'Oswald', sans-serif;
   font-family: var(--font-display);
   font-size: clamp(1.8rem, 4.5vw, 3.2rem);
   font-weight: 700;
@@ -281,36 +280,6 @@ button                    { font-family: inherit; }
   gap: 1rem;
   justify-content: center;
   flex-wrap: wrap;
-}
-
-/* Scroll hint */
-.hero__scroll-hint {
-  position: absolute;
-  bottom: 2.5rem;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  animation: fadeIn .8s ease 1.5s both;
-}
-
-.hero__scroll-line {
-  display: block;
-  width: 1px;
-  height: 40px;
-  background: linear-gradient(to bottom, transparent, var(--c-pale-gold));
-  animation: scrollPulse 2s ease infinite;
-}
-
-.hero__scroll-text {
-  font-family: var(--font-ui);
-  font-size: 0.65rem;
-  letter-spacing: 3px;
-  text-transform: uppercase;
-  color: rgba(232,192,96,.5);
 }
 
 /* ── PROMISE STRIP ──────────────────────────────────────────────────────────── */

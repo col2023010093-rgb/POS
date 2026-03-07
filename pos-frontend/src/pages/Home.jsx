@@ -118,11 +118,6 @@ const Home = () => {
             </button>
           </div>
         </div>
-
-        <div className="hero__scroll-hint" aria-hidden="true">
-          <span className="hero__scroll-line" />
-          <span className="hero__scroll-text">Scroll</span>
-        </div>
       </section>
 
       {/* ══════════════════════════════════════════════════════
