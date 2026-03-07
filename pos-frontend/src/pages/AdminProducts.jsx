@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import AdminProductForm from '../components/AdminProductForm';
+import AdminProductForm from '../Components/AdminProductForm';
 import api from '../api';
 import './AdminProducts.css';
 
