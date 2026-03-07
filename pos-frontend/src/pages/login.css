@@ -1676,3 +1676,93 @@
   from { opacity: 0; transform: translateY(-4px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   FORGOT PASSWORD MODAL — append to bottom of login.css
+   Inherits all existing .verification-modal-overlay / .verification-modal
+   styles. Only adds what is new or overrides where needed.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Modal icon (emoji header) ─────────────────────────────────────────── */
+.fp-icon {
+  font-size  : 2.4rem;
+  display    : block;
+  text-align : center;
+  margin-bottom: 6px;
+  line-height: 1;
+}
+
+/* ── Done state ────────────────────────────────────────────────────────── */
+.fp-done {
+  display        : flex;
+  flex-direction : column;
+  align-items    : center;
+  text-align     : center;
+  padding        : 10px 0 4px;
+  gap            : 10px;
+}
+
+.fp-done-icon {
+  font-size    : 3.2rem;
+  line-height  : 1;
+  margin-bottom: 4px;
+}
+
+.fp-done h2 {
+  color        : #3d2914;
+  font-size    : 1.4rem;
+  margin       : 0;
+}
+
+.fp-done p {
+  color      : #7a5c2e;
+  font-size  : 13px;
+  margin     : 0 0 8px;
+  line-height: 1.6;
+}
+
+/* ── Field wrapper ─────────────────────────────────────────────────────── */
+.fp-field {
+  width        : 100%;
+  margin-bottom: 2px;
+}
+
+/* ── Email input (full-width, matches existing inputs) ─────────────────── */
+.fp-email-input {
+  width        : 100%;
+  padding      : 10px 14px;
+  border       : 1.5px solid #c8a96a;
+  border-radius: 8px;
+  font-size    : 13px;
+  color        : #3d2914;
+  background   : #fffdf8;
+  outline      : none;
+  box-sizing   : border-box;
+  transition   : border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.fp-email-input:focus {
+  border-color: #8B4513;
+  box-shadow  : 0 0 0 3px rgba(139, 69, 19, 0.12);
+}
+
+.fp-email-input.fp-input-error,
+.code-input.fp-input-error {
+  border-color: #d32f2f !important;
+  box-shadow  : 0 0 0 2px rgba(211, 47, 47, 0.12);
+}
+
+/* ── "Use a different email" back button — subtle styling ──────────────── */
+.verification-form .btn-cancel {
+  font-size: 12px;
+  opacity  : 0.85;
+}
+
+.verification-form .btn-cancel:hover {
+  opacity: 1;
+}
+
+/* ── Ensure modal sits above everything on the page ────────────────────── */
+.fp-overlay {
+  z-index: 10000;
+}
