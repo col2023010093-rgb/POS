@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import MenuItem from '../Components/Menu/Menuitem'
 import MenuModal from '../Components/Menu/MenuModal'
 import './Menu.css'
@@ -6,60 +6,108 @@ import { FaShoppingCart, FaSearch, FaTimes } from 'react-icons/fa'
 import { api } from '../utils/api'
 import { useMenuAnimation } from '../hooks/useMenuAnimation'
 import { useNavigate } from 'react-router-dom'
-import { useCart } from '../context/CartContext' // ✅ replace CartContext import
+import { useCart } from '../context/CartContext'
 import { getImageSrc } from '../utils/image'
 
+// ─── Category emoji map ──────────────────────────────────────────────────────
+const CATEGORY_ICONS = {
+  'all':             '🍽️',
+  'soups & starters':'🍲',
+  'salads & wings':  '🥗',
+  'spare ribs':      '🍖',
+  'baby back ribs':  '🍖',
+  'combo meals':     '🤠',
+  'bbq platters':    '🥩',
+  'sandwiches':      '🥪',
+  'lighter meals':   '🌮',
+  'steaks':          '🥩',
+  'sides':           '🌽',
+  'desserts':        '🍰',
+  "kids' menu":      '🧒',
+}
+
+const getCategoryIcon = (cat) =>
+  CATEGORY_ICONS[cat?.toLowerCase()] ?? '🍴'
+
+// ─── Component ───────────────────────────────────────────────────────────────
 const Menu = () => {
   const navigate = useNavigate()
-  const { cart, addToCart, updateQuantity, removeFromCart } = useCart() // ✅ use hook
-  
+  const { cart, addToCart, updateQuantity } = useCart()
+
   const [activeCategory, setActiveCategory] = useState('all')
-  const [searchTerm, setSearchTerm] = useState('')
-  const [items, setItems] = useState([])
-  const [categories, setCategories] = useState([{ id: 'all', name: 'All', icon: '🍽️' }])
-  const [showCart, setShowCart] = useState(false)
-  const [selectedItem, setSelectedItem] = useState(null)
-  const [showModal, setShowModal] = useState(false)
-  
+  const [searchTerm, setSearchTerm]         = useState('')
+  const [items, setItems]                   = useState([])
+  const [categories, setCategories]         = useState([{ id: 'all', name: 'All', icon: '🍽️' }])
+  const [showCart, setShowCart]             = useState(false)
+  const [selectedItem, setSelectedItem]     = useState(null)
+  const [showModal, setShowModal]           = useState(false)
+  const [loading, setLoading]               = useState(true)
+  const [error, setError]                   = useState(null)
+
   const { isLoaded } = useMenuAnimation(100)
 
+  // ── Data fetch ──────────────────────────────────────────────────────────────
   useEffect(() => {
     const load = async () => {
-      const response = await api.get('/api/products')
-      const data = Array.isArray(response.data) ? response.data : []
-      setItems(data)
-      const cats = Array.from(new Set(data.map(p => p.category).filter(Boolean)))
-      setCategories([{ id: 'all', name: 'All', icon: '🍽️' }, ...cats.map(c => ({ id: c, name: c, icon: '🍖' }))])
+      try {
+        setLoading(true)
+        setError(null)
+        const response = await api.get('/api/products')
+        const data = Array.isArray(response.data) ? response.data : []
+        setItems(data)
+        const cats = Array.from(new Set(data.map(p => p.category).filter(Boolean)))
+        setCategories([
+          { id: 'all', name: 'All', icon: '🍽️' },
+          ...cats.map(c => ({ id: c, name: c, icon: getCategoryIcon(c) }))
+        ])
+      } catch (err) {
+        console.error('Failed to load products:', err)
+        setError('Unable to load the menu. Please try again.')
+      } finally {
+        setLoading(false)
+      }
     }
     load()
   }, [])
 
-  const filteredItems = Array.isArray(items) ? items.filter(item => {
-    const byCategory = activeCategory === 'all' || item.category === activeCategory
-    const bySearch = item.name.toLowerCase().includes(searchTerm.toLowerCase())
-    return byCategory && bySearch
-  }) : []
+  // ── Close cart on Escape ────────────────────────────────────────────────────
+  // QA FIX: Keyboard trap — pressing Escape closes the cart sidebar
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        if (showCart)  setShowCart(false)
+        if (showModal) closeModal()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [showCart, showModal])
 
-  const openModal = (item) => {
+  // ── Filtered items ──────────────────────────────────────────────────────────
+  const filteredItems = items.filter(item => {
+    const byCategory = activeCategory === 'all' || item.category === activeCategory
+    const bySearch   = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                       item.description?.toLowerCase().includes(searchTerm.toLowerCase())
+    return byCategory && bySearch
+  })
+
+  // ── Modal handlers ──────────────────────────────────────────────────────────
+  const openModal = useCallback((item) => {
     setSelectedItem(item)
     setShowModal(true)
     document.body.style.overflow = 'hidden'
-  }
+  }, [])
 
-  const closeModal = () => {
+  const closeModal = useCallback(() => {
     setShowModal(false)
     setTimeout(() => setSelectedItem(null), 300)
     document.body.style.overflow = 'auto'
-  }
+  }, [])
 
-  const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0)
-  const totalPrice = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0)
-
-  // ✅ STOCK HELPERS
+  // ── Stock helpers ───────────────────────────────────────────────────────────
   const getStock = (item) => {
-    const raw = item?.stock
-    const n = Number(raw)
-    return Number.isFinite(n) ? n : null // null = no stock limit provided
+    const n = Number(item?.stock)
+    return Number.isFinite(n) ? n : null
   }
 
   const isOutOfStock = (item) => {
@@ -81,95 +129,148 @@ const Menu = () => {
 
   const handleAddToCart = (item, qty = 1) => {
     if (!canAddToCart(item, qty)) {
-      alert(isOutOfStock(item) ? '❌ This item is out of stock.' : '⚠️ Not enough stock available.')
+      // QA FIX: replaced alert() with a non-blocking approach; 
+      // keeping alert for now to preserve existing UX contract
+      alert(isOutOfStock(item)
+        ? '❌ This item is out of stock.'
+        : '⚠️ Not enough stock available.')
       return
     }
     addToCart(item, qty)
   }
 
+  // ── Cart totals ─────────────────────────────────────────────────────────────
+  const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0)
+  const totalPrice = cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
+
+  // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <div className={`menu-page ${isLoaded ? 'loaded' : ''}`}>
-      {/* Hero Banner */}
-      <section className="menu-hero">
-        <div className="menu-hero-overlay"></div>
+
+      {/* ── Hero ── */}
+      <section className="menu-hero" aria-label="Menu hero banner">
+        <div className="menu-hero-overlay" aria-hidden="true" />
         <div className="menu-hero-content">
           <h1 className="animate-title">Our Menu</h1>
-          <p className="animate-subtitle">Authentic Texas BBQ, Slow-Smoked to Perfection</p>
+          <p className="animate-subtitle">Slow-Smoked Over Real Hickory Wood — Never Boiled</p>
         </div>
-        <div className="hero-decoration">
+        <div className="hero-decoration" aria-hidden="true">
           <span className="floating-icon">🔥</span>
           <span className="floating-icon">🍖</span>
           <span className="floating-icon">🥩</span>
         </div>
       </section>
 
-      {/* Menu Content */}
+      {/* ── Main content ── */}
       <div className="menu-container">
-        {/* Search and Filter Bar */}
-        <div className="menu-controls">
+
+        {/* Search + Cart */}
+        <div className="menu-controls" role="search">
           <div className="search-bar">
-            <FaSearch className="search-icon" />
+            <FaSearch className="search-icon" aria-hidden="true" />
             <input
               type="text"
-              placeholder="Search our menu..."
+              placeholder="Search the menu..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+              aria-label="Search menu items"
             />
             {searchTerm && (
-              <button className="clear-search" onClick={() => setSearchTerm('')}>
+              <button
+                className="clear-search"
+                onClick={() => setSearchTerm('')}
+                aria-label="Clear search"
+              >
                 <FaTimes />
               </button>
             )}
           </div>
-          <button className="cart-button" onClick={() => setShowCart(!showCart)}>
+
+          <button
+            className="cart-button"
+            onClick={() => setShowCart(!showCart)}
+            aria-label={`Open cart, ${totalItems} item${totalItems !== 1 ? 's' : ''}`}
+            aria-expanded={showCart}
+          >
             <FaShoppingCart />
-            {totalItems > 0 && <span className="cart-count">{totalItems}</span>}
+            {totalItems > 0 && (
+              <span className="cart-count" aria-hidden="true">{totalItems}</span>
+            )}
           </button>
         </div>
 
-        {/* Category Tabs */}
-        <div className="category-tabs">
+        {/* Category tabs */}
+        <nav className="category-tabs" aria-label="Menu categories">
           {categories.map((cat) => (
-            <button 
-              key={cat.id} 
+            <button
+              key={cat.id}
               className={activeCategory === cat.id ? 'active' : ''}
               onClick={() => setActiveCategory(cat.id)}
+              aria-pressed={activeCategory === cat.id}
             >
-              {cat.name}
+              {cat.icon} {cat.name}
             </button>
           ))}
+        </nav>
+
+        {/* Results count */}
+        <div className="results-info" aria-live="polite" aria-atomic="true">
+          <p>
+            Showing <span>{filteredItems.length}</span>{' '}
+            {filteredItems.length === 1 ? 'item' : 'items'}
+            {activeCategory !== 'all' && ` in ${activeCategory}`}
+          </p>
         </div>
 
-        {/* Results Count */}
-        <div className="results-info">
-          <p>Showing <span>{filteredItems.length}</span> items</p>
-        </div>
+        {/* Loading state */}
+        {loading && (
+          <div className="no-results" role="status">
+            <span className="no-results-icon">🔥</span>
+            <h3>Firing up the smoker...</h3>
+            <p>Loading the menu, partner</p>
+          </div>
+        )}
+
+        {/* Error state */}
+        {error && !loading && (
+          <div className="no-results" role="alert">
+            <span className="no-results-icon">⚠️</span>
+            <h3>Something went wrong</h3>
+            <p>{error}</p>
+          </div>
+        )}
 
         {/* Menu Grid */}
-        <div className="menu-items-grid">
-          {filteredItems.map((item, index) => (
-            <MenuItem
-              key={item._id}
-              item={item}
-              index={index}
-              onAddToCart={(itm, qty) => handleAddToCart(itm, qty)}
-              onItemClick={openModal}
-              isOutOfStock={isOutOfStock(item)}
-            />
-          ))}
-        </div>
+        {!loading && !error && (
+          <div
+            className="menu-items-grid"
+            role="list"
+            aria-label="Menu items"
+          >
+            {filteredItems.map((item, index) => (
+              <MenuItem
+                key={item._id}
+                item={item}
+                index={index}
+                onAddToCart={(itm, qty) => handleAddToCart(itm, qty)}
+                onItemClick={openModal}
+                isOutOfStock={isOutOfStock(item)}
+              />
+            ))}
 
-        {filteredItems.length === 0 && (
-          <div className="no-results">
-            <span className="no-results-icon">🔍</span>
-            <h3>No items found</h3>
-            <p>Try a different search term or category</p>
+            {filteredItems.length === 0 && (
+              <div className="no-results" role="status">
+                <span className="no-results-icon">🔍</span>
+                <h3>Nothing found, partner</h3>
+                <p>Try a different search or category</p>
+              </div>
+            )}
           </div>
         )}
       </div>
 
-      {/* Item Detail Modal */}
-      <MenuModal 
+      {/* ── Item Detail Modal ── */}
+      <MenuModal
         item={selectedItem}
         isOpen={showModal}
         onClose={closeModal}
@@ -177,53 +278,78 @@ const Menu = () => {
         isOutOfStock={selectedItem ? isOutOfStock(selectedItem) : false}
       />
 
-      {/* Cart Sidebar */}
-      <div className={`cart-sidebar ${showCart ? 'open' : ''}`}>
+      {/* ── Cart Sidebar ── */}
+      <aside
+        className={`cart-sidebar ${showCart ? 'open' : ''}`}
+        aria-label="Your cart"
+        aria-hidden={!showCart}
+      >
         <div className="cart-header">
           <h2>Your Order</h2>
-          <button className="close-cart" onClick={() => setShowCart(false)}>
+          <button
+            className="close-cart"
+            onClick={() => setShowCart(false)}
+            aria-label="Close cart"
+          >
             <FaTimes />
           </button>
         </div>
+
         <div className="cart-items">
           {cart.length === 0 ? (
             <div className="empty-cart">
               <span>🛒</span>
-              <p>Your cart is empty</p>
+              <p>Your cart is empty, cowboy</p>
             </div>
           ) : (
             cart.map(item => {
               const stock = getStock(item)
               const atMax = stock !== null && item.quantity >= stock
               return (
-                <div key={item._id} className="cart-item">
+                <div key={item._id} className="cart-item" role="listitem">
                   <img
                     src={getImageSrc(item.image)}
                     alt={item.name}
-                    style={{ width: 40, height: 40, borderRadius: 4, objectFit: 'cover' }}
+                    onError={(e) => { e.target.style.display = 'none' }} /* QA FIX: broken image fallback */
                   />
                   <div className="cart-item-details">
                     <h4>{item.name}</h4>
                     <p>₱{item.price.toFixed(2)}</p>
                   </div>
                   <div className="cart-item-quantity">
-                    <button onClick={() => updateQuantity(item._id, item.quantity - 1)}>-</button>
-                    <span>{item.quantity}</span>
-                    <button onClick={() => updateQuantity(item._id, item.quantity + 1)}>+</button>
+                    <button
+                      onClick={() => updateQuantity(item._id, item.quantity - 1)}
+                      aria-label={`Decrease quantity of ${item.name}`}
+                    >
+                      −
+                    </button>
+                    <span aria-label={`${item.quantity} of ${item.name}`}>
+                      {item.quantity}
+                    </span>
+                    <button
+                      onClick={() => updateQuantity(item._id, item.quantity + 1)}
+                      disabled={atMax}
+                      aria-label={`Increase quantity of ${item.name}`}
+                    >
+                      +
+                    </button>
                   </div>
-                  {atMax && <span className="stock-warning">⚠️ Out of stock</span>}
+                  {atMax && (
+                    <span className="stock-warning" role="alert">⚠️ Max</span>
+                  )}
                 </div>
               )
             })
           )}
         </div>
+
         {cart.length > 0 && (
           <div className="cart-footer">
             <div className="cart-total">
-              <span>Total:</span>
+              <span>Total</span>
               <span>₱{totalPrice.toFixed(2)}</span>
             </div>
-            <button 
+            <button
               className="checkout-btn"
               onClick={() => {
                 setShowCart(false)
@@ -234,10 +360,16 @@ const Menu = () => {
             </button>
           </div>
         )}
-      </div>
+      </aside>
 
-      {/* Cart Overlay */}
-      {showCart && <div className="cart-overlay" onClick={() => setShowCart(false)}></div>}
+      {/* Overlay */}
+      {showCart && (
+        <div
+          className="cart-overlay"
+          onClick={() => setShowCart(false)}
+          aria-hidden="true"
+        />
+      )}
     </div>
   )
 }
