@@ -1,380 +1,345 @@
-import React, { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
-import { FaFire, FaHeart, FaAward, FaUsers, FaLeaf, FaClock, FaQuoteLeft, FaStar, FaArrowRight } from 'react-icons/fa'
-import { GiMeat, GiBarbecue, GiChefToque } from 'react-icons/gi'
+import React, { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import './about.css'
 
-// Import images - replace with your actual images
-import pitmaster from '../assets/pitmaster.jpg'
-import restaurant from '../assets/restaurant.jpg'
-import team1 from '../assets/team1.jpg'
-import team2 from '../assets/team2.jpg'
-import team3 from '../assets/team3.jpg'
+// ─── Real Texas Joe's content ─────────────────────────────────────────────────
 
+const PILLARS = [
+  {
+    icon: '🔥',
+    title: 'Real Hickory Wood',
+    body: 'Every rack, every brisket, every rib is smoked over genuine hickory wood — never boiled, never dipped in liquid smoke. The smoke does the work.',
+  },
+  {
+    icon: '🐷',
+    title: 'USA Swift Premium',
+    body: 'Only USA Swift Premium Pork meets our standards. We source the best cuts so that quality is locked in before the smoker door even closes.',
+  },
+  {
+    icon: '⏱️',
+    title: 'Low & Slow',
+    body: 'We never rush the process. Our meats are smoked low and slow for hours, then char-broiled to order — giving you that perfect crust every time.',
+  },
+  {
+    icon: '🤝',
+    title: 'Texas Hospitality',
+    body: 'We bring the spirit of the American South to Subic Bay. Generous portions, a warm atmosphere, and food made the way it was always meant to be.',
+  },
+]
+
+const STATS = [
+  { value: '1999', label: 'Est. in the Philippines' },
+  { value: '100%', label: 'Real Hickory Smoked' },
+  { value: '0',    label: 'Times We\'ve Boiled Ribs' },
+  { value: '∞',    label: 'Smoke Rings Served' },
+]
+
+const MENU_HIGHLIGHTS = [
+  { name: 'Hickory Smoked Spare Ribs',   cat: 'Spare Ribs',    img: 'https://texasjoes.com/wp-content/uploads/2018/09/hickory-smoked-ribs.jpg' },
+  { name: 'Baby Back Ribs',              cat: 'Baby Back',     img: 'https://texasjoes.com/wp-content/uploads/2018/09/baby-back-ribs.jpg' },
+  { name: 'Classic BBQ Platters',        cat: 'Platters',      img: 'https://texasjoes.com/wp-content/uploads/2018/09/classic-bbq.jpg' },
+  { name: 'Real BBQ Sandwiches',         cat: 'Sandwiches',    img: 'https://texasjoes.com/wp-content/uploads/2018/09/real-bbq-sandwich.jpg' },
+]
+
+// ─── Shared Divider (matches Home.css) ───────────────────────────────────────
+const Divider = ({ light = false }) => (
+  <div className={`tj-divider${light ? ' tj-divider--light' : ''}`} aria-hidden="true">
+    <span /><span className="tj-divider__icon">✦</span><span />
+  </div>
+)
+
+// ─── Simple scroll-reveal hook ────────────────────────────────────────────────
+const useReveal = () => {
+  const ref = useRef(null)
+  const [visible, setVisible] = useState(false)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setVisible(true); obs.disconnect() } },
+      { threshold: 0.15 }
+    )
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [])
+  return [ref, visible]
+}
+
+// ─── Pillar card ──────────────────────────────────────────────────────────────
+const PillarCard = ({ item, delay }) => {
+  const [ref, visible] = useReveal()
+  return (
+    <div
+      ref={ref}
+      className={`ab-pillar${visible ? ' ab-pillar--visible' : ''}`}
+      style={{ transitionDelay: `${delay}ms` }}
+    >
+      <span className="ab-pillar__icon" aria-hidden="true">{item.icon}</span>
+      <h3 className="ab-pillar__title">{item.title}</h3>
+      <p  className="ab-pillar__body">{item.body}</p>
+    </div>
+  )
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
 const About = () => {
-  const [isLoaded, setIsLoaded] = useState(false)
-  const [activeTestimonial, setActiveTestimonial] = useState(0)
-
-  useEffect(() => {
-    setTimeout(() => setIsLoaded(true), 100)
-  }, [])
-
-  // Auto-rotate testimonials
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setActiveTestimonial(prev => (prev + 1) % testimonials.length)
-    }, 5000)
-    return () => clearInterval(interval)
-  }, [])
-
-  const stats = [
-    { icon: <FaFire />, number: '15+', label: 'Years of Experience' },
-    { icon: <GiMeat />, number: '50K+', label: 'Pounds Smoked Yearly' },
-    { icon: <FaUsers />, number: '100K+', label: 'Happy Customers' },
-    { icon: <FaAward />, number: '25+', label: 'Awards Won' }
-  ]
-
-  const values = [
-    {
-      icon: <GiBarbecue />,
-      title: 'Authentic Smoking',
-      description: 'We use traditional Texas smoking techniques passed down through generations. Every cut is smoked low and slow over premium oak and hickory wood.'
-    },
-    {
-      icon: <FaLeaf />,
-      title: 'Fresh Ingredients',
-      description: 'We source our meats from local farms and ranches. Our vegetables come fresh from nearby suppliers every morning.'
-    },
-    {
-      icon: <FaHeart />,
-      title: 'Made with Love',
-      description: 'Every dish is prepared with passion and care. We treat every plate as if we\'re serving our own family.'
-    },
-    {
-      icon: <GiChefToque />,
-      title: 'Expert Pitmasters',
-      description: 'Our team of skilled pitmasters brings decades of combined experience to perfect every rack, brisket, and rib.'
-    }
-  ]
-
-  const timeline = [
-    {
-      year: '2009',
-      title: 'The Beginning',
-      description: 'Texas Joe started smoking meats in his backyard, perfecting recipes passed down from his grandfather.'
-    },
-    {
-      year: '2012',
-      title: 'First Food Truck',
-      description: 'After winning local BBQ competitions, we launched our first food truck serving the Dallas community.'
-    },
-    {
-      year: '2015',
-      title: 'Our First Restaurant',
-      description: 'Overwhelming demand led us to open our flagship restaurant, bringing authentic Texas BBQ to a permanent home.'
-    },
-    {
-      year: '2018',
-      title: 'Award Recognition',
-      description: 'Named "Best BBQ in Texas" by Texas Monthly and featured on Food Network\'s BBQ championship.'
-    },
-    {
-      year: '2023',
-      title: 'Expanding the Family',
-      description: 'Opened our second location and launched our signature sauce line available nationwide.'
-    }
-  ]
-
-  const team = [
-    {
-      name: 'Joe "Texas" Martinez',
-      role: 'Founder & Head Pitmaster',
-      image: team1,
-      bio: '25 years of BBQ mastery'
-    },
-    {
-      name: 'Sarah Williams',
-      role: 'Executive Chef',
-      image: team2,
-      bio: 'Culinary Institute graduate'
-    },
-    {
-      name: 'Marcus Johnson',
-      role: 'Pitmaster',
-      image: team3,
-      bio: '15 years smoking experience'
-    }
-  ]
-
-  const testimonials = [
-    {
-      text: "The best BBQ I've ever had outside of Austin. The brisket melts in your mouth, and the ribs are fall-off-the-bone perfection.",
-      author: 'Michael R.',
-      rating: 5,
-      location: 'Dallas, TX'
-    },
-    {
-      text: "A true Texas BBQ experience. The atmosphere, the service, and most importantly, the food - everything is top-notch.",
-      author: 'Jennifer S.',
-      rating: 5,
-      location: 'Houston, TX'
-    },
-    {
-      text: "I drive 2 hours just for their burnt ends. Worth every mile. This place is a hidden gem that deserves all the recognition.",
-      author: 'David L.',
-      rating: 5,
-      location: 'San Antonio, TX'
-    }
-  ]
+  const navigate = useNavigate()
+  const [storyRef,    storyVisible]    = useReveal()
+  const [statsRef,    statsVisible]    = useReveal()
+  const [menuRef,     menuVisible]     = useReveal()
+  const [locationRef, locationVisible] = useReveal()
 
   return (
-    <div className={`about-page ${isLoaded ? 'loaded' : ''}`}>
-      {/* Hero Section */}
-      <section className="about-hero">
-        <div className="about-hero-overlay"></div>
-        <div className="about-hero-content">
-          <span className="hero-badge">Est. 2009</span>
-          <h1 className="hero-title">Our Story</h1>
-          <p className="hero-subtitle">
-            From a backyard passion to Texas BBQ tradition
+    <div className="about">
+
+      {/* ══════════════════════════════════════════════════════
+          HERO
+      ══════════════════════════════════════════════════════ */}
+      <section className="ab-hero" aria-label="About Texas Joe's">
+        <div className="ab-hero__bg"      aria-hidden="true" />
+        <div className="ab-hero__overlay" aria-hidden="true" />
+        <div className="ab-hero__body">
+          <p  className="ab-hero__eyebrow">Texas Joe's — Est. 1999</p>
+          <h1 className="ab-hero__title">The Story Behind<br />the Smoke</h1>
+          <Divider light />
+          <p className="ab-hero__sub">
+            The Original Real American Smokehouse — In the Philippines
           </p>
-          <div className="hero-decoration">
-            <span className="floating-ember">🔥</span>
-            <span className="floating-ember">✨</span>
-            <span className="floating-ember">🔥</span>
-          </div>
         </div>
-        <div className="scroll-indicator">
-          <span>Scroll to explore</span>
-          <div className="scroll-arrow"></div>
+        <div className="ab-hero__scroll" aria-hidden="true">
+          <span className="ab-hero__scroll-line" />
+          <span className="ab-hero__scroll-text">Scroll</span>
         </div>
       </section>
 
-      {/* Introduction Section */}
-      <section className="about-intro">
-        <div className="intro-container">
-          <div className="intro-image">
-            <img src={pitmaster} alt="Texas Joe at the smoker" />
-            <div className="image-badge">
-              <GiBarbecue />
-              <span>Since 2009</span>
-            </div>
-          </div>
-          <div className="intro-content">
-            <span className="section-tag">Who We Are</span>
-            <h2>A Family Tradition of Smoke & Fire</h2>
-            <p className="intro-lead">
-              Texas Joe's House of Ribs was born from a simple belief: great BBQ takes time, 
-              quality ingredients, and an unwavering commitment to tradition.
-            </p>
-            <p>
-              What started as weekend cookouts in Joe Martinez's backyard has grown into one of 
-              Texas's most beloved BBQ destinations. Our founder learned the art of smoking from 
-              his grandfather, who ran a small smokehouse in Central Texas during the 1950s.
-            </p>
-            <p>
-              Today, we continue those same traditions – waking up before dawn to tend our smokers, 
-              hand-rubbing every cut with our secret blend of spices, and smoking our meats low and 
-              slow until they reach absolute perfection.
-            </p>
-            <div className="intro-signature">
-              <span className="signature">Texas Joe</span>
-              <span className="signature-title">Founder & Head Pitmaster</span>
+      {/* ══════════════════════════════════════════════════════
+          OUR STORY
+      ══════════════════════════════════════════════════════ */}
+      <section
+        ref={storyRef}
+        className={`ab-story${storyVisible ? ' ab-story--visible' : ''}`}
+        aria-label="Our story"
+      >
+        <div className="ab-story__image-col">
+          <div className="ab-story__img-wrap">
+            <img
+              src="https://texasjoes.com/wp-content/uploads/2018/09/8.jpg"
+              alt="Texas Joe's smoker"
+              loading="lazy"
+            />
+            <div className="ab-story__img-badge">
+              <span className="ab-story__img-badge-year">1999</span>
+              <span className="ab-story__img-badge-label">Est. Philippines</span>
             </div>
           </div>
         </div>
+
+        <div className="ab-story__text-col">
+          <p className="section-label">Who We Are</p>
+          <h2 className="section-title">In the Beginning.<br />Let There Be BBQ.</h2>
+          <Divider />
+          <p className="ab-story__lead">
+            Texas Joe's House of Ribs is the original real American smokehouse in the Philippines —
+            born from one unwavering belief: great BBQ takes time, the right wood, and an
+            absolute refusal to cut corners.
+          </p>
+          <p className="ab-story__body">
+            Since 1999, we have been bringing authentic Texas pit barbecue to Subic Bay Freeport
+            Zone. Every morning, our pitmasters fire up the smoker with genuine hickory wood and
+            begin the slow, patient process that separates real BBQ from everything else.
+          </p>
+          <p className="ab-story__body">
+            Our meats are never boiled. Never dipped in liquid smoke. Only USA Swift Premium Pork
+            ribs meet our standards — slow smoked over hickory, then char-broiled to order for
+            that signature crust and smoke ring that keeps our guests coming back.
+          </p>
+          <p className="ab-story__body ab-story__body--emphasis">
+            "Never Boiled. Never Dipped in Liquid Smoke."
+          </p>
+        </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="about-stats">
-        <div className="stats-container">
-          {stats.map((stat, index) => (
-            <div 
-              className="stat-card" 
-              key={index}
-              style={{ animationDelay: `${index * 0.15}s` }}
-            >
-              <div className="stat-icon">{stat.icon}</div>
-              <div className="stat-number">{stat.number}</div>
-              <div className="stat-label">{stat.label}</div>
-            </div>
+      {/* ══════════════════════════════════════════════════════
+          STATS BAND
+      ══════════════════════════════════════════════════════ */}
+      <section
+        ref={statsRef}
+        className={`ab-stats${statsVisible ? ' ab-stats--visible' : ''}`}
+        aria-label="By the numbers"
+      >
+        {STATS.map((s, i) => (
+          <div
+            className="ab-stat"
+            key={i}
+            style={{ transitionDelay: `${i * 100}ms` }}
+          >
+            <span className="ab-stat__value">{s.value}</span>
+            <span className="ab-stat__label">{s.label}</span>
+          </div>
+        ))}
+      </section>
+
+      {/* ══════════════════════════════════════════════════════
+          OUR PILLARS (philosophy)
+      ══════════════════════════════════════════════════════ */}
+      <section className="ab-pillars" aria-label="Our philosophy">
+        <div className="ab-pillars__header section-header">
+          <p className="section-label">What We Stand For</p>
+          <h2 className="section-title">The Texas Joe's Way</h2>
+          <Divider />
+          <p className="section-sub">
+            Four principles we have never compromised on — not once in over two decades.
+          </p>
+        </div>
+        <div className="ab-pillars__grid">
+          {PILLARS.map((p, i) => (
+            <PillarCard key={i} item={p} delay={i * 100} />
           ))}
         </div>
       </section>
 
-      {/* Values Section */}
-      <section className="about-values">
-        <div className="values-container">
-          <div className="values-header">
-            <span className="section-tag">What We Stand For</span>
-            <h2>Our Core Values</h2>
-            <p>The principles that guide everything we do</p>
+      {/* ══════════════════════════════════════════════════════
+          MENU HIGHLIGHTS
+      ══════════════════════════════════════════════════════ */}
+      <section
+        ref={menuRef}
+        className={`ab-menu${menuVisible ? ' ab-menu--visible' : ''}`}
+        aria-label="Menu highlights"
+      >
+        <div className="ab-menu__overlay" aria-hidden="true" />
+        <div className="ab-menu__inner">
+          <div className="ab-menu__header">
+            <p className="section-label section-label--gold">From the Pit</p>
+            <h2 className="section-title section-title--light">What We're Known For</h2>
+            <Divider light />
           </div>
-          <div className="values-grid">
-            {values.map((value, index) => (
-              <div 
-                className="value-card" 
-                key={index}
-                style={{ animationDelay: `${index * 0.1}s` }}
+          <div className="ab-menu__grid">
+            {MENU_HIGHLIGHTS.map((item, i) => (
+              <div
+                className="ab-menu__card"
+                key={i}
+                style={{ transitionDelay: `${i * 80}ms` }}
+                onClick={() => navigate('/menu')}
+                role="button"
+                tabIndex={0}
+                onKeyDown={e => e.key === 'Enter' && navigate('/menu')}
+                aria-label={`View ${item.name} on menu`}
               >
-                <div className="value-icon">{value.icon}</div>
-                <h3>{value.title}</h3>
-                <p>{value.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Timeline Section */}
-      <section className="about-timeline">
-        <div className="timeline-container">
-          <div className="timeline-header">
-            <span className="section-tag">Our Journey</span>
-            <h2>The Road to BBQ Excellence</h2>
-          </div>
-          <div className="timeline">
-            {timeline.map((item, index) => (
-              <div 
-                className={`timeline-item ${index % 2 === 0 ? 'left' : 'right'}`} 
-                key={index}
-                style={{ animationDelay: `${index * 0.2}s` }}
-              >
-                <div className="timeline-content">
-                  <span className="timeline-year">{item.year}</span>
-                  <h3>{item.title}</h3>
-                  <p>{item.description}</p>
+                <div className="ab-menu__card-img">
+                  <img src={item.img} alt={item.name} loading="lazy" />
+                  <div className="ab-menu__card-overlay" aria-hidden="true" />
                 </div>
-                <div className="timeline-marker">
-                  <FaFire />
-                </div>
-              </div>
-            ))}
-            <div className="timeline-line"></div>
-          </div>
-        </div>
-      </section>
-
-      {/* Team Section */}
-      <section className="about-team">
-        <div className="team-container">
-          <div className="team-header">
-            <span className="section-tag">Meet the Crew</span>
-            <h2>The Faces Behind the Smoke</h2>
-            <p>Our talented team brings passion and expertise to every dish</p>
-          </div>
-          <div className="team-grid">
-            {team.map((member, index) => (
-              <div 
-                className="team-card" 
-                key={index}
-                style={{ animationDelay: `${index * 0.15}s` }}
-              >
-                <div className="team-image">
-                  <img src={member.image} alt={member.name} />
-                  <div className="team-overlay">
-                    <p>{member.bio}</p>
-                  </div>
-                </div>
-                <div className="team-info">
-                  <h3>{member.name}</h3>
-                  <span className="team-role">{member.role}</span>
+                <div className="ab-menu__card-body">
+                  <span className="ab-menu__card-cat">{item.cat}</span>
+                  <h3  className="ab-menu__card-name">{item.name}</h3>
                 </div>
               </div>
             ))}
           </div>
+          <div className="ab-menu__cta">
+            <button className="btn-primary" onClick={() => navigate('/menu')}>
+              See Full Menu
+            </button>
+          </div>
         </div>
       </section>
 
-      {/* Restaurant Image Section */}
-      <section className="about-restaurant">
-        <div className="restaurant-image-container">
-          <img src={restaurant} alt="Texas Joe's Restaurant Interior" />
-          <div className="restaurant-overlay">
-            <div className="restaurant-content">
-              <h2>Visit Our Restaurant</h2>
-              <p>Experience the warmth of Texas hospitality in our rustic, family-friendly space</p>
-              <div className="restaurant-features">
-                <div className="feature">
-                  <FaClock />
-                  <span>Open 7 Days a Week</span>
-                </div>
-                <div className="feature">
-                  <FaUsers />
-                  <span>Seats 150+ Guests</span>
-                </div>
-                <div className="feature">
-                  <GiBarbecue />
-                  <span>Live Smoking Station</span>
-                </div>
-              </div>
+      {/* ══════════════════════════════════════════════════════
+          EXPERIENCE STRIP
+      ══════════════════════════════════════════════════════ */}
+      <section className="ab-experience" aria-label="The experience">
+        <div className="ab-experience__inner">
+          <Divider />
+          <blockquote className="ab-experience__quote">
+            "We bring the spirit of the American South straight to Subic Bay —
+            generous portions, warm service, and BBQ that's smoked the real way."
+          </blockquote>
+          <p className="ab-experience__attribution">— Texas Joe's, since 1999</p>
+          <Divider />
+          <div className="ab-experience__facts">
+            <div className="ab-experience__fact">
+              <span aria-hidden="true">📍</span>
+              <span>Subic Bay Freeport Zone</span>
+            </div>
+            <div className="ab-experience__fact">
+              <span aria-hidden="true">🕐</span>
+              <span>Open Daily · 10:30 AM – 10:00 PM</span>
+            </div>
+            <div className="ab-experience__fact">
+              <span aria-hidden="true">📞</span>
+              <a href="tel:+639175123461">0917-512-3461</a>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Testimonials Section */}
-      <section className="about-testimonials">
-        <div className="testimonials-container">
-          <div className="testimonials-header">
-            <span className="section-tag">What People Say</span>
-            <h2>Customer Love</h2>
+      {/* ══════════════════════════════════════════════════════
+          LOCATION
+      ══════════════════════════════════════════════════════ */}
+      <section
+        ref={locationRef}
+        className={`ab-location${locationVisible ? ' ab-location--visible' : ''}`}
+        aria-label="Location"
+      >
+        <div className="ab-location__info">
+          <p className="section-label">Visit Us</p>
+          <h2 className="section-title">Come Find Us</h2>
+          <Divider />
+          <p className="ab-location__address">
+            Corner of Waterfront Rd. and McKinley St.,<br />
+            Subic Bay Freeport Zone, Zambales
+          </p>
+          <ul className="ab-location__hours">
+            <li><strong>Monday – Sunday</strong><span>10:30 AM – 10:00 PM</span></li>
+          </ul>
+          <div className="ab-location__actions">
+            <a
+              className="btn-primary"
+              href="https://www.google.com/maps/dir/?api=1&destination=Corner+Waterfront+Rd+McKinley+St+Subic+Bay+Freeport+Zone+Zambales"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Get Directions
+            </a>
+            <button className="btn-ghost-dark" onClick={() => navigate('/reservations')}>
+              Reserve a Table
+            </button>
           </div>
-          <div className="testimonials-slider">
-            {testimonials.map((testimonial, index) => (
-              <div 
-                className={`testimonial-card ${index === activeTestimonial ? 'active' : ''}`}
-                key={index}
-              >
-                <FaQuoteLeft className="quote-icon" />
-                <p className="testimonial-text">{testimonial.text}</p>
-                <div className="testimonial-rating">
-                  {[...Array(testimonial.rating)].map((_, i) => (
-                    <FaStar key={i} />
-                  ))}
-                </div>
-                <div className="testimonial-author">
-                  <span className="author-name">{testimonial.author}</span>
-                  <span className="author-location">{testimonial.location}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="testimonial-dots">
-            {testimonials.map((_, index) => (
-              <button
-                key={index}
-                className={`dot ${index === activeTestimonial ? 'active' : ''}`}
-                onClick={() => setActiveTestimonial(index)}
-                aria-label={`Go to testimonial ${index + 1}`}
-              />
-            ))}
+        </div>
+        <div className="ab-location__map">
+          <iframe
+            title="Texas Joe's Location"
+            src="https://www.google.com/maps?q=R7CG%2B7F9%2C+Mc+Kinley+St%2C+Subic+Bay+Freeport+Zone%2C+Zambales&output=embed"
+            loading="lazy"
+            allowFullScreen
+            referrerPolicy="no-referrer-when-downgrade"
+          />
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════
+          CTA CLOSING BAND
+      ══════════════════════════════════════════════════════ */}
+      <section className="ab-cta" aria-label="Call to action">
+        <div className="ab-cta__overlay" aria-hidden="true" />
+        <div className="ab-cta__body">
+          <p className="section-label section-label--gold">Don't Wait</p>
+          <h2 className="ab-cta__title">Ready to Taste the Real Thing?</h2>
+          <Divider light />
+          <p className="ab-cta__sub">
+            Dine in, take out, or order online — the smoke's been going since sunrise.
+          </p>
+          <div className="ab-cta__actions">
+            <button className="btn-primary" onClick={() => navigate('/menu')}>
+              Order Online
+            </button>
+            <button className="btn-ghost" onClick={() => navigate('/reservations')}>
+              Make a Reservation
+            </button>
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="about-cta">
-        <div className="cta-container">
-          <div className="cta-content">
-            <h2>Ready to Taste the Tradition?</h2>
-            <p>Join us for an unforgettable BBQ experience</p>
-            <div className="cta-buttons">
-              <Link to="/menu" className="cta-btn primary">
-                <span>View Our Menu</span>
-                <FaArrowRight />
-              </Link>
-              <Link to="/reservations" className="cta-btn secondary">
-                <span>Make a Reservation</span>
-                <FaArrowRight />
-              </Link>
-            </div>
-          </div>
-          <div className="cta-decoration">
-            <span className="big-emoji">🍖</span>
-          </div>
-        </div>
-      </section>
     </div>
   )
 }
