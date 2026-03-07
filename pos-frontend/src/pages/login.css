@@ -1613,7 +1613,7 @@ button:disabled { opacity: 0.6; cursor: not-allowed; }
 .wrapper { overflow: hidden; width: 100%; }
 .wrapper-holder { display: flex; width: 100%; }
 .wrapper-holder .slide { min-width: 100%; flex-shrink: 0; }
-
+// ...existing code...
 
 
 
