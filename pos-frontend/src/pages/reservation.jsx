@@ -1,12 +1,15 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useContext } from 'react'
 import { useNavigate } from 'react-router-dom'
 import './reservation.css'
 
-// ─── Opening hours ─────────────────────────────────────────────────────────────
-// First slot: 10:30 AM · Last slot: 9:30 PM (closes 10:00 PM)
-// Slots are blocked if they are < 30 min away from now
+// ── Optional: import your AuthContext if available ────────────────────────────
+// This lets us pre-fill the form and link bookings to the user's account.
+// If you don't have an AuthContext, remove these two lines — the rest still works.
+import { AuthContext } from '../context/AuthContext'
 
-// ─── All slots with their numeric hour/min for comparison ─────────────────────
+// ─── Config ───────────────────────────────────────────────────────────────────
+const API_BASE = import.meta.env.VITE_API_URL || ''  // e.g. https://api.texasjoes.site
+
 const ALL_SLOTS = [
   { label: '10:30 AM', h: 10, m: 30 },
   { label: '11:00 AM', h: 11, m: 0  },
@@ -28,74 +31,63 @@ const ALL_SLOTS = [
   { label: '9:30 PM',  h: 21, m: 30 },
 ]
 
-// ─── Slot status ───────────────────────────────────────────────────────────────
-// Returns: 'available' | 'past' | 'full'
 const getSlotStatus = (slot, selectedDate, bookedSlots = []) => {
   if (!selectedDate) return 'available'
-
   const [y, mo, d] = selectedDate.split('-').map(Number)
   const slotTime   = new Date(y, mo - 1, d, slot.h, slot.m)
   const now        = new Date()
-
-  // Restriction 1 — block past times (with 30-min lead buffer)
   if (slotTime.getTime() - now.getTime() < 30 * 60 * 1000) return 'past'
-
-  // Restriction 3 — block fully booked (from DB)
   if (bookedSlots.includes(slot.label)) return 'full'
-
   return 'available'
 }
 
-// ─── Fetch booked slots from your backend ─────────────────────────────────────
-// Expected API:  GET /api/reservations/availability?date=YYYY-MM-DD
-// Expected shape: { bookedSlots: ['6:00 PM', '7:30 PM'] }
-//
-// BACKEND SETUP NEEDED:
-//   In your Express router, add:
-//
-//   router.get('/reservations/availability', async (req, res) => {
-//     const { date } = req.query
-//     const reservations = await Reservation.find({ date })
-//     // Count how many bookings per slot; mark as "full" when limit is reached
-//     const MAX_PER_SLOT = 5  // adjust to your table capacity
-//     const counts = {}
-//     reservations.forEach(r => { counts[r.time] = (counts[r.time] || 0) + 1 })
-//     const bookedSlots = Object.entries(counts)
-//       .filter(([, count]) => count >= MAX_PER_SLOT)
-//       .map(([time]) => time)
-//     res.json({ bookedSlots })
-//   })
-//
+// ─── API helpers ──────────────────────────────────────────────────────────────
+
 const fetchBookedSlots = async (date) => {
   try {
-    const res = await fetch(`/api/reservations/availability?date=${date}`)
+    const res = await fetch(`${API_BASE}/api/reservations/availability?date=${date}`)
     if (!res.ok) return []
     const data = await res.json()
     return Array.isArray(data.bookedSlots) ? data.bookedSlots : []
   } catch {
-    // Fail open — don't block user if API is unreachable
-    console.warn('[Reservation] Could not fetch availability. Showing all slots.')
+    console.warn('[Reservation] Could not fetch availability.')
     return []
   }
 }
 
-// ─── Other constants ──────────────────────────────────────────────────────────
+const submitReservation = async (payload, token = null) => {
+  const headers = { 'Content-Type': 'application/json' }
+  if (token) headers['Authorization'] = `Bearer ${token}`
+
+  const res = await fetch(`${API_BASE}/api/reservations`, {
+    method:  'POST',
+    headers,
+    body:    JSON.stringify(payload),
+  })
+
+  const data = await res.json()
+  if (!res.ok) throw { status: res.status, data }
+  return data
+}
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
 const GUEST_OPTIONS = ['1','2','3','4','5','6','7','8','9','10+']
 
 const OCCASIONS = [
-  { id: 'none',         label: 'None',        icon: '🍖' },
-  { id: 'birthday',    label: 'Birthday',    icon: '🎂' },
-  { id: 'anniversary', label: 'Anniversary', icon: '❤️' },
-  { id: 'business',    label: 'Business',    icon: '💼' },
-  { id: 'celebration', label: 'Celebration', icon: '🥂' },
-  { id: 'date',        label: 'Date Night',  icon: '✨' },
+  { id: 'none',        label: 'None',        icon: '🍖' },
+  { id: 'birthday',   label: 'Birthday',    icon: '🎂' },
+  { id: 'anniversary',label: 'Anniversary', icon: '❤️' },
+  { id: 'business',   label: 'Business',    icon: '💼' },
+  { id: 'celebration',label: 'Celebration', icon: '🥂' },
+  { id: 'date',       label: 'Date Night',  icon: '✨' },
 ]
 
 const SEATING = [
-  { id: 'indoor',  label: 'Indoor',       desc: 'Classic dining room' },
-  { id: 'patio',   label: 'Patio',        desc: 'Outdoor seating'     },
-  { id: 'bar',     label: 'Bar Area',     desc: 'Casual atmosphere'   },
-  { id: 'private', label: 'Private Room', desc: 'For special events'  },
+  { id: 'indoor', label: 'Indoor',       desc: 'Classic dining room' },
+  { id: 'patio',  label: 'Patio',        desc: 'Outdoor seating'     },
+  { id: 'bar',    label: 'Bar Area',     desc: 'Casual atmosphere'   },
+  { id: 'private',label: 'Private Room', desc: 'For special events'  },
 ]
 
 const INFO_CARDS = [
@@ -114,7 +106,6 @@ const INFO_CARDS = [
   },
 ]
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 const getMinDate = () => new Date().toISOString().split('T')[0]
 const getMaxDate = () => {
   const d = new Date(); d.setMonth(d.getMonth() + 3)
@@ -129,6 +120,7 @@ const formatDate = ds => {
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
+
 const Divider = ({ light = false }) => (
   <div className={`tj-divider${light ? ' tj-divider--light' : ''}`} aria-hidden="true">
     <span /><span className="tj-divider__icon">✦</span><span />
@@ -138,7 +130,7 @@ const Divider = ({ light = false }) => (
 const Steps = ({ current }) => (
   <div className="rv-steps" role="list" aria-label="Reservation steps">
     {['Date & Time', 'Your Details', 'Confirm'].map((label, i) => {
-      const n = i + 1
+      const n      = i + 1
       const done   = current > n
       const active = current === n
       return (
@@ -170,10 +162,10 @@ const SlotLegend = () => (
 const SuccessScreen = ({ formData, onReset }) => (
   <div className="rv-success" role="alert" aria-live="polite">
     <div className="rv-success__icon" aria-hidden="true">✅</div>
-    <h2 className="rv-success__title">Reservation Confirmed!</h2>
+    <h2 className="rv-success__title">Reservation Submitted!</h2>
     <p className="rv-success__msg">
-      Thank you, <strong>{formData.firstName}</strong>! Your table request has been received.
-      We'll confirm your booking shortly.
+      Thank you, <strong>{formData.firstName}</strong>! Your table request has been received
+      and is <strong>pending confirmation</strong>. We'll reach out shortly.
     </p>
     <div className="rv-success__summary">
       <div className="rv-success__row"><span>📅</span><span>{formatDate(formData.date)}</span></div>
@@ -190,7 +182,7 @@ const SuccessScreen = ({ formData, onReset }) => (
       )}
     </div>
     <p className="rv-success__note">
-      A confirmation email will be sent to <strong>{formData.email}</strong>.<br />
+      A confirmation will be sent to <strong>{formData.email}</strong>.<br />
       Estimated response: within 1 business hour.
     </p>
     <button className="btn-primary" onClick={onReset}>Make Another Reservation</button>
@@ -201,8 +193,21 @@ const SuccessScreen = ({ formData, onReset }) => (
 const Reservation = () => {
   const navigate = useNavigate()
 
+  // Try to get the logged-in user; gracefully handle missing context
+  let user = null, token = null
+  try {
+    const ctx = useContext(AuthContext)
+    user  = ctx?.user  ?? null
+    token = ctx?.token ?? null
+  } catch {
+    // AuthContext not available — continue as guest
+  }
+
   const EMPTY_FORM = {
-    firstName: '', lastName: '', email: '', phone: '',
+    firstName: user?.firstName || '',
+    lastName:  user?.lastName  || '',
+    email:     user?.email     || '',
+    phone:     user?.phone     || '',
     date: '', time: '', guests: '2',
     occasion: '', seatingPreference: '', specialRequests: '',
   }
@@ -215,19 +220,17 @@ const Reservation = () => {
   const [bookedSlots,     setBookedSlots]     = useState([])
   const [loadingSlots,    setLoadingSlots]    = useState(false)
   const [availabilityErr, setAvailabilityErr] = useState(false)
-  // Tick every 60s so "past" slots update in real time without a page reload
-  const [tick, setTick] = useState(0)
+  const [tick,            setTick]            = useState(0)
 
-  // ── Re-tick every minute so past-time blocking stays accurate ──────────────
+  // Re-tick every minute so past-slot blocking stays accurate
   useEffect(() => {
     const id = setInterval(() => setTick(t => t + 1), 60_000)
     return () => clearInterval(id)
   }, [])
 
-  // ── Restriction 4: fetch booked slots from DB whenever date changes ────────
+  // Fetch booked slots whenever the date changes
   useEffect(() => {
     if (!formData.date) { setBookedSlots([]); return }
-
     let cancelled = false
     setLoadingSlots(true)
     setAvailabilityErr(false)
@@ -236,11 +239,8 @@ const Reservation = () => {
       if (cancelled) return
       setBookedSlots(slots)
       setLoadingSlots(false)
-      // If the already-selected time just became full, deselect it
-      setFormData(p => ({
-        ...p,
-        time: slots.includes(p.time) ? '' : p.time,
-      }))
+      // Deselect time if it just became fully booked
+      setFormData(p => ({ ...p, time: slots.includes(p.time) ? '' : p.time }))
     }).catch(() => {
       if (!cancelled) { setLoadingSlots(false); setAvailabilityErr(true) }
     })
@@ -248,7 +248,6 @@ const Reservation = () => {
     return () => { cancelled = true }
   }, [formData.date])
 
-  // ── Compute slot statuses (memoised on date, bookedSlots, tick) ────────────
   const slotStatuses = useCallback(
     () => ALL_SLOTS.map(slot => ({
       ...slot,
@@ -259,11 +258,10 @@ const Reservation = () => {
 
   const availableCount = slotStatuses.filter(s => s.status === 'available').length
 
-  // ── Handlers ──────────────────────────────────────────────────────────────
+  // ── Handlers ────────────────────────────────────────────────────────────────
   const handleChange = e => {
     const { name, value } = e.target
     if (name === 'date') {
-      // Clear selected time when date changes — old slot may be invalid on new date
       setFormData(p => ({ ...p, date: value, time: '' }))
     } else {
       setFormData(p => ({ ...p, [name]: value }))
@@ -288,12 +286,11 @@ const Reservation = () => {
     }
   }
 
-  // ── Validation ────────────────────────────────────────────────────────────
+  // ── Validation ──────────────────────────────────────────────────────────────
   const validate = s => {
     const e = {}
-
     if (s === 1) {
-      if (!formData.date)   e.date   = 'Please select a date.'
+      if (!formData.date)   e.date = 'Please select a date.'
       if (!formData.guests) e.guests = 'Please select number of guests.'
       if (formData.guests === '10+') {
         e.guests = 'For groups of 10 or more, please call 0917-512-3461 or use Private Function Rooms below.'
@@ -301,7 +298,6 @@ const Reservation = () => {
       if (!formData.time) {
         e.time = 'Please select an available time slot.'
       } else {
-        // Race-condition guard: re-check the chosen slot right before advancing
         const slot = ALL_SLOTS.find(sl => sl.label === formData.time)
         if (slot) {
           const status = getSlotStatus(slot, formData.date, bookedSlots)
@@ -310,7 +306,6 @@ const Reservation = () => {
         }
       }
     }
-
     if (s === 2) {
       if (!formData.firstName.trim()) e.firstName = 'First name is required.'
       if (!formData.lastName.trim())  e.lastName  = 'Last name is required.'
@@ -320,7 +315,6 @@ const Reservation = () => {
       else if (!/^\d{7,}$/.test(formData.phone.replace(/\D/g, '')))
         e.phone = 'Enter a valid phone number (digits only, min 7).'
     }
-
     setErrors(e)
     return Object.keys(e).length === 0
   }
@@ -328,33 +322,76 @@ const Reservation = () => {
   const next = () => { if (validate(step)) setStep(s => Math.min(s + 1, 3)) }
   const back = () => setStep(s => Math.max(s - 1, 1))
 
+  // ── Submit ───────────────────────────────────────────────────────────────────
   const handleSubmit = async e => {
     e.preventDefault()
     if (!validate(2)) return
+
     setSubmitting(true)
+    setErrors(p => ({ ...p, submit: '' }))
+
     try {
-      // ── Wire up your real API here ──────────────────────────────────────
-      // const res = await fetch('/api/reservations', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(formData),
-      // })
-      // if (!res.ok) throw new Error('Submission failed')
-      await new Promise(res => setTimeout(res, 1600)) // remove when API is ready
+      const payload = {
+        firstName:        formData.firstName.trim(),
+        lastName:         formData.lastName.trim(),
+        email:            formData.email.trim(),
+        phone:            formData.phone.trim(),
+        date:             formData.date,
+        time:             formData.time,
+        guests:           formData.guests,
+        occasion:         formData.occasion || 'none',
+        seatingPreference:formData.seatingPreference || '',
+        specialRequests:  formData.specialRequests || '',
+      }
+
+      await submitReservation(payload, token)
       setSuccess(true)
-    } catch {
-      setErrors({ submit: 'Something went wrong. Please try again or call us directly.' })
+
+      // Refresh booked slots so other users see the new booking
+      const updated = await fetchBookedSlots(formData.date)
+      setBookedSlots(updated)
+
+    } catch (err) {
+      const status = err?.status
+      const data   = err?.data
+
+      // ── Map server-side errors back to form fields ─────────────────────────
+      if (status === 409) {
+        // Duplicate or fully booked
+        if (data?.field === 'time') {
+          setErrors({ time: data.message, submit: data.message })
+          setStep(1)
+
+          // Refresh availability so the slot shows as "Full"
+          const updated = await fetchBookedSlots(formData.date)
+          setBookedSlots(updated)
+        } else {
+          setErrors({ submit: data?.message || 'A duplicate reservation was detected.' })
+        }
+      } else if (status === 400 && data?.errors) {
+        // Structured validation errors from server
+        const mapped = {}
+        Object.entries(data.errors).forEach(([k, v]) => { mapped[k] = v })
+        setErrors({ ...mapped, submit: 'Please correct the highlighted fields.' })
+        // Jump to the relevant step
+        const step1Fields = ['date', 'time', 'guests']
+        const hasStep1Err = step1Fields.some(f => mapped[f])
+        setStep(hasStep1Err ? 1 : 2)
+      } else {
+        setErrors({ submit: data?.message || 'Something went wrong. Please try again or call us directly.' })
+      }
     } finally {
       setSubmitting(false)
     }
   }
 
   const reset = () => {
-    setSuccess(false); setStep(1); setFormData(EMPTY_FORM)
+    setSuccess(false); setStep(1)
+    setFormData({ ...EMPTY_FORM, firstName: user?.firstName || '', lastName: user?.lastName || '', email: user?.email || '', phone: user?.phone || '' })
     setErrors({}); setBookedSlots([])
   }
 
-  // ── Success ────────────────────────────────────────────────────────────────
+  // ── Success screen ───────────────────────────────────────────────────────────
   if (success) {
     return (
       <div className="reservation-page">
@@ -365,6 +402,7 @@ const Reservation = () => {
     )
   }
 
+  // ── Main render ──────────────────────────────────────────────────────────────
   return (
     <div className="reservation-page">
 
@@ -431,9 +469,7 @@ const Reservation = () => {
                   {errors.guests && (
                     <span className={`rv-field__error${formData.guests === '10+' ? ' rv-field__error--info' : ''}`} role="alert">
                       {errors.guests}
-                      {formData.guests === '10+' && (
-                        <> — <a href="tel:+639175123461">call us</a></>
-                      )}
+                      {formData.guests === '10+' && (<> — <a href="tel:+639175123461">call us</a></>)}
                     </span>
                   )}
                 </div>
@@ -443,10 +479,7 @@ const Reservation = () => {
               <div className={`rv-field${errors.time ? ' rv-field--error' : ''}`}>
                 <div className="rv-times-header">
                   <label className="rv-field__label">🕐 Select Time</label>
-
-                  {/* Restriction 2 — opening hours notice */}
                   <span className="rv-times-hours">Open 10:30 AM – 10:00 PM</span>
-
                   {loadingSlots && (
                     <span className="rv-times-loading" aria-live="polite">
                       <span className="rv-spinner--small" aria-hidden="true" /> Checking availability…
@@ -469,16 +502,16 @@ const Reservation = () => {
                       <SlotLegend />
                       <div className="rv-times" role="group" aria-label="Available time slots">
                         {slotStatuses.map(slot => {
-                          const unavail     = slot.status !== 'available'
-                          const isSelected  = formData.time === slot.label
+                          const unavail    = slot.status !== 'available'
+                          const isSelected = formData.time === slot.label
                           return (
                             <button
                               key={slot.label} type="button"
                               className={[
                                 'rv-times__btn',
-                                isSelected            ? 'rv-times__btn--active' : '',
-                                slot.status === 'past'? 'rv-times__btn--past'   : '',
-                                slot.status === 'full'? 'rv-times__btn--full'   : '',
+                                isSelected             ? 'rv-times__btn--active' : '',
+                                slot.status === 'past' ? 'rv-times__btn--past'   : '',
+                                slot.status === 'full' ? 'rv-times__btn--full'   : '',
                               ].filter(Boolean).join(' ')}
                               onClick={() => !unavail && pick('time', slot.label)}
                               disabled={unavail}
@@ -563,6 +596,12 @@ const Reservation = () => {
                 <Divider />
                 <p className="rv-step-header__sub">How should we reach you?</p>
               </div>
+
+              {user && (
+                <p className="rv-prefill-notice">
+                  ✅ Your details have been pre-filled from your account. You can edit them if needed.
+                </p>
+              )}
 
               <div className="rv-form__row">
                 <div className={`rv-field${errors.firstName ? ' rv-field--error' : ''}`}>
