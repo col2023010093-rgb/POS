@@ -252,15 +252,16 @@ button                    { font-family: inherit; }
 
 .hero__title {
   font-family: var(--font-display);
-  font-size: clamp(3rem, 8vw, 6.5rem);
+  font-size: clamp(1.8rem, 4.5vw, 3.2rem);
   font-weight: 700;
   color: var(--c-white);
-  line-height: 1.0;
-  letter-spacing: -1px;
+  line-height: 1.15;
+  letter-spacing: 3px;
+  text-transform: uppercase;
   margin-bottom: 1rem;
   text-shadow:
-    0 4px 24px rgba(0,0,0,.55),
-    0 1px 4px rgba(0,0,0,.3);
+    0 2px 8px rgba(0,0,0,.6),
+    0 1px 2px rgba(0,0,0,.4);
 }
 
 .hero__sub {

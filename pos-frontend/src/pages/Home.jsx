@@ -105,9 +105,9 @@ const Home = () => {
 
         <div className="hero__body">
           <p  className="hero__eyebrow">Texas Joe's — Est. 1999</p>
-          <h1 className="hero__title">
-            The Original<br />Real American<br />Smokehouse
-          </h1>
+        <h1 className="hero__title">
+          The Original Real American Smokehouse
+        </h1>
           <p  className="hero__sub">In the Philippines</p>
           <div className="hero__actions">
             <button className="btn-primary" onClick={() => navigate('/menu')}>
