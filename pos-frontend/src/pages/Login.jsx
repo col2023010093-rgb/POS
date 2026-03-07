@@ -165,7 +165,7 @@ const Login = () => {
 
   // ── UI state ──────────────────────────────────────────────────────────────
   const [step,             setStep]             = useState('login');
-  const [isRegisterActive, setIsRegisterActive] = useState(false);
+  const [isRegisterActive, setIsRegisterActive] = useState(true);
   const [loading,          setLoading]          = useState(false);
   const [error,            setError]            = useState('');
   const [success,          setSuccess]          = useState('');
@@ -535,7 +535,6 @@ const Login = () => {
               onCancel={() => {
                 localStorage.removeItem('verifyEmail');
                 setStep('login');
-                setCode('');
                 setIsRegisterActive(false);
                 setFormData({ firstName: '', lastName: '', email: '', phone: '', password: '', confirmPassword: '' });
               }}
