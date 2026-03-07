@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 require('dotenv').config();
-const bcrypt = require('bcryptjs');
 const Product = require('./src/models/Product');
 const User = require('./src/models/User');
 
@@ -14,12 +13,11 @@ async function seed() {
     });
     console.log('✅ Connected to MongoDB');
 
-    // Clear existing data
     await User.deleteMany({});
     await Product.deleteMany({});
     console.log('✅ Cleared existing data');
 
-    // ✅ Create Admin User (VERIFIED)
+    // ✅ Create Admin User
     const adminUser = await User.create({
       firstName: 'Roland',
       lastName: 'Admin',
@@ -27,14 +25,14 @@ async function seed() {
       password: 'Admin123!',
       phone: '555-0001',
       role: 'admin',
-      verified: true  // ✅ Mark as verified
+      verified: true
     });
     console.log('✅ Admin user created');
     console.log(`   Email: ${adminUser.email}`);
     console.log(`   Password: Admin123!`);
     console.log(`   Role: ${adminUser.role}`);
 
-    // ✅ Create Customer User (VERIFIED)
+    // ✅ Create Customer User
     const customerUser = await User.create({
       firstName: 'John',
       lastName: 'Customer',
@@ -42,7 +40,7 @@ async function seed() {
       password: 'Customer123!',
       phone: '555-0002',
       role: 'customer',
-      verified: true  // ✅ Mark as verified
+      verified: true
     });
     console.log('✅ Customer user created');
     console.log(`   Email: ${customerUser.email}`);
@@ -51,143 +49,271 @@ async function seed() {
 
     // ✅ Create Products
     const products = await Product.create([
+
+      // ─── SOUPS & STARTERS ───────────────────────────────────────────────
+
       {
-        name: 'Baby Back Ribs',
-        description: 'Slow-smoked for 6 hours with our secret dry rub, served with your choice of two sides',
-        price: 24.99,
-        category: 'ribs',
-        image: '/images/products/baby-back-ribs.jpg',
+        name: 'Corn Tortilla Soup',
+        description: 'A Mexican classic with a Texas Joe\'s twist.',
+        price: 250,
+        category: 'soups & starters',
+        image: '',
         inStock: true,
-        popular: true,
-        prepTime: '25 mins',
-        ingredients: ['Pork ribs', 'House dry rub', 'Hickory smoke', 'BBQ glaze']
+        popular: false,
+        prepTime: '10 mins',
+        ingredients: ['Corn tortilla', 'Chicken broth', 'Tomatoes', 'Spices']
       },
       {
-        name: 'Texas Brisket',
-        description: 'Hand-rubbed and smoked over oak wood for 12 hours until perfectly tender',
-        price: 26.99,
-        category: 'brisket',
-        image: '/images/products/texas-brisket.jpg',
+        name: 'Cream of Mushroom Soup',
+        description: 'House made with real cream and mushrooms.',
+        price: 250,
+        category: 'soups & starters',
+        image: '',
         inStock: true,
-        popular: true,
-        prepTime: '30 mins',
-        ingredients: ['Prime beef brisket', 'Texas rub', 'Oak wood smoke', 'Black pepper']
+        popular: false,
+        prepTime: '10 mins',
+        ingredients: ['Mushrooms', 'Heavy cream', 'Butter', 'Garlic', 'Onion']
       },
       {
-        name: 'Smoked Chicken',
-        description: 'Whole chicken smoked to perfection with herbs and citrus',
-        price: 16.99,
-        category: 'chicken',
-        image: '/images/products/smoked-chicken.jpg',
+        name: 'Seafood Chowder',
+        description: 'Salmon, shrimp, potato, carrots, corn, onions & bacon bits.',
+        price: 280,
+        category: 'soups & starters',
+        image: '',
         inStock: true,
         popular: true,
-        prepTime: '20 mins',
-        ingredients: ['Whole chicken', 'Herb blend', 'Citrus', 'Butter']
+        prepTime: '12 mins',
+        ingredients: ['Salmon', 'Shrimp', 'Potato', 'Carrots', 'Corn', 'Onions', 'Bacon bits']
       },
       {
-        name: 'Pulled Pork',
-        description: 'Slow-smoked pork shoulder pulled and served with tangy vinegar sauce',
-        price: 14.99,
-        category: 'pork',
-        image: '/images/products/pulled-pork.jpg',
+        name: 'Riblets',
+        description: 'Tender morsels of spare rib trimmings, served on a bed of Tater Peels.',
+        price: 280,
+        category: 'soups & starters',
+        image: '',
         inStock: true,
         popular: true,
         prepTime: '15 mins',
-        ingredients: ['Pork shoulder', 'Vinegar sauce', 'House rub']
+        ingredients: ['Pork spare rib trimmings', 'House dry rub', 'Hickory smoke', 'Tater peels']
       },
       {
-        name: 'Pulled Pork Sandwich',
-        description: 'Heaping pulled pork on a brioche bun with slaw',
-        price: 12.99,
-        category: 'pork',
-        image: '/images/products/pork-sandwich.jpg',
-        inStock: true,
-        popular: true,
-        prepTime: '10 mins',
-        ingredients: ['Pulled pork', 'Brioche bun', 'Coleslaw', 'Pickles']
-      },
-      {
-        name: 'Coleslaw',
-        description: 'Creamy homemade coleslaw with a hint of apple cider vinegar',
-        price: 4.99,
-        category: 'sides',
-        image: '/images/products/coleslaw.jpg',
+        name: 'Crispy Tater Peels',
+        description: 'Fried potato skins served as a tasty snack. Comes with Ranch Dressing.',
+        price: 90,
+        category: 'soups & starters',
+        image: '',
         inStock: true,
         popular: false,
-        prepTime: '5 mins',
-        ingredients: ['Cabbage', 'Carrots', 'Mayo', 'Apple cider vinegar']
-      },
-      {
-        name: 'Baked Beans',
-        description: 'Sweet and smoky baked beans with burnt ends',
-        price: 4.99,
-        category: 'sides',
-        image: '/images/products/baked-beans.jpg',
-        inStock: true,
-        popular: true,
-        prepTime: '5 mins',
-        ingredients: ['Navy beans', 'Burnt ends', 'Brown sugar', 'Molasses']
-      },
-      {
-        name: 'Mac & Cheese',
-        description: 'Creamy three-cheese mac with a crispy breadcrumb topping',
-        price: 5.99,
-        category: 'sides',
-        image: '/images/products/mac-cheese.jpg',
-        inStock: true,
-        popular: true,
         prepTime: '8 mins',
-        ingredients: ['Elbow pasta', 'Cheddar', 'Gruyere', 'Parmesan', 'Breadcrumbs']
+        ingredients: ['Potato skins', 'Seasoning', 'Ranch dressing']
       },
       {
-        name: 'Sweet Tea',
-        description: 'Classic Southern sweet tea brewed fresh daily',
-        price: 2.99,
-        category: 'drinks',
-        image: '/images/products/sweet-tea.jpg',
+        name: 'Redneck Egg Rolls',
+        description: 'Crispy egg rolls stuffed with smoked pork and slaw. Comes with homemade Ranch dipping sauce.',
+        price: 370,
+        category: 'soups & starters',
+        image: '',
         inStock: true,
         popular: true,
-        prepTime: '2 mins',
-        ingredients: ['Black tea', 'Cane sugar', 'Lemon']
+        prepTime: '12 mins',
+        ingredients: ['Egg roll wrapper', 'Smoked pork', 'Coleslaw', 'Ranch dipping sauce']
       },
       {
-        name: 'Lemonade',
-        description: 'Fresh-squeezed lemonade with a hint of mint',
-        price: 3.49,
-        category: 'drinks',
-        image: '/images/products/lemonade.jpg',
+        name: 'Plain Chips',
+        description: 'Classic plain tortilla chips.',
+        price: 140,
+        category: 'soups & starters',
+        image: '',
         inStock: true,
         popular: false,
         prepTime: '3 mins',
-        ingredients: ['Fresh lemons', 'Cane sugar', 'Mint', 'Sparkling water']
+        ingredients: ['Corn tortilla chips']
       },
       {
-        name: 'Pecan Pie',
-        description: 'Traditional Southern pecan pie with whipped cream',
-        price: 6.99,
-        category: 'desserts',
-        image: '/images/products/pecan-pie.jpg',
+        name: 'Chips with Pico de Gallo or Guacamole',
+        description: 'Tortilla chips served with your choice of Pico de Gallo or Guacamole.',
+        price: 210,
+        category: 'soups & starters',
+        image: '',
+        inStock: true,
+        popular: false,
+        prepTime: '5 mins',
+        ingredients: ['Corn tortilla chips', 'Tomatoes', 'Onion', 'Cilantro', 'Avocado', 'Lime']
+      },
+      {
+        name: 'Chips with Chili-Cheese Dip',
+        description: 'Tortilla chips served with a hearty chili-cheese dip.',
+        price: 240,
+        category: 'soups & starters',
+        image: '',
         inStock: true,
         popular: true,
         prepTime: '5 mins',
-        ingredients: ['Pecans', 'Brown sugar', 'Butter', 'Pie crust']
+        ingredients: ['Corn tortilla chips', 'Chili', 'Nacho cheese sauce']
       },
       {
-        name: 'Banana Pudding',
-        description: 'Creamy vanilla pudding with fresh bananas and wafers',
-        price: 5.99,
-        category: 'desserts',
-        image: '/images/products/banana-pudding.jpg',
+        name: 'Chips with the Works',
+        description: 'Tortilla chips served with Pico de Gallo, Guacamole, and Chili-Cheese Dip.',
+        price: 360,
+        category: 'soups & starters',
+        image: '',
         inStock: true,
         popular: true,
         prepTime: '5 mins',
-        ingredients: ['Vanilla pudding', 'Bananas', 'Vanilla wafers', 'Whipped cream']
-      }
+        ingredients: ['Corn tortilla chips', 'Pico de gallo', 'Guacamole', 'Chili-cheese dip']
+      },
+      {
+        name: 'Skewer of Shrimp',
+        description: 'Seasoned and grilled shrimp on a stick.',
+        price: 310,
+        category: 'soups & starters',
+        image: '',
+        inStock: true,
+        popular: false,
+        prepTime: '12 mins',
+        ingredients: ['Shrimp', 'Seasoning blend', 'Butter', 'Garlic']
+      },
+      {
+        name: 'Panhandle Fries',
+        description: 'Imported skin-on fries. Add Jalapeños and Nacho Cheese for Tex-Mex style (+₱130).',
+        price: 250,
+        category: 'soups & starters',
+        image: '',
+        inStock: true,
+        popular: true,
+        prepTime: '10 mins',
+        ingredients: ['Skin-on fries', 'Seasoning']
+      },
+
+      // ─── SALADS, WINGS & MORE ────────────────────────────────────────────
+
+      {
+        name: 'Cowpoke Salad (Regular)',
+        description: '4 kinds of lettuce tossed with tomatoes, cucumbers, Bermuda onions and cheese. Choice of Italian, Thousand Island or Ranch dressing.',
+        price: 250,
+        category: 'salads & wings',
+        image: '',
+        inStock: true,
+        popular: false,
+        prepTime: '8 mins',
+        ingredients: ['Mixed lettuce', 'Tomatoes', 'Cucumbers', 'Bermuda onions', 'Cheese', 'Dressing']
+      },
+      {
+        name: 'Cowpoke Salad (Large)',
+        description: '4 kinds of lettuce tossed with tomatoes, cucumbers, Bermuda onions and cheese. Choice of Italian, Thousand Island or Ranch dressing.',
+        price: 370,
+        category: 'salads & wings',
+        image: '',
+        inStock: true,
+        popular: false,
+        prepTime: '8 mins',
+        ingredients: ['Mixed lettuce', 'Tomatoes', 'Cucumbers', 'Bermuda onions', 'Cheese', 'Dressing']
+      },
+      {
+        name: 'Buffalo Nuggets (Regular)',
+        description: 'Tender boneless chicken breast, brined, rubbed, smoked, battered and fried. Choice of Spicy Buffalo Sauce, Joe\'s Original or Carolina Honey Sauce.',
+        price: 360,
+        category: 'salads & wings',
+        image: '',
+        inStock: true,
+        popular: true,
+        prepTime: '15 mins',
+        ingredients: ['Boneless chicken breast', 'Brine', 'House rub', 'Hickory smoke', 'Batter', 'Wing sauce']
+      },
+      {
+        name: 'Buffalo Nuggets (Large)',
+        description: 'Tender boneless chicken breast, brined, rubbed, smoked, battered and fried. Choice of Spicy Buffalo Sauce, Joe\'s Original or Carolina Honey Sauce.',
+        price: 590,
+        category: 'salads & wings',
+        image: '',
+        inStock: true,
+        popular: false,
+        prepTime: '15 mins',
+        ingredients: ['Boneless chicken breast', 'Brine', 'House rub', 'Hickory smoke', 'Batter', 'Wing sauce']
+      },
+      {
+        name: 'Onion Loaf',
+        description: 'Sweet onions, battered and deep fried in a loaf.',
+        price: 360,
+        category: 'salads & wings',
+        image: '',
+        inStock: true,
+        popular: true,
+        prepTime: '12 mins',
+        ingredients: ['Sweet onions', 'Batter', 'Seasoning']
+      },
+      {
+        name: 'Ultimate Nachos (Regular)',
+        description: 'Corn tortilla chips, smoked chicken, pork or beef, onion, nacho sauce, pico de gallo salsa, sour cream and jalapeño peppers.',
+        price: 410,
+        category: 'salads & wings',
+        image: '',
+        inStock: true,
+        popular: true,
+        prepTime: '12 mins',
+        ingredients: ['Corn tortilla chips', 'Smoked meat', 'Onion', 'Nacho sauce', 'Pico de gallo', 'Sour cream', 'Jalapeños']
+      },
+      {
+        name: 'Ultimate Nachos (Large)',
+        description: 'Corn tortilla chips, smoked chicken, pork or beef, onion, nacho sauce, pico de gallo salsa, sour cream and jalapeño peppers.',
+        price: 620,
+        category: 'salads & wings',
+        image: '',
+        inStock: true,
+        popular: false,
+        prepTime: '12 mins',
+        ingredients: ['Corn tortilla chips', 'Smoked meat', 'Onion', 'Nacho sauce', 'Pico de gallo', 'Sour cream', 'Jalapeños']
+      },
+      {
+        name: 'Road Kill Chili',
+        description: 'Our chili is the best. Make a meal out of it.',
+        price: 340,
+        category: 'salads & wings',
+        image: '',
+        inStock: true,
+        popular: true,
+        prepTime: '10 mins',
+        ingredients: ['Ground beef', 'Kidney beans', 'Tomatoes', 'Chili spices', 'Onion']
+      },
+      {
+        name: 'Texas Tornado Wings (Regular)',
+        description: 'Smoked over real hickory; tossed with your choice of wing sauce and served with homemade Ranch dipping sauce. Choice of Spicy, Joe\'s Original or Carolina Honey.',
+        price: 450,
+        category: 'salads & wings',
+        image: '',
+        inStock: true,
+        popular: true,
+        prepTime: '20 mins',
+        ingredients: ['Chicken wings', 'Hickory smoke', 'Wing sauce', 'Ranch dipping sauce']
+      },
+      {
+        name: 'Texas Tornado Wings (Large)',
+        description: 'Smoked over real hickory; tossed with your choice of wing sauce and served with homemade Ranch dipping sauce. Choice of Spicy, Joe\'s Original or Carolina Honey.',
+        price: 620,
+        category: 'salads & wings',
+        image: '',
+        inStock: true,
+        popular: false,
+        prepTime: '20 mins',
+        ingredients: ['Chicken wings', 'Hickory smoke', 'Wing sauce', 'Ranch dipping sauce']
+      },
+      {
+        name: 'Bacon Pups',
+        description: 'Delicious sausage wrapped in crispy bacon. Served on a bed of Tater Peels.',
+        price: 310,
+        category: 'salads & wings',
+        image: '',
+        inStock: true,
+        popular: true,
+        prepTime: '12 mins',
+        ingredients: ['Sausage', 'Bacon', 'Tater peels']
+      },
+
     ]);
 
     console.log(`✅ ${products.length} products seeded`);
     console.log('✅ Seed complete!');
-    
+
     process.exit(0);
   } catch (error) {
     console.error('❌ Error:', error.message);
