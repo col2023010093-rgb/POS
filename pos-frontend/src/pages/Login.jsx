@@ -557,7 +557,8 @@ const Login = () => {
             <div className="verification-modal-overlay">
               <div className="verification-modal">
                 <div className="verification-header">
-                  <h2>Email Verification</h2>
+                  <div className="fp-icon" aria-hidden="true">✉️</div>
+                  <h2>Verify Your Email</h2>
                   <p>We've sent a 6-digit code to</p>
                   <span className="verification-email">{verifyEmail}</span>
                 </div>
