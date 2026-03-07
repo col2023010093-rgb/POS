@@ -1,5 +1,7 @@
 import cartPlaceholder from '../assets/cart-placeholder.png'
 
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
+
 export const getImageSrc = (image) => {
   if (!image) return cartPlaceholder
 
@@ -14,14 +16,12 @@ export const getImageSrc = (image) => {
 
   if (str.startsWith('data:')) return str
   if (str.startsWith('http://') || str.startsWith('https://')) return str
-  if (str.startsWith('/')) return `http://localhost:4000${str}`
+  if (str.startsWith('/')) return `${BASE_URL}${str}`
 
-  // Treat as a filename and serve from /uploads or /images directory
   if (!str.includes('/') && !str.startsWith('base64')) {
-    return `http://localhost:4000/images/${str}`
+    return `${BASE_URL}/images/${str}`
   }
 
-  // Fallback: if it looks like base64, use it as data URL
   if (str.length > 100 && !str.includes('/')) {
     return `data:image/png;base64,${str}`
   }
