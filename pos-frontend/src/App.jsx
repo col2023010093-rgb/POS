@@ -3,15 +3,15 @@ import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-route
 import HeaderGuest from './Components/shared/HeaderGuest';
 import AdminHeader from './Components/shared/AdminHeader';
 import Bottomnav from './Components/shared/Bottomnav';
-import ProtectedRoute from './components/ProtectedRoute';
+import ProtectedRoute from './Components/ProtectedRoute';
 import Home from './pages/Home';
 import Auth from './pages/Auth';
 import Orders from './pages/Orders';
 import Login from './pages/Login';
 import Menu from './pages/Menu';
-import About from './pages/About';
-import Reservation from './pages/Reservation';
-import Checkout from './pages/checkout';
+import About from './pages/about';             // lowercase
+import Reservation from './pages/reservation'; // lowercase
+import Checkout from './pages/checkout';       // lowercase
 import AdminDashboard from './pages/AdminDashboard/AdminDashboard';
 import AdminOrders from './pages/AdminDashboard/AdminOrders';
 import AdminMenu from './pages/AdminDashboard/AdminMenu';
@@ -68,7 +68,9 @@ function App() {
   return (
     <div className="App">
       <Router>
-        <AppWrapper />
+        <CartProvider>
+          <AppWrapper />
+        </CartProvider>
       </Router>
     </div>
   )
