@@ -1,214 +1,184 @@
-import React, { useContext } from 'react'
+import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import './Home.css'
 import { useMenu } from '../context/MenuContext'
 import { getImageSrc } from '../utils/image'
 
-// ─── Decorative divider component ────────────────────────────────────────────
-const WesternDivider = ({ light = false }) => (
-  <div className={`western-divider ${light ? 'western-divider--light' : ''}`} aria-hidden="true">
-    <span className="divider-line" />
-    <span className="divider-icon">✦</span>
-    <span className="divider-line" />
+// ─── Real menu category data from texasjoes.com ──────────────────────────────
+const MENU_CATEGORIES = [
+  {
+    id: 'baby-back',
+    title: 'Baby Back Ribs',
+    description: 'Baby Back Ribs come from the loin — more lean than Spare Ribs. Slow smoked and flame-kissed on the grill.',
+    image: 'https://texasjoes.com/wp-content/uploads/2018/09/baby-back-ribs.jpg',
+  },
+  {
+    id: 'spare-ribs',
+    title: 'Hickory Smoked Spare Ribs',
+    description: 'Only USA Swift Premium Pork ribs meet our standards. Slow smoked over hickory wood and char-broiled before serving.',
+    image: 'https://texasjoes.com/wp-content/uploads/2018/09/hickory-smoked-ribs.jpg',
+  },
+  {
+    id: 'platters',
+    title: 'Classic BBQ Platters',
+    description: 'Comes with our popular Roasted Garlic Green Beans and your choice of 2 delicious sides.',
+    image: 'https://texasjoes.com/wp-content/uploads/2018/09/classic-bbq.jpg',
+  },
+  {
+    id: 'sandwiches',
+    title: 'Real BBQ Sandwiches',
+    description: 'All sandwiches come with one side of your choice. Texas BBQ served between two buns.',
+    image: 'https://texasjoes.com/wp-content/uploads/2018/09/real-bbq-sandwich.jpg',
+  },
+  {
+    id: 'lunch',
+    title: 'Lunch Meals',
+    description: 'Not so hungry? Lighten up! Comes with rice and your choice of 1 side.',
+    image: 'https://texasjoes.com/wp-content/uploads/2018/09/lunch-meal.jpg',
+  },
+  {
+    id: 'desserts',
+    title: 'Desserts',
+    description: 'End your meal the Texas way — sweet finishes to a smoky feast.',
+    image: 'https://texasjoes.com/wp-content/uploads/2018/09/desserts.jpg',
+  },
+]
+
+const GALLERY = [
+  'https://texasjoes.com/wp-content/uploads/2018/09/7.jpg',
+  'https://texasjoes.com/wp-content/uploads/2018/09/5.jpg',
+  'https://texasjoes.com/wp-content/uploads/2018/09/4.jpg',
+  'https://texasjoes.com/wp-content/uploads/2018/09/8.jpg',
+  'https://texasjoes.com/wp-content/uploads/2018/09/2.jpg',
+  'https://texasjoes.com/wp-content/uploads/2018/09/1.jpg',
+  'https://texasjoes.com/wp-content/uploads/2018/09/6.jpg',
+  'https://texasjoes.com/wp-content/uploads/2018/09/3.jpg',
+]
+
+// ─── Shared divider ───────────────────────────────────────────────────────────
+const Divider = ({ light = false }) => (
+  <div className={`tj-divider${light ? ' tj-divider--light' : ''}`} aria-hidden="true">
+    <span /><span className="tj-divider__icon">✦</span><span />
   </div>
 )
 
-// ─── Stat badge for hero ──────────────────────────────────────────────────────
-const StatBadge = ({ value, label }) => (
-  <div className="stat-badge">
-    <span className="stat-value">{value}</span>
-    <span className="stat-label">{label}</span>
-  </div>
-)
-
-// ─── Featured item card ───────────────────────────────────────────────────────
-const FeaturedCard = ({ item, onNavigate }) => (
-  <div className="featured-card" role="article">
-    <div className="featured-card__image">
-      {item.image ? (
-        <img
-          src={getImageSrc(item.image)}
-          alt={item.name}
-          onError={(e) => { e.currentTarget.style.display = 'none' }}
-        />
-      ) : (
-        <span className="featured-card__emoji">🍖</span>
-      )}
-      <div className="featured-card__image-overlay" />
-      {item.popular && (
-        <span className="featured-card__badge">★ Best Seller</span>
-      )}
+// ─── Menu category card ───────────────────────────────────────────────────────
+const CategoryCard = ({ item, onClick }) => (
+  <div
+    className="cat-card"
+    onClick={onClick}
+    role="button"
+    tabIndex={0}
+    onKeyDown={e => e.key === 'Enter' && onClick()}
+    aria-label={`Browse ${item.title}`}
+  >
+    <div className="cat-card__img-wrap">
+      <img src={item.image} alt={item.title} loading="lazy" />
+      <div className="cat-card__overlay" aria-hidden="true" />
     </div>
-    <div className="featured-card__body">
-      <span className="featured-card__category">{item.category}</span>
-      <h3 className="featured-card__name">{item.name}</h3>
-      <p className="featured-card__desc">{item.description}</p>
-      <div className="featured-card__footer">
-        <span className="featured-card__price">
-          <sup>₱</sup>{Number(item.price).toLocaleString()}
-        </span>
-        {/* QA FIX: removed broken addToCart call; navigates to menu for ordering */}
-        <button
-          className="btn-order"
-          onClick={() => onNavigate('/menu')}
-          aria-label={`Order ${item.name}`}
-        >
-          Order Now
-        </button>
-      </div>
+    <div className="cat-card__body">
+      <h3 className="cat-card__title">{item.title}</h3>
+      <p className="cat-card__desc">{item.description}</p>
+      <span className="cat-card__cta">View Items →</span>
     </div>
   </div>
 )
 
 // ─── Main component ───────────────────────────────────────────────────────────
 const Home = () => {
-  const navigate = useNavigate()
+  const navigate  = useNavigate()
   const { products, loading } = useMenu()
 
-  // Safe featured items filter
   const featuredItems = (!loading && Array.isArray(products))
-    ? products.filter(item => item.popular || item.featured).slice(0, 6)
+    ? products.filter(i => i.popular || i.featured).slice(0, 4)
     : []
 
   return (
     <div className="home">
 
       {/* ══════════════════════════════════════════════════════
-          HERO — Cinematic campfire night
+          HERO
       ══════════════════════════════════════════════════════ */}
-      <section className="hero" aria-label="Welcome to Texas Joe's">
-        {/* layered atmospheric backgrounds */}
-        <div className="hero__bg"         aria-hidden="true" />
-        <div className="hero__smoke"      aria-hidden="true" />
-        <div className="hero__gradient"   aria-hidden="true" />
-        <div className="hero__vignette"   aria-hidden="true" />
+      <section className="hero" aria-label="Welcome">
+        <div className="hero__bg"      aria-hidden="true" />
+        <div className="hero__overlay" aria-hidden="true" />
 
-        <div className="hero__content">
-          {/* Eyebrow */}
-          <p className="hero__eyebrow">
-            <span className="eyebrow-ornament">─── ✦ ───</span>
-            &nbsp;&nbsp;Est. 1999 · Subic Bay, Philippines&nbsp;&nbsp;
-            <span className="eyebrow-ornament">─── ✦ ───</span>
-          </p>
-
-          {/* Main headline */}
-          <h1 className="hero__headline">
-            <span className="headline-sub">Texas Joe's</span>
-            <span className="headline-main">Real American</span>
-            <span className="headline-accent">Smokehouse</span>
+        <div className="hero__body">
+          <p  className="hero__eyebrow">Texas Joe's — Est. 1999</p>
+          <h1 className="hero__title">
+            The Original<br />Real American<br />Smokehouse
           </h1>
-
-          <p className="hero__tagline">
-            Slow-smoked over real hickory wood.&nbsp; Never boiled. Never dipped in liquid smoke.
-          </p>
-
-          {/* CTAs */}
+          <p  className="hero__sub">In the Philippines</p>
           <div className="hero__actions">
-            <button
-              className="btn-primary"
-              onClick={() => navigate('/menu')}
-              aria-label="View our menu"
-            >
+            <button className="btn-primary" onClick={() => navigate('/menu')}>
               View Menu
             </button>
-            <button
-              className="btn-ghost"
-              onClick={() => navigate('/reservations')}
-              aria-label="Make a reservation"
-            >
+            <button className="btn-ghost" onClick={() => navigate('/reservations')}>
               Reserve a Table
             </button>
           </div>
-
-          {/* Stats row */}
-          <div className="hero__stats" aria-label="Restaurant highlights">
-            <StatBadge value="25+" label="Years Serving" />
-            <span className="stats-divider" aria-hidden="true">|</span>
-            <StatBadge value="100%" label="Hickory Smoked" />
-            <span className="stats-divider" aria-hidden="true">|</span>
-            <StatBadge value="USA" label="Swift Premium Pork" />
-          </div>
         </div>
 
-        {/* Scroll indicator */}
         <div className="hero__scroll-hint" aria-hidden="true">
-          <span className="scroll-label">Scroll</span>
-          <span className="scroll-arrow">↓</span>
+          <span className="hero__scroll-line" />
+          <span className="hero__scroll-text">Scroll</span>
         </div>
       </section>
 
       {/* ══════════════════════════════════════════════════════
-          BRAND STATEMENT — Parchment strip
+          PROMISE STRIP
       ══════════════════════════════════════════════════════ */}
-      <section className="brand-strip" aria-label="Our promise">
-        <div className="brand-strip__inner">
-          <blockquote className="brand-strip__quote">
-            <p>"In the beginning — let there be BBQ. And it was good!!!"</p>
-          </blockquote>
-          <p className="brand-strip__sub">
-            Our meat is smoked with real hickory wood &nbsp;·&nbsp; Never Boiled &nbsp;·&nbsp; Never Dipped in Liquid Smoke
+      <section className="promise" aria-label="Our promise">
+        <div className="promise__inner">
+          <Divider />
+          <h2 className="promise__headline">
+            "In the Beginning. Let There Be BBQ.<br />And It Was Good!!!"
+          </h2>
+          <p className="promise__body">
+            Our meat is smoked with real hickory wood.&ensp;
+            <strong>Never Boiled. Never Dipped in Liquid Smoke.</strong>
           </p>
+          <Divider />
         </div>
       </section>
 
       {/* ══════════════════════════════════════════════════════
-          PILLARS — Three brand values
+          PHOTO GALLERY — auto-scrolling strip
       ══════════════════════════════════════════════════════ */}
-      <section className="pillars" aria-label="Why Texas Joe's">
-        <div className="pillars__inner">
-          <div className="pillar">
-            <span className="pillar__icon" aria-hidden="true">🔥</span>
-            <h3 className="pillar__title">Real Hickory Smoke</h3>
-            <p className="pillar__text">Every cut slow-smoked over genuine hickory wood for hours — never shortcuts, never liquid smoke.</p>
-          </div>
-          <div className="pillar pillar--accent">
-            <span className="pillar__icon" aria-hidden="true">🐄</span>
-            <h3 className="pillar__title">USA Premium Cuts</h3>
-            <p className="pillar__text">We use only Swift Premium USA Pork ribs and Certified Angus Beef — quality you can taste in every bite.</p>
-          </div>
-          <div className="pillar">
-            <span className="pillar__icon" aria-hidden="true">🤠</span>
-            <h3 className="pillar__title">Texas Tradition</h3>
-            <p className="pillar__text">Over 25 years of authentic Texas BBQ tradition, brought straight to Subic Bay, Philippines.</p>
-          </div>
+      <section className="gallery" aria-label="Food gallery">
+        <div className="gallery__track" aria-hidden="true">
+          {[...GALLERY, ...GALLERY].map((src, i) => (
+            <div className="gallery__item" key={i}>
+              <img src={src} alt="" loading="lazy" />
+            </div>
+          ))}
         </div>
       </section>
 
       {/* ══════════════════════════════════════════════════════
-          FEATURED MENU
+          MENU CATEGORIES
       ══════════════════════════════════════════════════════ */}
-      <section className="featured" aria-label="Featured menu items">
-        <div className="featured__header">
-          <span className="section-eyebrow">From the Pit</span>
-          <h2 className="section-title">Crowd Favourites</h2>
-          <WesternDivider />
-          <p className="section-subtitle">
-            Hand-picked by our pitmaster — the dishes that keep our regulars coming back
+      <section className="menu-cats" aria-label="Menu categories">
+        <div className="section-header">
+          <p className="section-label">From the Pit</p>
+          <h2 className="section-title">Our Menu</h2>
+          <Divider />
+          <p className="section-sub">
+            Slow-smoked with real hickory wood — never boiled, never dipped in liquid smoke.
           </p>
         </div>
 
-        {loading ? (
-          <div className="featured__loading" role="status" aria-live="polite">
-            <span className="loading-ember">🔥</span>
-            <p>Firing up the smoker…</p>
-          </div>
-        ) : featuredItems.length === 0 ? (
-          <div className="featured__empty" role="status">
-            <p>No featured items right now — check back soon.</p>
-          </div>
-        ) : (
-          <div className="featured__grid" role="list">
-            {featuredItems.map((item) => (
-              <FeaturedCard
-                key={item._id}
-                item={item}
-                onNavigate={navigate}
-              />
-            ))}
-          </div>
-        )}
+        <div className="cat-grid">
+          {MENU_CATEGORIES.map(cat => (
+            <CategoryCard
+              key={cat.id}
+              item={cat}
+              onClick={() => navigate('/menu')}
+            />
+          ))}
+        </div>
 
-        <div className="featured__cta">
+        <div className="section-cta">
           <button className="btn-primary" onClick={() => navigate('/menu')}>
             See Full Menu
           </button>
@@ -216,120 +186,145 @@ const Home = () => {
       </section>
 
       {/* ══════════════════════════════════════════════════════
-          ABOUT SECTION
+          POPULAR ITEMS — live from database
       ══════════════════════════════════════════════════════ */}
-      <section className="about" aria-label="Our story">
-        <div className="about__visual" aria-hidden="true">
-          <div className="about__badge-ring">
-            <div className="about__badge">
-              <span className="badge-icon">🔥</span>
-              <span className="badge-years">25+</span>
-              <span className="badge-text">Years of BBQ</span>
-            </div>
+      {!loading && featuredItems.length > 0 && (
+        <section className="popular" aria-label="Popular items">
+          <div className="section-header section-header--dark">
+            <p className="section-label section-label--gold">Best Sellers</p>
+            <h2 className="section-title section-title--light">Crowd Favourites</h2>
+            <Divider light />
           </div>
-          <div className="about__smoke-effect" aria-hidden="true" />
-        </div>
 
-        <div className="about__content">
-          <span className="section-eyebrow section-eyebrow--light">Our Story</span>
-          <h2 className="section-title section-title--light">Born in Texas.<br />Smoked in Subic.</h2>
-          <WesternDivider light />
-          <p className="about__body">
-            For over 25 years, Texas Joe's has been bringing authentic American BBQ to the Philippines.
-            Our pitmaster uses traditional techniques passed down through generations — slow-smoking
-            every cut over real hickory wood until it reaches that perfect, fall-off-the-bone tenderness.
-          </p>
-          <p className="about__body">
-            Using only USA Swift Premium Pork ribs and Certified Angus Beef, every plate that leaves
-            our kitchen carries the soul of a true Texas smokehouse.
-          </p>
-          <button
-            className="btn-outline-light"
-            onClick={() => navigate('/about')}
-            aria-label="Learn more about our story"
-          >
-            Our Full Story
+          <div className="popular__grid">
+            {featuredItems.map(item => (
+              <div
+                className="pop-card"
+                key={item._id}
+                onClick={() => navigate('/menu')}
+                role="button"
+                tabIndex={0}
+                onKeyDown={e => e.key === 'Enter' && navigate('/menu')}
+                aria-label={`View ${item.name}`}
+              >
+                <div className="pop-card__img">
+                  {item.image
+                    ? <img
+                        src={getImageSrc(item.image)}
+                        alt={item.name}
+                        onError={e => { e.currentTarget.style.display = 'none' }}
+                      />
+                    : <span className="pop-card__emoji">🍖</span>
+                  }
+                  {item.popular && <span className="pop-card__badge">★ Best Seller</span>}
+                </div>
+                <div className="pop-card__body">
+                  <span className="pop-card__cat">{item.category}</span>
+                  <h3 className="pop-card__name">{item.name}</h3>
+                  <p className="pop-card__desc">{item.description}</p>
+                  <div className="pop-card__footer">
+                    <span className="pop-card__price">₱{Number(item.price).toLocaleString()}</span>
+                    <button
+                      className="btn-order"
+                      onClick={e => { e.stopPropagation(); navigate('/menu') }}
+                      aria-label={`Order ${item.name}`}
+                    >
+                      Order Now
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ══════════════════════════════════════════════════════
+          FUNCTION ROOMS
+      ══════════════════════════════════════════════════════ */}
+      <section className="events" aria-label="Private function rooms">
+        <div className="events__overlay" aria-hidden="true" />
+        <div className="events__body">
+          <p className="section-label section-label--gold">Private Events</p>
+          <h2 className="events__title">
+            Private Function Rooms Available for Your Next Business Meeting,
+            Team Building Event, Birthday Party or Other Event.
+          </h2>
+          <Divider light />
+          <button className="btn-primary" onClick={() => navigate('/reservations')}>
+            Find Out More
           </button>
         </div>
       </section>
 
       {/* ══════════════════════════════════════════════════════
-          LOCATION SECTION
+          CONTACT & MAP
       ══════════════════════════════════════════════════════ */}
-      <section className="location" aria-label="Find us">
-        <div className="location__header">
-          <span className="section-eyebrow">Come Find Us</span>
-          <h2 className="section-title">Where the Smoke Rises</h2>
-          <WesternDivider />
+      <section className="contact" aria-label="Contact and location">
+        <div className="contact__info">
+          <p className="section-label">Visit Us</p>
+          <h2 className="section-title">Find Us</h2>
+          <Divider />
+
+          <ul className="contact__list" role="list">
+            <li>
+              <span className="contact__icon" aria-hidden="true">📍</span>
+              <span>
+                Corner of Waterfront Rd. and McKinley St.,<br />
+                Subic Bay Freeport Zone
+              </span>
+            </li>
+            <li>
+              <span className="contact__icon" aria-hidden="true">📞</span>
+              <a href="tel:+639175123461">0917-512-3461</a>
+            </li>
+            <li>
+              <span className="contact__icon" aria-hidden="true">✉️</span>
+              <a href="mailto:info@texasjoes.com">info@texasjoes.com</a>
+            </li>
+            <li>
+              <span className="contact__icon" aria-hidden="true">🕐</span>
+              <span>Open every day &nbsp;·&nbsp; 10:30 AM – 10:00 PM</span>
+            </li>
+          </ul>
+
+          <a
+            className="btn-primary"
+            href="https://www.google.com/maps/dir/?api=1&destination=Corner+Waterfront+Rd+McKinley+St+Subic+Bay+Freeport+Zone+Zambales"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Get directions to Texas Joe's"
+          >
+            Get Directions
+          </a>
         </div>
 
-        <div className="location__body">
-          <div className="location__info">
-            <div className="location__detail">
-              <span className="location__icon" aria-hidden="true">📍</span>
-              <div>
-                <strong>Texas Joe's House of Ribs</strong>
-                <p>R7CG+7F9, Mc Kinley St,<br />Subic Bay Freeport Zone, Zambales</p>
-              </div>
-            </div>
-            <div className="location__detail">
-              <span className="location__icon" aria-hidden="true">🕐</span>
-              <div>
-                <strong>Hours</strong>
-                <p>Mon – Sun: 11:00 AM – 10:00 PM</p>
-              </div>
-            </div>
-            <a
-              className="btn-primary"
-              href="https://www.google.com/maps/dir/?api=1&destination=R7CG%2B7F9%2C%20Mc%20Kinley%20St%2C%20Subic%20Bay%20Freeport%20Zone%2C%20Zambales"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Get directions to Texas Joe's"
-            >
-              Get Directions
-            </a>
-          </div>
-
-          <div className="location__map">
-            <iframe
-              title="Texas Joe's House of Ribs Location"
-              src="https://www.google.com/maps?q=R7CG%2B7F9%2C%20Mc%20Kinley%20St%2C%20Subic%20Bay%20Freeport%20Zone%2C%20Zambales&output=embed"
-              loading="lazy"
-              allowFullScreen
-              referrerPolicy="no-referrer-when-downgrade"
-            />
-          </div>
+        <div className="contact__map">
+          <iframe
+            title="Texas Joe's Location — Subic Bay"
+            src="https://www.google.com/maps?q=R7CG%2B7F9%2C+Mc+Kinley+St%2C+Subic+Bay+Freeport+Zone%2C+Zambales&output=embed"
+            loading="lazy"
+            allowFullScreen
+            referrerPolicy="no-referrer-when-downgrade"
+          />
         </div>
       </section>
 
       {/* ══════════════════════════════════════════════════════
-          CTA SECTION
+          CTA CLOSING BAND
       ══════════════════════════════════════════════════════ */}
-      <section className="cta" aria-label="Get started">
-        <div className="cta__bg"     aria-hidden="true" />
-        <div className="cta__overlay" aria-hidden="true" />
-        <div className="cta__content">
-          <span className="section-eyebrow cta__eyebrow">Don't Wait, Partner</span>
-          <h2 className="cta__title">
-            Ready for the Best<br />BBQ in the Philippines?
-          </h2>
-          <p className="cta__sub">
-            Dine in, order online, or book a table for your whole crew.
-          </p>
-          <div className="cta__actions">
-            <button
-              className="btn-primary"
-              onClick={() => navigate('/reservations')}
-              aria-label="Make a reservation"
-            >
-              🤠 Reserve a Table
-            </button>
-            <button
-              className="btn-ghost cta__ghost"
-              onClick={() => navigate('/menu')}
-              aria-label="Order online"
-            >
+      <section className="cta-band" aria-label="Order now">
+        <div className="cta-band__overlay" aria-hidden="true" />
+        <div className="cta-band__body">
+          <p className="section-label section-label--gold">Don't Wait</p>
+          <h2 className="cta-band__title">Ready to Order?</h2>
+          <p className="cta-band__sub">Dine in, take out, or order online.</p>
+          <div className="cta-band__actions">
+            <button className="btn-primary" onClick={() => navigate('/menu')}>
               Order Online
+            </button>
+            <button className="btn-ghost" onClick={() => navigate('/reservations')}>
+              Reserve a Table
             </button>
           </div>
         </div>
