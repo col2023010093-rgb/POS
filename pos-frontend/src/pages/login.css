@@ -1771,3 +1771,41 @@
   top: 0 !important;
   right: 0 !important;
 }
+
+/* ── Verification modal — Texas Wild West theme colors ── */
+.verification-email {
+  color      : #8B4513 !important;
+  background : #fdf6ec !important;
+}
+
+.code-input {
+  border-color: #d4bfa8 !important;
+  background  : #fffdf8 !important;
+  color       : #3d2914 !important;
+}
+
+.code-input:focus {
+  border-color: #8B4513 !important;
+  box-shadow  : 0 0 0 4px rgba(139, 69, 19, 0.12) !important;
+}
+
+.btn-verify {
+  background : linear-gradient(135deg, #8B4513 0%, #A0522D 100%) !important;
+  box-shadow : 0 4px 14px rgba(139, 69, 19, 0.3) !important;
+}
+
+.btn-verify:hover:not(:disabled) {
+  background : linear-gradient(135deg, #A0522D 0%, #CD853F 100%) !important;
+  box-shadow : 0 6px 20px rgba(139, 69, 19, 0.4) !important;
+}
+
+.btn-resend {
+  color        : #8B4513 !important;
+  border-color : #8B4513 !important;
+}
+
+.btn-resend:hover:not(:disabled) {
+  background   : #fdf6ec !important;
+  border-color : #A0522D !important;
+  color        : #A0522D !important;
+}
