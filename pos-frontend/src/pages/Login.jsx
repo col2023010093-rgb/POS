@@ -1,141 +1,310 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import './login.css';
-import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import api from '../api';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
+import './login.css';
 
-import logo from "../assets/logo.png";
-import slide1 from "../assets/slide1.png";
-import slide2 from "../assets/slide2.png";
-import slide3 from "../assets/slide3.png";
-import slide4 from "../assets/slide4.png";
+import logo   from '../assets/logo.png';
+import slide1 from '../assets/slide1.png';
+import slide2 from '../assets/slide2.png';
+import slide3 from '../assets/slide3.png';
+import slide4 from '../assets/slide4.png';
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_MS   = 15 * 60 * 1000;
+const LOCKOUT_KEY  = 'login_lockout';
+const ATTEMPTS_KEY = 'login_attempts';
+
+// ─── Lockout helpers ──────────────────────────────────────────────────────────
+
+function getLockoutState() {
+  try {
+    return {
+      lockoutUntil : parseInt(localStorage.getItem(LOCKOUT_KEY)  || '0', 10),
+      attempts     : parseInt(localStorage.getItem(ATTEMPTS_KEY) || '0', 10),
+    };
+  } catch { return { lockoutUntil: 0, attempts: 0 }; }
+}
+
+function recordFailedAttempt() {
+  try {
+    let { attempts } = getLockoutState();
+    attempts += 1;
+    localStorage.setItem(ATTEMPTS_KEY, String(attempts));
+    if (attempts >= MAX_ATTEMPTS) {
+      localStorage.setItem(LOCKOUT_KEY, String(Date.now() + LOCKOUT_MS));
+    }
+    return attempts;
+  } catch { return 0; }
+}
+
+function clearLockout() {
+  try {
+    localStorage.removeItem(LOCKOUT_KEY);
+    localStorage.removeItem(ATTEMPTS_KEY);
+  } catch { /* noop */ }
+}
+
+function getRemainingLockout() {
+  const { lockoutUntil } = getLockoutState();
+  const remaining = lockoutUntil - Date.now();
+  return remaining > 0 ? remaining : 0;
+}
+
+// ─── Validation helpers ───────────────────────────────────────────────────────
+
+function isValidEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
+}
+
+function getPasswordStrength(password) {
+  let score = 0;
+  if (password.length >= 8)          score++;
+  if (/[A-Z]/.test(password))        score++;
+  if (/[a-z]/.test(password))        score++;
+  if (/[0-9]/.test(password))        score++;
+  if (/[^A-Za-z0-9]/.test(password)) score++;
+
+  if (score <= 2) return { score, label: 'Weak',   color: '#d32f2f' };
+  if (score <= 4) return { score, label: 'Medium', color: '#f9a825' };
+  return              { score, label: 'Strong', color: '#2e7d32' };
+}
+
+function validatePhone(phone) {
+  if (!phone) return true;
+  return /^[0-9\-\+\(\)\s]+$/.test(phone) && phone.length >= 10;
+}
+
+// ─── UserMenu — authenticated users only ─────────────────────────────────────
+// Returns null for guests — this is the fix for the "Guest" display bug.
+
+function UserMenu({ user, onLogout }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const handler = e => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  // GUARD: render nothing for unauthenticated users
+  if (!user) return null;
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button
+        className="btn-secondary"
+        onClick={() => setOpen(o => !o)}
+        aria-haspopup="true"
+        aria-expanded={open}
+      >
+        {user.firstName} ▾
+      </button>
+      {open && (
+        <ul
+          role="menu"
+          style={{
+            position    : 'absolute',
+            top         : '110%',
+            right       : 0,
+            background  : '#fff',
+            borderRadius: '8px',
+            boxShadow   : '0 4px 16px rgba(0,0,0,0.15)',
+            minWidth    : '160px',
+            listStyle   : 'none',
+            padding     : '8px 0',
+            zIndex      : 9999,
+          }}
+        >
+          <li role="menuitem">
+            <a href="/profile" style={{ display: 'block', padding: '8px 16px', color: '#3d2914', fontSize: '13px' }}>
+              My Profile
+            </a>
+          </li>
+          <li role="menuitem">
+            <a href="/orders" style={{ display: 'block', padding: '8px 16px', color: '#3d2914', fontSize: '13px' }}>
+              My Orders
+            </a>
+          </li>
+          <li role="separator" style={{ borderTop: '1px solid #eee', margin: '4px 0' }} />
+          <li role="menuitem">
+            <button
+              onClick={onLogout}
+              style={{
+                display    : 'block',
+                width      : '100%',
+                textAlign  : 'left',
+                padding    : '8px 16px',
+                background : 'none',
+                border     : 'none',
+                color      : '#c62828',
+                fontSize   : '13px',
+                cursor     : 'pointer',
+              }}
+            >
+              Sign Out
+            </button>
+          </li>
+        </ul>
+      )}
+    </div>
+  );
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
 
 const Login = () => {
-  const { login } = useAuth()
-  const navigate = useNavigate()
-  const [step, setStep] = useState('login');
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    firstName: '',
-    lastName: '',
-    phone: '',
-    confirmPassword: ''
-  })
-  const [code, setCode] = useState('');
-  const [email, setEmail] = useState('');
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
-  const [showSignUpPassword, setShowSignUpPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [isRegisterActive, setIsRegisterActive] = useState(false)
-  const [validationErrors, setValidationErrors] = useState({})
+  // ── Auth context (your existing setup) ──────────────────────────────────────
+  const { user, login, logout, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
 
-  // ✅ Restore verification state on refresh
+  // ── UI state ─────────────────────────────────────────────────────────────────
+  const [step, setStep]                         = useState('login');
+  const [isRegisterActive, setIsRegisterActive] = useState(false);
+  const [loading, setLoading]                   = useState(false);
+  const [error, setError]                       = useState('');
+  const [success, setSuccess]                   = useState('');
+
+  // ── Login form state ─────────────────────────────────────────────────────────
+  const [loginEmail,    setLoginEmail]    = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginTouched,  setLoginTouched]  = useState({});
+  const [loginErrors,   setLoginErrors]   = useState({});
+  const [showPassword,  setShowPassword]  = useState(false);
+  const [apiMsg,        setApiMsg]        = useState({ type: '', text: '' });
+
+  // ── Brute-force lockout state ────────────────────────────────────────────────
+  const [lockoutRemaining, setLockoutRemaining] = useState(getRemainingLockout());
+  const [attemptsLeft, setAttemptsLeft]         = useState(MAX_ATTEMPTS - getLockoutState().attempts);
+  const isLocked = lockoutRemaining > 0;
+
+  // ── Sign-up form state ───────────────────────────────────────────────────────
+  const [formData, setFormData] = useState({
+    firstName: '', lastName: '', email: '', phone: '', password: '', confirmPassword: '',
+  });
+  const [validationErrors,    setValidationErrors]    = useState({});
+  const [showSignUpPassword,  setShowSignUpPassword]  = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // ── Verification state ───────────────────────────────────────────────────────
+  const [verifyEmail, setVerifyEmail] = useState('');
+  const [code, setCode]               = useState('');
+
+  // ── Redirect if already logged in ───────────────────────────────────────────
+  // Uses your existing AuthContext loading + user — no extra fetch needed
+  useEffect(() => {
+    if (!authLoading && user) {
+      navigate('/');
+    }
+  }, [user, authLoading, navigate]);
+
+  // ── Restore verification state on refresh ───────────────────────────────────
   useEffect(() => {
     const savedEmail = localStorage.getItem('verifyEmail');
     if (savedEmail) {
-      setEmail(savedEmail);
+      setVerifyEmail(savedEmail);
       setStep('verify');
       setIsRegisterActive(true);
     }
   }, []);
 
-  // ✅ Auto-focus first code input when modal opens
+  // ── Auto-focus first code input ──────────────────────────────────────────────
   useEffect(() => {
     if (step === 'verify') {
-      setTimeout(() => {
-        const firstInput = document.querySelector('.code-input');
-        firstInput?.focus();
-      }, 100);
+      setTimeout(() => document.querySelector('.code-input')?.focus(), 100);
     }
   }, [step]);
 
-  const validateEmail = (email) => {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    return re.test(email)
-  }
+  // ── Lockout countdown ────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!lockoutRemaining) return;
+    const id = setInterval(() => {
+      const rem = getRemainingLockout();
+      setLockoutRemaining(rem);
+      if (!rem) clearLockout();
+    }, 1000);
+    return () => clearInterval(id);
+  }, [lockoutRemaining]);
 
-  const validatePassword = (password) => {
-    return password.length >= 6
-  }
+  // ── Live login validation ────────────────────────────────────────────────────
+  useEffect(() => {
+    if (Object.keys(loginTouched).length === 0) return;
+    const errs = {};
+    if (loginTouched.email) {
+      if (!loginEmail.trim())            errs.email = 'Email is required.';
+      else if (!isValidEmail(loginEmail)) errs.email = 'Enter a valid email address.';
+    }
+    if (loginTouched.password && !loginPassword) {
+      errs.password = 'Password is required.';
+    }
+    setLoginErrors(errs);
+  }, [loginEmail, loginPassword, loginTouched]);
 
-  const validatePhone = (phone) => {
-    if (!phone) return true
-    const re = /^[0-9\-\+\(\)\s]+$/
-    return re.test(phone) && phone.length >= 10
-  }
+  // ── Handlers ─────────────────────────────────────────────────────────────────
 
-  const handleLoginChange = (e) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-    setValidationErrors((prev) => ({ ...prev, [name]: '' }))
-    setError('')
-  }
-
-  const handleRegisterChange = (e) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
-    setValidationErrors((prev) => ({ ...prev, [name]: '' }))
-    setError('')
-  }
+  const touchLogin = field => setLoginTouched(t => ({ ...t, [field]: true }));
 
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError('');
-    setSuccess('');
+    setLoginTouched({ email: true, password: true });
 
-    try {
-      console.log('📝 Submitting login form:', formData.email);
-      
-      const result = await login(formData.email.trim(), formData.password);
-      
-      console.log('📊 Login result:', result);
-      
-      if (result.success) {
-        console.log('✅ Login successful!');
-        setSuccess('Login successful! Redirecting...');
-        setTimeout(() => {
-          navigate('/');
-        }, 500);
+    const errs = {};
+    if (!loginEmail.trim())             errs.email    = 'Email is required.';
+    else if (!isValidEmail(loginEmail)) errs.email    = 'Enter a valid email address.';
+    if (!loginPassword)                 errs.password = 'Password is required.';
+    if (Object.keys(errs).length > 0) { setLoginErrors(errs); return; }
+    if (isLocked) return;
+
+    setLoading(true);
+    setApiMsg({ type: '', text: '' });
+
+    // Uses YOUR login() from AuthContext — no fetch replacement needed
+    const result = await login(loginEmail.trim(), loginPassword);
+
+    if (result.success) {
+      clearLockout();
+      setApiMsg({ type: 'success', text: 'Login successful! Redirecting…' });
+      setTimeout(() => navigate('/'), 500);
+    } else {
+      // Handle 429 rate-limit from your backend
+      if (result.code === 'TOO_MANY_REQUESTS' || result.error?.includes('429')) {
+        setLockoutRemaining(LOCKOUT_MS);
+        setApiMsg({ type: 'error', text: 'Too many failed attempts. Please wait 15 minutes.' });
       } else {
-        // ✅ Show specific error messages
-        if (result.code === 'EMAIL_NOT_VERIFIED') {
-          setError('⚠️ Please verify your email before logging in.');
-        } else if (result.error?.includes('not found')) {
-          setError('📧 Email address not found. Please create an account.');
-        } else if (result.error?.includes('password')) {
-          setError('🔐 Incorrect password. Please try again.');
+        const newAttempts = recordFailedAttempt();
+        const remaining   = MAX_ATTEMPTS - newAttempts;
+
+        if (newAttempts >= MAX_ATTEMPTS) {
+          setLockoutRemaining(LOCKOUT_MS);
+          setApiMsg({ type: 'error', text: 'Too many failed attempts. Account locked for 15 minutes.' });
         } else {
-          setError(result.error || 'Login failed. Please try again.');
+          setAttemptsLeft(remaining);
+
+          if (result.code === 'EMAIL_NOT_VERIFIED') {
+            setApiMsg({ type: 'error', text: '⚠️ Please verify your email before logging in.' });
+          } else {
+            // Generic message — don't reveal whether email or password is wrong
+            setApiMsg({ type: 'error', text: 'Invalid email or password.' });
+          }
         }
       }
-    } catch (err) {
-      console.error('❌ Unexpected error:', err);
-      setError('❌ An unexpected error occurred');
-    } finally {
-      setLoading(false);
     }
+
+    setLoading(false);
   };
 
-  const getPasswordStrength = (password) => {
-    let score = 0;
-    if (password.length >= 8) score++;
-    if (/[A-Z]/.test(password)) score++;
-    if (/[a-z]/.test(password)) score++;
-    if (/[0-9]/.test(password)) score++;
-    if (/[^A-Za-z0-9]/.test(password)) score++;
-
-    if (score <= 2) return { score, label: 'Weak', color: '#d32f2f' };
-    if (score <= 4) return { score, label: 'Medium', color: '#f9a825' };
-    return { score, label: 'Strong', color: '#2e7d32' };
+  const handleRegisterChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    setValidationErrors(prev => ({ ...prev, [name]: '' }));
+    setError('');
   };
-
-  const passwordStrength = getPasswordStrength(formData.password || '');
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -145,19 +314,18 @@ const Login = () => {
     setValidationErrors({});
 
     const errors = {};
-    if (!formData.firstName?.trim()) errors.firstName = 'First name is required';
-    if (!formData.lastName?.trim()) errors.lastName = 'Last name is required';
-    if (!formData.email?.trim()) errors.email = 'Email is required';
-    if (!formData.password) errors.password = 'Password is required';
-    if (!formData.confirmPassword) errors.confirmPassword = 'Confirm password is required';
-
-    if (formData.email && !validateEmail(formData.email)) errors.email = 'Please enter a valid email';
-    if (formData.phone && !validatePhone(formData.phone)) errors.phone = 'Please enter a valid phone number';
+    if (!formData.firstName?.trim()) errors.firstName = 'First name is required.';
+    if (!formData.lastName?.trim())  errors.lastName  = 'Last name is required.';
+    if (!formData.email?.trim())     errors.email     = 'Email is required.';
+    else if (!isValidEmail(formData.email)) errors.email = 'Enter a valid email address.';
+    if (!formData.password)          errors.password  = 'Password is required.';
+    if (!formData.confirmPassword)   errors.confirmPassword = 'Please confirm your password.';
+    if (formData.phone && !validatePhone(formData.phone)) errors.phone = 'Enter a valid phone number.';
     if (formData.password && formData.password !== formData.confirmPassword) {
-      errors.confirmPassword = 'Passwords do not match';
+      errors.confirmPassword = 'Passwords do not match.';
     }
     if (formData.password && getPasswordStrength(formData.password).score < 3) {
-      errors.password = 'Password must be at least medium strength';
+      errors.password = 'Password must be at least medium strength.';
     }
 
     if (Object.keys(errors).length > 0) {
@@ -167,38 +335,28 @@ const Login = () => {
     }
 
     try {
-      const response = await api.post('/api/auth/register', {
-        firstName: formData.firstName.trim(),
-        lastName: formData.lastName.trim(),
-        email: formData.email.trim().toLowerCase(),
-        password: formData.password,
-        phone: formData.phone?.trim() || ''
+      await api.post('/api/auth/register', {
+        firstName : formData.firstName.trim(),
+        lastName  : formData.lastName.trim(),
+        email     : formData.email.trim().toLowerCase(),
+        password  : formData.password,
+        phone     : formData.phone?.trim() || '',
       });
 
       const userEmail = formData.email.trim().toLowerCase();
-      setEmail(userEmail);
+      setVerifyEmail(userEmail);
       localStorage.setItem('verifyEmail', userEmail);
-      setSuccess('');
       setStep('verify');
     } catch (err) {
       const errorData = err.response?.data;
-      const msg = errorData?.error || 'Registration failed';
-      
-      // ✅ Handle different error types
+      const msg = errorData?.error || 'Registration failed.';
+
       if (errorData?.code === 'EMAIL_VERIFIED_EXISTS') {
-        setValidationErrors({ 
-          email: '⚠️ This email is already registered and verified. Please login instead.' 
-        });
-        // Optional: Switch to login form
-        setTimeout(() => {
-          switchToLogin();
-          setFormData(prev => ({ ...prev, email: formData.email }));
-        }, 2000);
+        setValidationErrors({ email: 'This email is already registered. Please sign in.' });
+        setTimeout(() => { switchToLogin(); setLoginEmail(formData.email); }, 2000);
       } else if (errorData?.code === 'EMAIL_EXISTS') {
-        setValidationErrors({ 
-          email: '⚠️ This email is already registered. Please login.' 
-        });
-      } else if (msg.includes('email') || msg.includes('Email')) {
+        setValidationErrors({ email: 'This email is already registered.' });
+      } else if (msg.toLowerCase().includes('email')) {
         setValidationErrors({ email: msg });
       } else {
         setError(msg);
@@ -210,101 +368,87 @@ const Login = () => {
 
   const handleVerify = async (e) => {
     e.preventDefault();
+    if (!verifyEmail || !code || code.length !== 6) {
+      setError('Please enter the full 6-digit code.');
+      return;
+    }
     setLoading(true);
     setError('');
     setSuccess('');
-    
+
     try {
-      if (!email || !code || code.length !== 6) {
-        setError('Please enter a valid 6-digit code');
-        setLoading(false);
-        return;
-      }
-      
-      await api.post('/api/auth/verify', { 
-        email: email.trim(), 
-        code: code.trim()
-      });
-      
+      await api.post('/api/auth/verify', { email: verifyEmail.trim(), code: code.trim() });
       localStorage.removeItem('verifyEmail');
       setSuccess('Email verified successfully!');
       setStep('done');
-      
-      // ✅ Optional: Auto-login after verification
+
       setTimeout(async () => {
-        // Auto-login with the registered credentials
-        const loginResult = await login(email, formData.password);
+        const loginResult = await login(verifyEmail, formData.password);
         if (loginResult.success) {
           navigate('/');
         } else {
-          // If auto-login fails, redirect to login page
           setStep('login');
           setIsRegisterActive(false);
-          setSuccess('Account verified! Please login.');
+          setSuccess('Account verified! Please sign in.');
         }
       }, 1500);
-      
     } catch (err) {
-      const errorMsg = err.response?.data?.message || 
-                     err.response?.data?.error || 
-                     'Verification failed';
-      
-      setError(errorMsg);
+      setError(err.response?.data?.message || err.response?.data?.error || 'Verification failed.');
       setCode('');
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ Reset form when switching between login/register
   const switchToLogin = () => {
     setIsRegisterActive(false);
-    setFormData({
-      email: '',
-      password: '',
-      firstName: '',
-      lastName: '',
-      phone: '',
-      confirmPassword: ''
-    });
-    setError('');
-    setSuccess('');
-    setValidationErrors({});
+    setFormData({ firstName: '', lastName: '', email: '', phone: '', password: '', confirmPassword: '' });
+    setError(''); setSuccess(''); setValidationErrors({});
+    setApiMsg({ type: '', text: '' });
   };
 
   const switchToRegister = () => {
     setIsRegisterActive(true);
-    setFormData({
-      email: '',
-      password: '',
-      firstName: '',
-      lastName: '',
-      phone: '',
-      confirmPassword: ''
-    });
-    setError('');
-    setSuccess('');
-    setValidationErrors({});
+    setFormData({ firstName: '', lastName: '', email: '', phone: '', password: '', confirmPassword: '' });
+    setError(''); setSuccess(''); setValidationErrors({});
+    setApiMsg({ type: '', text: '' });
   };
 
+  const handleLogout = useCallback(() => {
+    logout();
+    clearLockout();
+  }, [logout]);
+
+  const passwordStrength = getPasswordStrength(formData.password || '');
+  const lockoutMinutes   = Math.ceil(lockoutRemaining / 60000);
+
+  // ── Show nothing until auth context has resolved (prevents flash) ────────────
+  if (authLoading) {
+    return (
+      <div className="login-page">
+        <div style={{ color: '#fff', fontSize: '14px', position: 'relative', zIndex: 10 }}>
+          Loading…
+        </div>
+      </div>
+    );
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────────
   return (
     <div className="login-page">
-      <div
-        className={`container ${isRegisterActive ? 'active' : ''}`}
-        id="container"
-      >
-        {/* Sign Up Form */}
+      <div className={`container${isRegisterActive ? ' active' : ''}`} id="container">
+
+        {/* ── Sign Up Form ───────────────────────────────────────────────── */}
         <div className="form-container sign-up">
-          <form onSubmit={handleRegister}>
+          <form onSubmit={handleRegister} noValidate>
             <h1 className="t-sign">Create Account</h1>
-            {error && (
-              <div className="login-error-message">❌ {error}</div>
-            )}
-            {success && (
-              <div className="login-success-message">✅ {success}</div>
-            )}
+
+            {error && <div className="login-error-message">❌ {error}</div>}
+            {success && <div className="login-success-message">✅ {success}</div>}
+
             <p>Welcome! Create your customer account:</p>
 
+            {/* Name row */}
             <div className="name-row">
               <div style={{ flex: 1 }}>
                 <input
@@ -314,10 +458,11 @@ const Login = () => {
                   value={formData.firstName}
                   onChange={handleRegisterChange}
                   autoComplete="given-name"
+                  aria-invalid={!!validationErrors.firstName}
                   style={{ borderColor: validationErrors.firstName ? '#d32f2f' : undefined, width: '100%' }}
                 />
                 {validationErrors.firstName && (
-                  <small style={{ color: '#d32f2f', fontSize: '11px' }}>⚠️ {validationErrors.firstName}</small>
+                  <span className="field-error" role="alert">⚠️ {validationErrors.firstName}</span>
                 )}
               </div>
               <div style={{ flex: 1 }}>
@@ -328,14 +473,16 @@ const Login = () => {
                   value={formData.lastName}
                   onChange={handleRegisterChange}
                   autoComplete="family-name"
+                  aria-invalid={!!validationErrors.lastName}
                   style={{ borderColor: validationErrors.lastName ? '#d32f2f' : undefined, width: '100%' }}
                 />
                 {validationErrors.lastName && (
-                  <small style={{ color: '#d32f2f', fontSize: '11px' }}>⚠️ {validationErrors.lastName}</small>
+                  <span className="field-error" role="alert">⚠️ {validationErrors.lastName}</span>
                 )}
               </div>
             </div>
 
+            {/* Email */}
             <div>
               <input
                 type="email"
@@ -344,13 +491,15 @@ const Login = () => {
                 value={formData.email}
                 onChange={handleRegisterChange}
                 autoComplete="email"
+                aria-invalid={!!validationErrors.email}
                 style={{ borderColor: validationErrors.email ? '#d32f2f' : undefined }}
               />
               {validationErrors.email && (
-                <small style={{ color: '#d32f2f', fontSize: '11px', display: 'block', marginTop: '3px' }}>⚠️ {validationErrors.email}</small>
+                <span className="field-error" role="alert">⚠️ {validationErrors.email}</span>
               )}
             </div>
 
+            {/* Phone */}
             <div>
               <input
                 type="tel"
@@ -359,51 +508,55 @@ const Login = () => {
                 value={formData.phone}
                 onChange={handleRegisterChange}
                 autoComplete="tel"
+                aria-invalid={!!validationErrors.phone}
                 style={{ borderColor: validationErrors.phone ? '#d32f2f' : undefined }}
               />
               {validationErrors.phone && (
-                <small style={{ color: '#d32f2f', fontSize: '11px', display: 'block', marginTop: '3px' }}>⚠️ {validationErrors.phone}</small>
+                <span className="field-error" role="alert">⚠️ {validationErrors.phone}</span>
               )}
             </div>
 
+            {/* Password + strength bar */}
             <div>
-              <div className="password-wrapper signup-password">
+              <div className="password-wrapper">
                 <input
                   type={showSignUpPassword ? 'text' : 'password'}
-                  placeholder="Password (min. 8 chars + upper/lower/number/symbol)"
+                  placeholder="Password (min. 8 chars)"
                   name="password"
                   value={formData.password}
                   onChange={handleRegisterChange}
                   autoComplete="new-password"
+                  aria-invalid={!!validationErrors.password}
                   style={{ borderColor: validationErrors.password ? '#d32f2f' : undefined }}
                 />
-                <span className="toggle-password" onClick={() => setShowSignUpPassword(!showSignUpPassword)}>
+                <span className="toggle-password" onClick={() => setShowSignUpPassword(v => !v)}>
                   {showSignUpPassword ? <FaEyeSlash /> : <FaEye />}
                 </span>
               </div>
-
-              <div style={{ marginTop: '6px' }}>
-                <div style={{ height: '6px', background: '#eee', borderRadius: '4px', overflow: 'hidden' }}>
-                  <div
-                    style={{
-                      width: `${(passwordStrength.score / 5) * 100}%`,
-                      height: '100%',
-                      background: passwordStrength.color,
-                      transition: 'width 0.2s ease'
-                    }}
-                  />
+              {formData.password && (
+                <div className="password-strength">
+                  <div className="strength-bar">
+                    <div style={{
+                      width      : `${(passwordStrength.score / 5) * 100}%`,
+                      height     : '100%',
+                      background : passwordStrength.color,
+                      transition : 'width 0.2s ease',
+                      borderRadius: '4px',
+                    }} />
+                  </div>
+                  <small style={{ color: passwordStrength.color, fontSize: '11px' }}>
+                    Strength: {passwordStrength.label}
+                  </small>
                 </div>
-                <small style={{ color: passwordStrength.color, fontSize: '11px' }}>
-                  Strength: {formData.password ? passwordStrength.label : 'N/A'}
-                </small>
-              </div>
+              )}
               {validationErrors.password && (
-                <small style={{ color: '#d32f2f', fontSize: '11px', display: 'block', marginTop: '3px' }}>⚠️ {validationErrors.password}</small>
+                <span className="field-error" role="alert">⚠️ {validationErrors.password}</span>
               )}
             </div>
 
+            {/* Confirm password */}
             <div>
-              <div className="password-wrapper signup-password">
+              <div className="password-wrapper">
                 <input
                   type={showConfirmPassword ? 'text' : 'password'}
                   placeholder="Confirm Password"
@@ -411,258 +564,236 @@ const Login = () => {
                   value={formData.confirmPassword}
                   onChange={handleRegisterChange}
                   autoComplete="new-password"
+                  aria-invalid={!!validationErrors.confirmPassword}
                   style={{ borderColor: validationErrors.confirmPassword ? '#d32f2f' : undefined }}
                 />
-                <span className="toggle-password" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+                <span className="toggle-password" onClick={() => setShowConfirmPassword(v => !v)}>
                   {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
                 </span>
               </div>
               {validationErrors.confirmPassword && (
-                <small style={{ color: '#d32f2f', fontSize: '11px', display: 'block', marginTop: '3px' }}>⚠️ {validationErrors.confirmPassword}</small>
+                <span className="field-error" role="alert">⚠️ {validationErrors.confirmPassword}</span>
               )}
             </div>
 
             <button className="btn-1st" type="submit" disabled={loading}>
-              {loading ? 'Creating Account...' : 'Sign Up as Customer'}
+              {loading ? 'Creating Account…' : 'Sign Up as Customer'}
             </button>
-            <button
-              className="btn-2nd"
-              id="login"
-              type="button"
-              onClick={switchToLogin}
-            >
-              Already have account? Sign In
+            <button className="btn-2nd" type="button" onClick={switchToLogin} disabled={loading}>
+              Already have an account? Sign In
             </button>
           </form>
 
-{/* Verification Modal */}
-{step === 'verify' && (
-  <div className="verification-modal-overlay" onClick={(e) => {
-    if (e.target.className === 'verification-modal-overlay') {
-      // Prevent closing modal by clicking outside
-      e.stopPropagation();
-    }
-  }}>
-    <div className="verification-modal">
-      <div className="verification-header">
-        <h2>Email Verification</h2>
-        <p>We've sent a 6-digit code to</p>
-        <span className="verification-email">{email}</span>
-      </div>
+          {/* ── Verification Modal ─────────────────────────────────────── */}
+          {step === 'verify' && (
+            <div className="verification-modal-overlay">
+              <div className="verification-modal">
+                <div className="verification-header">
+                  <h2>Email Verification</h2>
+                  <p>We've sent a 6-digit code to</p>
+                  <span className="verification-email">{verifyEmail}</span>
+                </div>
 
-      <form onSubmit={handleVerify} className="verification-form">
-        {error && <div className="verification-error">❌ {error}</div>}
-        {success && <div className="verification-success">✅ {success}</div>}
+                <form onSubmit={handleVerify} className="verification-form">
+                  {error   && <div className="verification-error">❌ {error}</div>}
+                  {success && <div className="verification-success">✅ {success}</div>}
 
-        <div className="code-inputs">
-          {[0, 1, 2, 3, 4, 5].map((index) => (
-            <input
-              key={index}
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              maxLength={1}
-              className="code-input"
-              autoComplete="off"
-              value={code[index] || ''}
-              onChange={(e) => {
-                const value = e.target.value;
-                if (!/^\d*$/.test(value)) return;
-                
-                const newCode = code.split('');
-                newCode[index] = value;
-                setCode(newCode.join(''));
+                  <div className="code-inputs">
+                    {[0, 1, 2, 3, 4, 5].map(index => (
+                      <input
+                        key={index}
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        maxLength={1}
+                        className="code-input"
+                        autoComplete="off"
+                        value={code[index] || ''}
+                        onChange={e => {
+                          const value = e.target.value;
+                          if (!/^\d*$/.test(value)) return;
+                          const chars = code.split('');
+                          chars[index] = value;
+                          setCode(chars.join(''));
+                          if (value && index < 5) {
+                            e.target.parentElement.children[index + 1]?.focus();
+                          }
+                        }}
+                        onKeyDown={e => {
+                          if (e.key === 'Backspace' && !code[index] && index > 0) {
+                            e.target.parentElement.children[index - 1]?.focus();
+                          }
+                        }}
+                        onPaste={e => {
+                          e.preventDefault();
+                          const paste = e.clipboardData.getData('text').replace(/\D/g, '');
+                          if (paste.length === 6) {
+                            setCode(paste);
+                            e.target.parentElement.children[5]?.focus();
+                          }
+                        }}
+                        onFocus={e => e.target.select()}
+                      />
+                    ))}
+                  </div>
 
-                if (value && index < 5) {
-                  const nextInput = e.target.parentElement.children[index + 1];
-                  nextInput?.focus();
-                }
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Backspace' && !code[index] && index > 0) {
-                  const prevInput = e.target.parentElement.children[index - 1];
-                  prevInput?.focus();
-                }
-              }}
-              onPaste={(e) => {
-                e.preventDefault();
-                const paste = e.clipboardData.getData('text').replace(/\D/g, '');
-                if (paste.length === 6) {
-                  setCode(paste);
-                  const inputs = e.target.parentElement.children;
-                  inputs[5]?.focus();
-                }
-              }}
-              onFocus={(e) => e.target.select()}
-            />
-          ))}
+                  <button type="submit" className="btn-verify" disabled={loading || code.length < 6}>
+                    {loading ? 'Verifying…' : 'Verify Account'}
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn-resend"
+                    disabled={loading}
+                    onClick={async () => {
+                      setLoading(true);
+                      setError(''); setSuccess('');
+                      try {
+                        await api.post('/api/auth/resend', { email: verifyEmail });
+                        setSuccess('New code sent!');
+                        setCode('');
+                        setTimeout(() => setSuccess(''), 3000);
+                      } catch (err) {
+                        if (err.response?.status === 429) {
+                          const wait = err.response?.data?.retryAfter || 60;
+                          setError(`Please wait ${wait} seconds before resending.`);
+                        } else {
+                          setError(err.response?.data?.error || 'Failed to resend code.');
+                        }
+                      } finally { setLoading(false); }
+                    }}
+                  >
+                    Resend Code
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn-cancel"
+                    disabled={loading}
+                    onClick={async () => {
+                      if (!window.confirm('Cancel registration? Your account will be deleted.')) return;
+                      setLoading(true);
+                      try {
+                        await api.post('/api/auth/delete-unverified', { email: verifyEmail });
+                        localStorage.removeItem('verifyEmail');
+                        setStep('login');
+                        setCode('');
+                        setIsRegisterActive(false);
+                        setFormData({ firstName: '', lastName: '', email: '', phone: '', password: '', confirmPassword: '' });
+                      } catch (err) {
+                        setError(err.response?.data?.error || 'Failed to cancel.');
+                      } finally { setLoading(false); }
+                    }}
+                  >
+                    Cancel and go back
+                  </button>
+                </form>
+              </div>
+            </div>
+          )}
         </div>
 
-        <button type="submit" className="btn-verify" disabled={loading || code.length < 6}>
-          {loading ? 'Verifying...' : 'Verify Account'}
-        </button>
-
-        <button
-          type="button"
-          className="btn-resend"
-          onClick={async () => {
-            setLoading(true);
-            setError('');
-            setSuccess('');
-            try {
-              await api.post('/api/auth/resend', { email });
-              setSuccess('New code sent to your email!');
-              setCode('');
-              setTimeout(() => setSuccess(''), 3000);
-            } catch (err) {
-              if (err.response?.status === 429) {
-                const secondsToWait = err.response?.data?.retryAfter || 60;
-                setError(`Please wait ${secondsToWait} seconds before resending`);
-              } else {
-                setError(err.response?.data?.error || 'Failed to resend code');
-              }
-            } finally {
-              setLoading(false);
-            }
-          }}
-          disabled={loading}
-        >
-          Resend Code
-        </button>
-
-        <button
-          type="button"
-          className="btn-cancel"
-          onClick={async () => {
-            // ✅ Ask for confirmation
-            if (!window.confirm('Are you sure you want to cancel? Your account will be deleted.')) {
-              return;
-            }
-
-            setLoading(true);
-            setError('');
-            setSuccess('');
-
-            try {
-              // ✅ Delete unverified account
-              await api.post('/api/auth/delete-unverified', { email });
-
-              localStorage.removeItem('verifyEmail');
-              setStep('login');
-              setCode('');
-              setError('');
-              setSuccess('');
-              setIsRegisterActive(false);
-              setFormData({
-                email: '',
-                password: '',
-                firstName: '',
-                lastName: '',
-                phone: '',
-                confirmPassword: ''
-              });
-
-              setSuccess('Account cancelled and deleted.');
-              setTimeout(() => setSuccess(''), 3000);
-            } catch (err) {
-              setError(err.response?.data?.error || 'Failed to delete account');
-              console.error('Delete error:', err);
-            } finally {
-              setLoading(false);
-            }
-          }}
-          disabled={loading}
-        >
-          Cancel and go back
-        </button>
-      </form>
-    </div>
-  </div>
-)}
-
-        </div>
-
-        {/* Sign In Form */}
+        {/* ── Sign In Form ───────────────────────────────────────────────── */}
         <div className="form-container sign-in">
-          <form onSubmit={handleLoginSubmit}>
+          <form onSubmit={handleLoginSubmit} noValidate>
             <h1 className="t-sign">Log in to your Account</h1>
-            
             <p>Welcome back! Log in to your account:</p>
-            
+
+            {/* Lockout warning */}
+            {isLocked && (
+              <div className="lockout-warning" role="alert">
+                🔒 Too many attempts. Try again in {lockoutMinutes} min.
+              </div>
+            )}
+
+            {/* Attempts warning */}
+            {!isLocked && attemptsLeft < MAX_ATTEMPTS && attemptsLeft > 0 && (
+              <div className="attempts-warning" role="alert">
+                ⚠️ {attemptsLeft} attempt{attemptsLeft !== 1 ? 's' : ''} remaining before lockout.
+              </div>
+            )}
+
+            {/* API message */}
+            {apiMsg.text && (
+              <div
+                className={apiMsg.type === 'success' ? 'login-success-message' : 'login-error-message'}
+                role="alert"
+              >
+                {apiMsg.type === 'success' ? '✅' : '❌'} {apiMsg.text}
+              </div>
+            )}
+
+            {/* Email */}
             <div>
               <input
                 type="email"
                 placeholder="Email"
                 name="email"
-                value={formData.email}
-                onChange={handleLoginChange}
-                required
+                value={loginEmail}
+                onChange={e => { setLoginEmail(e.target.value); setApiMsg({ type: '', text: '' }); }}
+                onBlur={() => touchLogin('email')}
+                disabled={loading || isLocked}
+                autoComplete="email"
+                aria-invalid={!!loginErrors.email}
+                style={{ borderColor: loginErrors.email ? '#d32f2f' : undefined }}
               />
-              {error && error.includes('Email') && (
-                <small style={{ color: '#d32f2f', fontSize: '11px', display: 'block', marginTop: '3px' }}>
-                  ⚠️ {error}
-                </small>
+              {loginErrors.email && (
+                <span className="field-error" role="alert">⚠️ {loginErrors.email}</span>
               )}
             </div>
 
+            {/* Password */}
             <div>
               <div className="password-wrapper">
                 <input
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Password"
                   name="password"
-                  value={formData.password}
-                  onChange={handleLoginChange}
-                  required
+                  value={loginPassword}
+                  onChange={e => { setLoginPassword(e.target.value); setApiMsg({ type: '', text: '' }); }}
+                  onBlur={() => touchLogin('password')}
+                  disabled={loading || isLocked}
+                  autoComplete="current-password"
+                  aria-invalid={!!loginErrors.password}
+                  style={{ borderColor: loginErrors.password ? '#d32f2f' : undefined }}
                 />
-                <span
-                  className="toggle-password"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
+                <span className="toggle-password" onClick={() => setShowPassword(v => !v)}>
                   {showPassword ? <FaEyeSlash /> : <FaEye />}
                 </span>
               </div>
-              {error && error.includes('password') && (
-                <small style={{ color: '#d32f2f', fontSize: '11px', display: 'block', marginTop: '3px' }}>
-                  ⚠️ {error}
-                </small>
+              {loginErrors.password && (
+                <span className="field-error" role="alert">⚠️ {loginErrors.password}</span>
               )}
             </div>
 
             <div>
-              <a href="#" className="forgot-password">
+              <a href="/forgot-password" className="forgot-password">
                 Forgot your password?
               </a>
             </div>
-            <button className="btn-1st" type="submit" disabled={loading}>
-              {loading ? 'Signing in...' : 'SIGN IN'}
+
+            <button className="btn-1st" type="submit" disabled={loading || isLocked} aria-busy={loading}>
+              {loading
+                ? <span className="btn-loading"><span className="spinner" aria-hidden="true" /> Signing in…</span>
+                : 'SIGN IN'
+              }
             </button>
-            <button
-              className="btn-2nd"
-              type="button"
-              onClick={switchToRegister}
-            >
+            <button className="btn-2nd" type="button" onClick={switchToRegister} disabled={loading}>
               CREATE AN ACCOUNT
             </button>
           </form>
         </div>
 
-        {/* Toggle Section - keeping your existing code */}
+        {/* ── Toggle Panel (your original structure, unchanged) ──────────── */}
         <div className="toggle-container">
           <div className="toggle">
             <div className="toggle-panel toggle-right">
               <h1 className="ds-sign">
-                {isRegisterActive
-                  ? 'Create Your Account!'
-                  : 'Sign In to Your Account!'}
+                {isRegisterActive ? 'Create Your Account!' : 'Sign In to Your Account!'}
               </h1>
+
               <div className="logo">
-                <img
-                  src={logo}
-                  alt="Restaurant Logo"
-                  className="logo-image"
-                  width={70}
-                />
+                <img src={logo} alt="Restaurant Logo" width={70} />
               </div>
 
               <div className="restaurant-names">
@@ -671,43 +802,37 @@ const Login = () => {
               </div>
 
               <div className="navigation-buttons">
-                <button className="btn-secondary" onClick={() => navigate('/')}>
-                  Home
-                </button>
-                <button className="btn-secondary" onClick={() => navigate('/menu')}>
-                  Menu
-                </button>
-                <button className="btn-secondary" onClick={() => navigate('/contact')}>
-                  Contact
-                </button>
-                <button className="btn-secondary" onClick={() => navigate('/about')}>
-                  About us
-                </button>
+                <button className="btn-secondary" onClick={() => navigate('/')}>Home</button>
+                <button className="btn-secondary" onClick={() => navigate('/menu')}>Menu</button>
+                <button className="btn-secondary" onClick={() => navigate('/contact')}>Contact</button>
+                <button className="btn-secondary" onClick={() => navigate('/about')}>About us</button>
+                {/* FIX: only renders when user is authenticated */}
+                <UserMenu user={user} onLogout={handleLogout} />
               </div>
 
               <div className="ImageSlider">
                 <div className="wrapper">
                   <div className="wrapper-holder">
-                    <div className="slide" style={{ backgroundImage: `url(${slide1})` }}></div>
-                    <div className="slide" style={{ backgroundImage: `url(${slide2})` }}></div>
-                    <div className="slide" style={{ backgroundImage: `url(${slide3})` }}></div>
-                    <div className="slide" style={{ backgroundImage: `url(${slide4})` }}></div>
+                    <div className="slide" style={{ backgroundImage: `url(${slide1})` }} />
+                    <div className="slide" style={{ backgroundImage: `url(${slide2})` }} />
+                    <div className="slide" style={{ backgroundImage: `url(${slide3})` }} />
+                    <div className="slide" style={{ backgroundImage: `url(${slide4})` }} />
                   </div>
                 </div>
-
                 <div className="dots-container">
-                  <a href="#slide1" className="button"></a>
-                  <a href="#slide2" className="button"></a>
-                  <a href="#slide3" className="button"></a>
-                  <a href="#slide4" className="button"></a>
+                  <a href="#slide1" className="button" />
+                  <a href="#slide2" className="button" />
+                  <a href="#slide3" className="button" />
+                  <a href="#slide4" className="button" />
                 </div>
               </div>
             </div>
           </div>
         </div>
+
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Login
+export default Login;
