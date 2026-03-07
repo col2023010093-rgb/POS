@@ -120,25 +120,6 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* ── Quick Actions ── */}
-        <div className="quick-actions">
-          <button className="btn-primary"  onClick={() => navigate('/admin/orders')}>
-            📋 Manage Orders
-          </button>
-          <button className="btn-primary"  onClick={() => navigate('/admin/reservations')}>
-            📅 Reservations
-          </button>
-          <button className="btn-secondary" onClick={() => navigate('/admin/products')}>
-            🍖 Menu Items
-          </button>
-          <button className="btn-secondary" onClick={() => navigate('/admin/users')}>
-            👥 Users
-          </button>
-          <button className="btn-secondary" onClick={() => navigate('/admin/reports')}>
-            📊 Reports
-          </button>
-        </div>
-
         {/* ── Recent Orders ── */}
         <div className="admin-table-section">
           <div className="section-header-row">
