@@ -424,12 +424,14 @@ router.post('/forgot-password', async (req, res) => {
 
     recordResetRequest(emailLower);
 
-    // ✅ Silently bail if user not found — don't reveal to caller
-    const user = await User.findOne({ email: emailLower, verified: true });
-    if (!user) {
-      return res.json({ message: 'If that email exists, a reset code has been sent.' });
-    }
-
+    // ✅ Check if user exists
+const user = await User.findOne({ email: emailLower, verified: true });
+if (!user) {
+  return res.status(404).json({
+    error : 'No account found with that email address.',
+    code  : 'EMAIL_NOT_FOUND'
+  });
+}
     // ✅ Invalidate any previous reset codes for this email
     await PasswordReset.deleteMany({ email: emailLower });
 
@@ -458,10 +460,9 @@ router.post('/forgot-password', async (req, res) => {
 
     return res.json({ message: 'If that email exists, a reset code has been sent.' });
 
-  } catch (err) {
+} catch (err) {
     console.error('❌ Forgot password error:', err);
-    // Return 200 even on server error to prevent enumeration
-    return res.json({ message: 'If that email exists, a reset code has been sent.' });
+    return res.status(500).json({ error: 'Something went wrong. Please try again.' });
   }
 });
 
