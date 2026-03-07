@@ -1,11 +1,8 @@
-import React, { useState, useEffect, useCallback, useContext } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import './reservation.css'
 
-// ── Optional: import your AuthContext if available ────────────────────────────
-// This lets us pre-fill the form and link bookings to the user's account.
-// If you don't have an AuthContext, remove these two lines — the rest still works.
-import { AuthContext } from '../context/AuthContext'
+import { useAuth } from '../context/AuthContext'
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 const API_BASE = import.meta.env.VITE_API_URL || ''  // e.g. https://api.texasjoes.site
@@ -193,15 +190,8 @@ const SuccessScreen = ({ formData, onReset }) => (
 const Reservation = () => {
   const navigate = useNavigate()
 
-  // Try to get the logged-in user; gracefully handle missing context
-  let user = null, token = null
-  try {
-    const ctx = useContext(AuthContext)
-    user  = ctx?.user  ?? null
-    token = ctx?.token ?? null
-  } catch {
-    // AuthContext not available — continue as guest
-  }
+  // Safe auth — works whether user is logged in or browsing as a guest
+  const { user, token } = useAuth()
 
   const EMPTY_FORM = {
     firstName: user?.firstName || '',
