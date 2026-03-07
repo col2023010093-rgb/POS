@@ -1,11 +1,13 @@
-import React, { useState, useEffect, useContext, useRef } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
-import { FaUser, FaChevronDown, FaBars, FaTimes, FaBell } from "react-icons/fa"
+import { FaUser, FaChevronDown, FaBars, FaTimes, FaBell, FaSignInAlt } from "react-icons/fa"
 import { io } from "socket.io-client"
 import logo from "../../assets/logo.png"
 import "./HeaderGuest.css"
-import { useAuth } from "../../context/AuthContext" // ✅ Change this line
+import { useAuth } from "../../context/AuthContext"
 import { api } from "../../utils/api"
+
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
 const HeaderGuest = () => {
   const [isLoaded, setIsLoaded] = useState(false)
@@ -15,7 +17,7 @@ const HeaderGuest = () => {
   const [notifications, setNotifications] = useState([])
   const location = useLocation()
   const navigate = useNavigate()
-  const { user, token, logout } = useAuth() // ✅ Use the hook instead
+  const { user, token, logout } = useAuth()
   const profileRef = useRef(null)
   const notifRef = useRef(null)
   const socketRef = useRef(null)
@@ -44,17 +46,30 @@ const HeaderGuest = () => {
     setTimeout(() => setIsLoaded(true), 100)
   }, [])
 
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const onClickOutside = (e) => {
       if (profileRef.current && !profileRef.current.contains(e.target)) {
         setIsProfileOpen(false)
+      }
+      if (notifRef.current && !notifRef.current.contains(e.target)) {
+        setIsNotifOpen(false)
       }
     }
     document.addEventListener('mousedown', onClickOutside)
     return () => document.removeEventListener('mousedown', onClickOutside)
   }, [])
 
-  // Real-time Socket.io connection
+  // Close dropdown immediately on logout
+  useEffect(() => {
+    if (!user) {
+      setIsProfileOpen(false)
+      setIsNotifOpen(false)
+      setNotifications([])
+    }
+  }, [user])
+
+  // Socket.io + notifications — only when logged in
   useEffect(() => {
     if (!user || !token) return
 
@@ -75,7 +90,7 @@ const HeaderGuest = () => {
     }
     loadNotifications()
 
-    socketRef.current = io(import.meta.env.VITE_API_URL || 'http://localhost:4000', {
+    socketRef.current = io(BASE_URL, {
       path: '/socket.io',
       transports: ['websocket', 'polling'],
       withCredentials: true
@@ -87,7 +102,6 @@ const HeaderGuest = () => {
     })
 
     socketRef.current.on('notification', (newNotification) => {
-      console.log('🔔 New notification:', newNotification)
       setNotifications(prev => [newNotification, ...prev])
     })
 
@@ -98,37 +112,37 @@ const HeaderGuest = () => {
 
   const unreadCount = notifications.filter(n => !n.read).length
 
+  // ✅ Fixed: uses BASE_URL instead of localhost
   const markRead = async (id) => {
-    await fetch(`http://localhost:4000/api/notifications/${id}/read`, {
-      method: 'PATCH',
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    setNotifications(prev => prev.map(n => n._id === id ? { ...n, read: true } : n))
+    try {
+      await fetch(`${BASE_URL}/api/notifications/${id}/read`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      setNotifications(prev => prev.map(n => n._id === id ? { ...n, read: true } : n))
+    } catch (error) {
+      console.error('Error marking notification as read:', error)
+    }
   }
 
   const handleUserClick = (e) => {
-    e.stopPropagation(); // Prevent bubbling
+    e.stopPropagation()
+    // ✅ If not logged in, go to login — never open dropdown
     if (!user) {
       navigate('/login')
       return
     }
-    setIsProfileOpen((prev) => !prev)
+    setIsProfileOpen(prev => !prev)
   }
 
   const handleLogout = (e) => {
-    e.stopPropagation(); // Prevent bubbling
+    e.stopPropagation()
     logout()
     setIsProfileOpen(false)
     navigate('/')
   }
 
-  const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen)
-  }
-
-  const closeMobileMenu = () => {
-    setIsMobileMenuOpen(false)
-  }
+  const closeMobileMenu = () => setIsMobileMenuOpen(false)
 
   return (
     <>
@@ -161,64 +175,72 @@ const HeaderGuest = () => {
 
         {/* RIGHT - User & Actions */}
         <div className="header-right">
-          {/* Notifications - before user */}
-          <div className="notif-wrapper" ref={notifRef}>
-            <button
-              className="notif-btn"
-              onClick={() => setIsNotifOpen(!isNotifOpen)}
-              aria-label="Notifications"
-            >
-              <FaBell />
-              {unreadCount > 0 && (
-                <span className="notif-badge">{unreadCount}</span>
-              )}
-            </button>
 
-            {isNotifOpen && (
-              <div className="notif-dropdown">
-                <div className="notif-title">Notifications</div>
-                {notifications.length === 0 && (
-                  <div className="notif-empty">No notifications</div>
+          {/* Notifications - only show when logged in */}
+          {user && (
+            <div className="notif-wrapper" ref={notifRef}>
+              <button
+                className="notif-btn"
+                onClick={() => setIsNotifOpen(!isNotifOpen)}
+                aria-label="Notifications"
+              >
+                <FaBell />
+                {unreadCount > 0 && (
+                  <span className="notif-badge">{unreadCount}</span>
                 )}
-                {notifications.map(n => (
-                  <div
-                    key={n._id}
-                    className={`notif-item ${n.read ? '' : 'unread'}`}
-                    onClick={() => markRead(n._id)}
-                  >
-                    <div className="notif-message">{n.message}</div>
-                    <div className="notif-time">
-                      {new Date(n.createdAt).toLocaleString()}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+              </button>
 
-          {/* User Profile - after notifications */}
+              {isNotifOpen && (
+                <div className="notif-dropdown">
+                  <div className="notif-title">Notifications</div>
+                  {notifications.length === 0 && (
+                    <div className="notif-empty">No notifications</div>
+                  )}
+                  {notifications.map(n => (
+                    <div
+                      key={n._id}
+                      className={`notif-item ${n.read ? '' : 'unread'}`}
+                      onClick={() => markRead(n._id)}
+                    >
+                      <div className="notif-message">{n.message}</div>
+                      <div className="notif-time">
+                        {new Date(n.createdAt).toLocaleString()}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ✅ User Profile - shows Sign In button if not logged in */}
           <div
             className="user-info"
-            onClick={() => setIsProfileOpen(!isProfileOpen)}
+            onClick={handleUserClick}
             ref={profileRef}
           >
             <div className="user-avatar">
-              <FaUser />
+              {user ? <FaUser /> : <FaSignInAlt />}
             </div>
             <div className="user-text">
-              <h1>{user?.firstName || 'Guest'}</h1>
-              <p>My Account</p>
+              <h1>{user ? user.firstName : 'Sign In'}</h1>
+              {user && <p>My Account</p>}
             </div>
-            <FaChevronDown className={`dropdown-arrow ${isProfileOpen ? 'open' : ''}`} />
 
-            {isProfileOpen && (
-              <div className="profile-dropdown">
-                <button className="dropdown-item" onClick={() => navigate('/profile')}>Profile</button>
-                <button className="dropdown-item" onClick={() => navigate('/orders')}>Orders</button>
-                <button className="dropdown-item danger" onClick={handleLogout}>
-                  Logout
-                </button>
-              </div>
+            {/* ✅ Only show chevron and dropdown when logged in */}
+            {user && (
+              <>
+                <FaChevronDown className={`dropdown-arrow ${isProfileOpen ? 'open' : ''}`} />
+                {isProfileOpen && (
+                  <div className="profile-dropdown">
+                    <button className="dropdown-item" onClick={() => navigate('/profile')}>Profile</button>
+                    <button className="dropdown-item" onClick={() => navigate('/orders')}>Orders</button>
+                    <button className="dropdown-item danger" onClick={handleLogout}>
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </div>
 
