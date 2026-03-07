@@ -78,19 +78,22 @@ const ForgotPasswordModal = ({ onClose }) => {
     setLoading(true);
     try {
       await api.post('/api/auth/forgot-password', { email: email.trim().toLowerCase() });
+      // Success — advance to code step
+      setStep('code');
+      setSuccess('A reset code has been sent to your email.');
     } catch (err) {
-      // Swallow all errors for user enumeration protection
-      if (err.response?.status === 429) {
+      const status = err.response?.status;
+      const code   = err.response?.data?.code;
+      if (status === 429) {
         setError('Too many requests. Please wait a few minutes before trying again.');
-        setLoading(false);
-        return;
+      } else if (status === 404 || code === 'EMAIL_NOT_FOUND') {
+        setFieldErrors({ email: 'No account found with that email address.' });
+      } else {
+        setError('Something went wrong. Please try again.');
       }
     } finally {
       setLoading(false);
     }
-    // Always advance — never reveal if email exists
-    setStep('code');
-    setSuccess('If an account with that email exists, a reset code has been sent.');
   };
 
   // ── Step 2: Verify code + set new password ───────────────────────────────
