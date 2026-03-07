@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../api';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import './login.css';
+import ForgotPasswordModal from './ForgotPasswordModal';
 
 import logo   from '../assets/logo.png';
 import slide1 from '../assets/slide1.png';
@@ -79,7 +80,6 @@ function validatePhone(phone) {
 }
 
 // ─── UserMenu — authenticated users only ─────────────────────────────────────
-// Returns null for guests — this is the fix for the "Guest" display bug.
 
 function UserMenu({ user, onLogout }) {
   const [open, setOpen] = useState(false);
@@ -93,7 +93,6 @@ function UserMenu({ user, onLogout }) {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  // GUARD: render nothing for unauthenticated users
   if (!user) return null;
 
   return (
@@ -160,18 +159,20 @@ function UserMenu({ user, onLogout }) {
 // ─── Main component ───────────────────────────────────────────────────────────
 
 const Login = () => {
-  // ── Auth context (your existing setup) ──────────────────────────────────────
   const { user, login, logout, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
-  // ── UI state ─────────────────────────────────────────────────────────────────
-  const [step, setStep]                         = useState('login');
+  // ── UI state ──────────────────────────────────────────────────────────────
+  const [step,             setStep]             = useState('login');
   const [isRegisterActive, setIsRegisterActive] = useState(false);
-  const [loading, setLoading]                   = useState(false);
-  const [error, setError]                       = useState('');
-  const [success, setSuccess]                   = useState('');
+  const [loading,          setLoading]          = useState(false);
+  const [error,            setError]            = useState('');
+  const [success,          setSuccess]          = useState('');
 
-  // ── Login form state ─────────────────────────────────────────────────────────
+  // ── NEW: forgot password modal toggle ─────────────────────────────────────
+  const [showForgotModal, setShowForgotModal] = useState(false);
+
+  // ── Login form state ──────────────────────────────────────────────────────
   const [loginEmail,    setLoginEmail]    = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginTouched,  setLoginTouched]  = useState({});
@@ -179,12 +180,12 @@ const Login = () => {
   const [showPassword,  setShowPassword]  = useState(false);
   const [apiMsg,        setApiMsg]        = useState({ type: '', text: '' });
 
-  // ── Brute-force lockout state ────────────────────────────────────────────────
+  // ── Brute-force lockout state ─────────────────────────────────────────────
   const [lockoutRemaining, setLockoutRemaining] = useState(getRemainingLockout());
-  const [attemptsLeft, setAttemptsLeft]         = useState(MAX_ATTEMPTS - getLockoutState().attempts);
+  const [attemptsLeft,     setAttemptsLeft]     = useState(MAX_ATTEMPTS - getLockoutState().attempts);
   const isLocked = lockoutRemaining > 0;
 
-  // ── Sign-up form state ───────────────────────────────────────────────────────
+  // ── Sign-up form state ────────────────────────────────────────────────────
   const [formData, setFormData] = useState({
     firstName: '', lastName: '', email: '', phone: '', password: '', confirmPassword: '',
   });
@@ -192,19 +193,16 @@ const Login = () => {
   const [showSignUpPassword,  setShowSignUpPassword]  = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // ── Verification state ───────────────────────────────────────────────────────
+  // ── Verification state ────────────────────────────────────────────────────
   const [verifyEmail, setVerifyEmail] = useState('');
-  const [code, setCode]               = useState('');
+  const [code,        setCode]        = useState('');
 
-  // ── Redirect if already logged in ───────────────────────────────────────────
-  // Uses your existing AuthContext loading + user — no extra fetch needed
+  // ── Redirect if already logged in ────────────────────────────────────────
   useEffect(() => {
-    if (!authLoading && user) {
-      navigate('/');
-    }
+    if (!authLoading && user) navigate('/');
   }, [user, authLoading, navigate]);
 
-  // ── Restore verification state on refresh ───────────────────────────────────
+  // ── Restore verification state on refresh ────────────────────────────────
   useEffect(() => {
     const savedEmail = localStorage.getItem('verifyEmail');
     if (savedEmail) {
@@ -214,14 +212,14 @@ const Login = () => {
     }
   }, []);
 
-  // ── Auto-focus first code input ──────────────────────────────────────────────
+  // ── Auto-focus first code input ───────────────────────────────────────────
   useEffect(() => {
     if (step === 'verify') {
       setTimeout(() => document.querySelector('.code-input')?.focus(), 100);
     }
   }, [step]);
 
-  // ── Lockout countdown ────────────────────────────────────────────────────────
+  // ── Lockout countdown ─────────────────────────────────────────────────────
   useEffect(() => {
     if (!lockoutRemaining) return;
     const id = setInterval(() => {
@@ -232,12 +230,12 @@ const Login = () => {
     return () => clearInterval(id);
   }, [lockoutRemaining]);
 
-  // ── Live login validation ────────────────────────────────────────────────────
+  // ── Live login validation ─────────────────────────────────────────────────
   useEffect(() => {
     if (Object.keys(loginTouched).length === 0) return;
     const errs = {};
     if (loginTouched.email) {
-      if (!loginEmail.trim())            errs.email = 'Email is required.';
+      if (!loginEmail.trim())             errs.email = 'Email is required.';
       else if (!isValidEmail(loginEmail)) errs.email = 'Enter a valid email address.';
     }
     if (loginTouched.password && !loginPassword) {
@@ -246,7 +244,7 @@ const Login = () => {
     setLoginErrors(errs);
   }, [loginEmail, loginPassword, loginTouched]);
 
-  // ── Handlers ─────────────────────────────────────────────────────────────────
+  // ── Handlers ──────────────────────────────────────────────────────────────
 
   const touchLogin = field => setLoginTouched(t => ({ ...t, [field]: true }));
 
@@ -264,7 +262,6 @@ const Login = () => {
     setLoading(true);
     setApiMsg({ type: '', text: '' });
 
-    // Uses YOUR login() from AuthContext — no fetch replacement needed
     const result = await login(loginEmail.trim(), loginPassword);
 
     if (result.success) {
@@ -272,7 +269,6 @@ const Login = () => {
       setApiMsg({ type: 'success', text: 'Login successful! Redirecting…' });
       setTimeout(() => navigate('/'), 500);
     } else {
-      // Handle 429 rate-limit from your backend
       if (result.code === 'TOO_MANY_REQUESTS' || result.error?.includes('429')) {
         setLockoutRemaining(LOCKOUT_MS);
         setApiMsg({ type: 'error', text: 'Too many failed attempts. Please wait 15 minutes.' });
@@ -285,11 +281,9 @@ const Login = () => {
           setApiMsg({ type: 'error', text: 'Too many failed attempts. Account locked for 15 minutes.' });
         } else {
           setAttemptsLeft(remaining);
-
           if (result.code === 'EMAIL_NOT_VERIFIED') {
             setApiMsg({ type: 'error', text: '⚠️ Please verify your email before logging in.' });
           } else {
-            // Generic message — don't reveal whether email or password is wrong
             setApiMsg({ type: 'error', text: 'Invalid email or password.' });
           }
         }
@@ -419,10 +413,15 @@ const Login = () => {
     clearLockout();
   }, [logout]);
 
+  // ── NEW: open forgot password modal ───────────────────────────────────────
+  const handleForgotPassword = (e) => {
+    e.preventDefault();
+    setShowForgotModal(true);
+  };
+
   const passwordStrength = getPasswordStrength(formData.password || '');
   const lockoutMinutes   = Math.ceil(lockoutRemaining / 60000);
 
-  // ── Show nothing until auth context has resolved (prevents flash) ────────────
   if (authLoading) {
     return (
       <div className="login-page">
@@ -433,32 +432,26 @@ const Login = () => {
     );
   }
 
-  // ── Render ────────────────────────────────────────────────────────────────────
   return (
     <div className="login-page">
       <div className={`container${isRegisterActive ? ' active' : ''}`} id="container">
 
-        {/* ── Sign Up Form ───────────────────────────────────────────────── */}
+        {/* ── Sign Up Form ─────────────────────────────────────────────── */}
         <div className="form-container sign-up">
           <form onSubmit={handleRegister} noValidate>
             <h1 className="t-sign">Create Account</h1>
 
-            {error && <div className="login-error-message">❌ {error}</div>}
+            {error   && <div className="login-error-message">❌ {error}</div>}
             {success && <div className="login-success-message">✅ {success}</div>}
 
             <p>Welcome! Create your customer account:</p>
 
-            {/* Name row */}
             <div className="name-row">
               <div style={{ flex: 1 }}>
                 <input
-                  type="text"
-                  placeholder="First Name"
-                  name="firstName"
-                  value={formData.firstName}
-                  onChange={handleRegisterChange}
-                  autoComplete="given-name"
-                  aria-invalid={!!validationErrors.firstName}
+                  type="text" placeholder="First Name" name="firstName"
+                  value={formData.firstName} onChange={handleRegisterChange}
+                  autoComplete="given-name" aria-invalid={!!validationErrors.firstName}
                   style={{ borderColor: validationErrors.firstName ? '#d32f2f' : undefined, width: '100%' }}
                 />
                 {validationErrors.firstName && (
@@ -467,13 +460,9 @@ const Login = () => {
               </div>
               <div style={{ flex: 1 }}>
                 <input
-                  type="text"
-                  placeholder="Last Name"
-                  name="lastName"
-                  value={formData.lastName}
-                  onChange={handleRegisterChange}
-                  autoComplete="family-name"
-                  aria-invalid={!!validationErrors.lastName}
+                  type="text" placeholder="Last Name" name="lastName"
+                  value={formData.lastName} onChange={handleRegisterChange}
+                  autoComplete="family-name" aria-invalid={!!validationErrors.lastName}
                   style={{ borderColor: validationErrors.lastName ? '#d32f2f' : undefined, width: '100%' }}
                 />
                 {validationErrors.lastName && (
@@ -482,16 +471,11 @@ const Login = () => {
               </div>
             </div>
 
-            {/* Email */}
             <div>
               <input
-                type="email"
-                placeholder="Email"
-                name="email"
-                value={formData.email}
-                onChange={handleRegisterChange}
-                autoComplete="email"
-                aria-invalid={!!validationErrors.email}
+                type="email" placeholder="Email" name="email"
+                value={formData.email} onChange={handleRegisterChange}
+                autoComplete="email" aria-invalid={!!validationErrors.email}
                 style={{ borderColor: validationErrors.email ? '#d32f2f' : undefined }}
               />
               {validationErrors.email && (
@@ -499,16 +483,11 @@ const Login = () => {
               )}
             </div>
 
-            {/* Phone */}
             <div>
               <input
-                type="tel"
-                placeholder="Contact No. (optional)"
-                name="phone"
-                value={formData.phone}
-                onChange={handleRegisterChange}
-                autoComplete="tel"
-                aria-invalid={!!validationErrors.phone}
+                type="tel" placeholder="Contact No. (optional)" name="phone"
+                value={formData.phone} onChange={handleRegisterChange}
+                autoComplete="tel" aria-invalid={!!validationErrors.phone}
                 style={{ borderColor: validationErrors.phone ? '#d32f2f' : undefined }}
               />
               {validationErrors.phone && (
@@ -516,17 +495,13 @@ const Login = () => {
               )}
             </div>
 
-            {/* Password + strength bar */}
             <div>
               <div className="password-wrapper">
                 <input
                   type={showSignUpPassword ? 'text' : 'password'}
-                  placeholder="Password (min. 8 chars)"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleRegisterChange}
-                  autoComplete="new-password"
-                  aria-invalid={!!validationErrors.password}
+                  placeholder="Password (min. 8 chars)" name="password"
+                  value={formData.password} onChange={handleRegisterChange}
+                  autoComplete="new-password" aria-invalid={!!validationErrors.password}
                   style={{ borderColor: validationErrors.password ? '#d32f2f' : undefined }}
                 />
                 <span className="toggle-password" onClick={() => setShowSignUpPassword(v => !v)}>
@@ -537,11 +512,8 @@ const Login = () => {
                 <div className="password-strength">
                   <div className="strength-bar">
                     <div style={{
-                      width      : `${(passwordStrength.score / 5) * 100}%`,
-                      height     : '100%',
-                      background : passwordStrength.color,
-                      transition : 'width 0.2s ease',
-                      borderRadius: '4px',
+                      width: `${(passwordStrength.score / 5) * 100}%`, height: '100%',
+                      background: passwordStrength.color, transition: 'width 0.2s ease', borderRadius: '4px',
                     }} />
                   </div>
                   <small style={{ color: passwordStrength.color, fontSize: '11px' }}>
@@ -554,17 +526,13 @@ const Login = () => {
               )}
             </div>
 
-            {/* Confirm password */}
             <div>
               <div className="password-wrapper">
                 <input
                   type={showConfirmPassword ? 'text' : 'password'}
-                  placeholder="Confirm Password"
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleRegisterChange}
-                  autoComplete="new-password"
-                  aria-invalid={!!validationErrors.confirmPassword}
+                  placeholder="Confirm Password" name="confirmPassword"
+                  value={formData.confirmPassword} onChange={handleRegisterChange}
+                  autoComplete="new-password" aria-invalid={!!validationErrors.confirmPassword}
                   style={{ borderColor: validationErrors.confirmPassword ? '#d32f2f' : undefined }}
                 />
                 <span className="toggle-password" onClick={() => setShowConfirmPassword(v => !v)}>
@@ -584,7 +552,7 @@ const Login = () => {
             </button>
           </form>
 
-          {/* ── Verification Modal ─────────────────────────────────────── */}
+          {/* ── Verification Modal ──────────────────────────────────────── */}
           {step === 'verify' && (
             <div className="verification-modal-overlay">
               <div className="verification-modal">
@@ -601,13 +569,8 @@ const Login = () => {
                   <div className="code-inputs">
                     {[0, 1, 2, 3, 4, 5].map(index => (
                       <input
-                        key={index}
-                        type="text"
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        maxLength={1}
-                        className="code-input"
-                        autoComplete="off"
+                        key={index} type="text" inputMode="numeric" pattern="[0-9]*"
+                        maxLength={1} className="code-input" autoComplete="off"
                         value={code[index] || ''}
                         onChange={e => {
                           const value = e.target.value;
@@ -615,14 +578,12 @@ const Login = () => {
                           const chars = code.split('');
                           chars[index] = value;
                           setCode(chars.join(''));
-                          if (value && index < 5) {
+                          if (value && index < 5)
                             e.target.parentElement.children[index + 1]?.focus();
-                          }
                         }}
                         onKeyDown={e => {
-                          if (e.key === 'Backspace' && !code[index] && index > 0) {
+                          if (e.key === 'Backspace' && !code[index] && index > 0)
                             e.target.parentElement.children[index - 1]?.focus();
-                          }
                         }}
                         onPaste={e => {
                           e.preventDefault();
@@ -642,12 +603,9 @@ const Login = () => {
                   </button>
 
                   <button
-                    type="button"
-                    className="btn-resend"
-                    disabled={loading}
+                    type="button" className="btn-resend" disabled={loading}
                     onClick={async () => {
-                      setLoading(true);
-                      setError(''); setSuccess('');
+                      setLoading(true); setError(''); setSuccess('');
                       try {
                         await api.post('/api/auth/resend', { email: verifyEmail });
                         setSuccess('New code sent!');
@@ -667,17 +625,14 @@ const Login = () => {
                   </button>
 
                   <button
-                    type="button"
-                    className="btn-cancel"
-                    disabled={loading}
+                    type="button" className="btn-cancel" disabled={loading}
                     onClick={async () => {
                       if (!window.confirm('Cancel registration? Your account will be deleted.')) return;
                       setLoading(true);
                       try {
                         await api.post('/api/auth/delete-unverified', { email: verifyEmail });
                         localStorage.removeItem('verifyEmail');
-                        setStep('login');
-                        setCode('');
+                        setStep('login'); setCode('');
                         setIsRegisterActive(false);
                         setFormData({ firstName: '', lastName: '', email: '', phone: '', password: '', confirmPassword: '' });
                       } catch (err) {
@@ -693,27 +648,24 @@ const Login = () => {
           )}
         </div>
 
-        {/* ── Sign In Form ───────────────────────────────────────────────── */}
+        {/* ── Sign In Form ──────────────────────────────────────────────── */}
         <div className="form-container sign-in">
           <form onSubmit={handleLoginSubmit} noValidate>
             <h1 className="t-sign">Log in to your Account</h1>
             <p>Welcome back! Log in to your account:</p>
 
-            {/* Lockout warning */}
             {isLocked && (
               <div className="lockout-warning" role="alert">
                 🔒 Too many attempts. Try again in {lockoutMinutes} min.
               </div>
             )}
 
-            {/* Attempts warning */}
             {!isLocked && attemptsLeft < MAX_ATTEMPTS && attemptsLeft > 0 && (
               <div className="attempts-warning" role="alert">
                 ⚠️ {attemptsLeft} attempt{attemptsLeft !== 1 ? 's' : ''} remaining before lockout.
               </div>
             )}
 
-            {/* API message */}
             {apiMsg.text && (
               <div
                 className={apiMsg.type === 'success' ? 'login-success-message' : 'login-error-message'}
@@ -723,17 +675,12 @@ const Login = () => {
               </div>
             )}
 
-            {/* Email */}
             <div>
               <input
-                type="email"
-                placeholder="Email"
-                name="email"
-                value={loginEmail}
+                type="email" placeholder="Email" name="email" value={loginEmail}
                 onChange={e => { setLoginEmail(e.target.value); setApiMsg({ type: '', text: '' }); }}
                 onBlur={() => touchLogin('email')}
-                disabled={loading || isLocked}
-                autoComplete="email"
+                disabled={loading || isLocked} autoComplete="email"
                 aria-invalid={!!loginErrors.email}
                 style={{ borderColor: loginErrors.email ? '#d32f2f' : undefined }}
               />
@@ -742,18 +689,14 @@ const Login = () => {
               )}
             </div>
 
-            {/* Password */}
             <div>
               <div className="password-wrapper">
                 <input
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Password"
-                  name="password"
+                  type={showPassword ? 'text' : 'password'} placeholder="Password" name="password"
                   value={loginPassword}
                   onChange={e => { setLoginPassword(e.target.value); setApiMsg({ type: '', text: '' }); }}
                   onBlur={() => touchLogin('password')}
-                  disabled={loading || isLocked}
-                  autoComplete="current-password"
+                  disabled={loading || isLocked} autoComplete="current-password"
                   aria-invalid={!!loginErrors.password}
                   style={{ borderColor: loginErrors.password ? '#d32f2f' : undefined }}
                 />
@@ -766,8 +709,9 @@ const Login = () => {
               )}
             </div>
 
+            {/* ── CHANGED: e.preventDefault() + opens modal ─────────────── */}
             <div>
-              <a href="/forgot-password" className="forgot-password">
+              <a href="/forgot-password" className="forgot-password" onClick={handleForgotPassword}>
                 Forgot your password?
               </a>
             </div>
@@ -784,32 +728,27 @@ const Login = () => {
           </form>
         </div>
 
-        {/* ── Toggle Panel (your original structure, unchanged) ──────────── */}
+        {/* ── Toggle Panel ──────────────────────────────────────────────── */}
         <div className="toggle-container">
           <div className="toggle">
             <div className="toggle-panel toggle-right">
               <h1 className="ds-sign">
                 {isRegisterActive ? 'Create Your Account!' : 'Sign In to Your Account!'}
               </h1>
-
               <div className="logo">
                 <img src={logo} alt="Restaurant Logo" width={70} />
               </div>
-
               <div className="restaurant-names">
                 <span className="line1">Texas Joe's</span>
                 <span className="line2">House of Ribs</span>
               </div>
-
               <div className="navigation-buttons">
                 <button className="btn-secondary" onClick={() => navigate('/')}>Home</button>
                 <button className="btn-secondary" onClick={() => navigate('/menu')}>Menu</button>
                 <button className="btn-secondary" onClick={() => navigate('/contact')}>Contact</button>
                 <button className="btn-secondary" onClick={() => navigate('/about')}>About us</button>
-                {/* FIX: only renders when user is authenticated */}
                 <UserMenu user={user} onLogout={handleLogout} />
               </div>
-
               <div className="ImageSlider">
                 <div className="wrapper">
                   <div className="wrapper-holder">
@@ -831,6 +770,11 @@ const Login = () => {
         </div>
 
       </div>
+
+      {/* ── Forgot Password Modal — outside container so it overlays all ── */}
+      {showForgotModal && (
+        <ForgotPasswordModal onClose={() => setShowForgotModal(false)} />
+      )}
     </div>
   );
 };
