@@ -1765,6 +1765,9 @@
 /* ── Ensure modal sits above everything on the page ────────────────────── */
 .fp-overlay {
   z-index: 10000;
-  justify-content: center;
-  align-items: center;
+}
+
+.fp-overlay {
+  justify-content: center !important;
+  align-items: center !important;
 }
