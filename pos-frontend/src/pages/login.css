@@ -938,9 +938,11 @@
   background: #ffffff !important;
   background-image: none !important;
   border-radius: 20px !important;
-  padding: 32px 42px 36px !important;
+  padding: 28px 40px 28px !important;
   width: 90%;
-  max-width: 480px;
+  max-width: 460px;
+  max-height: 92vh;
+  overflow-y: auto;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25) !important;
   animation: modalSlideIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
@@ -951,26 +953,27 @@
 
 .verification-header {
   text-align: center;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
 .verification-header h2 {
-  font-size: 24px !important;
+  font-size: 22px !important;
   font-weight: 700;
   color: #3d2914 !important;
-  margin-bottom: 10px;
-  letter-spacing: -0.5px;
+  margin-bottom: 6px !important;
+  letter-spacing: -0.3px;
 }
 
 .verification-header p {
-  font-size: 14px;
+  font-size: 13px;
   color: #7a5c2e !important;
-  margin-bottom: 8px;
+  margin: 0 0 6px 0 !important;
   font-weight: 400;
-  /* Override the .login-page p negative margin */
+  /* Override ALL .login-page p inherited offsets */
   margin-top: 0 !important;
   position: static !important;
   top: auto !important;
+  line-height: 1.4;
 }
 
 .verification-email {
@@ -989,7 +992,7 @@
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
   /* Kill inherited form background */
   background: transparent !important;
   background-image: none !important;
@@ -1026,9 +1029,9 @@
 
 .code-inputs {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   justify-content: center;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
   /* Kill any inherited form input styles on this wrapper div */
   background: transparent !important;
   background-image: none !important;
@@ -1042,13 +1045,13 @@
 
 .code-input {
   /* Override all login-page input styles */
-  width: 52px !important;
-  height: 52px !important;
+  width: 48px !important;
+  height: 48px !important;
   min-height: unset !important;
   margin: 0 !important;
   padding: 0 !important;
   text-align: center !important;
-  font-size: 22px !important;
+  font-size: 20px !important;
   font-weight: 600 !important;
   border: 2px solid #d4bfa8 !important;
   border-radius: 12px !important;
@@ -1078,7 +1081,7 @@
 
 .btn-verify {
   width: 100% !important;
-  padding: 15px !important;
+  padding: 13px !important;
   font-size: 14px !important;
   font-weight: 600 !important;
   color: #fff !important;
@@ -1112,7 +1115,7 @@
 
 .btn-resend {
   width: 100% !important;
-  padding: 12px !important;
+  padding: 11px !important;
   font-size: 13px !important;
   font-weight: 500 !important;
   color: #8B4513 !important;
@@ -1147,7 +1150,7 @@
 
 .btn-cancel {
   width: 100% !important;
-  padding: 10px !important;
+  padding: 8px !important;
   font-size: 12px !important;
   font-weight: 500 !important;
   color: #aaa !important;
@@ -1175,10 +1178,10 @@
    ========================================================================== */
 
 .fp-icon {
-  font-size: 2.4rem;
+  font-size: 2rem;
   display: block;
   text-align: center;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
   line-height: 1;
 }
 
