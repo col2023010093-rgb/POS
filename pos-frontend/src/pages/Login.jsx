@@ -678,11 +678,8 @@ const Login = () => {
       const data = err.response?.data;
       const msg  = data?.error || data?.message || 'Registration failed. Please try again.';
 
-      if (data?.code === 'EMAIL_VERIFIED_EXISTS') {
-        setValidationErrors({ email: 'This email is already registered. Please sign in.' });
-        setTimeout(() => { switchToLogin(); setLoginEmail(formData.email); }, 2000);
-      } else if (data?.code === 'EMAIL_EXISTS') {
-        setValidationErrors({ email: 'This email is already registered.' });
+      if (data?.code === 'EMAIL_VERIFIED_EXISTS' || data?.code === 'EMAIL_EXISTS') {
+        setValidationErrors({ email: 'This email is already registered. Please sign in instead.' });
       } else if (msg.toLowerCase().includes('email')) {
         setValidationErrors({ email: msg });
       } else {
