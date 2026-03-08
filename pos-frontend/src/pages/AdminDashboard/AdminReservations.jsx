@@ -1,16 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react'
+import './AdminDashboard.css'
+import './AdminReservations.css'
 
 const API_BASE = import.meta.env.VITE_API_URL || ''
 
-const STATUS_COLORS = {
-  pending:   { bg: '#fff3cd', text: '#856404', border: '#ffc107' },
-  confirmed: { bg: '#d1e7dd', text: '#0a5c36', border: '#198754' },
-  cancelled: { bg: '#f8d7da', text: '#842029', border: '#dc3545' },
-  completed: { bg: '#cff4fc', text: '#055160', border: '#0dcaf0' },
-}
-
+/* ── Status options ─────────────────────────────────────────────────── */
 const STATUS_OPTIONS = ['pending', 'confirmed', 'cancelled', 'completed']
 
+/* ── Date formatter ─────────────────────────────────────────────────── */
 const formatDate = (dateStr) => {
   if (!dateStr) return '—'
   return new Date(dateStr).toLocaleDateString('en-US', {
@@ -18,43 +15,26 @@ const formatDate = (dateStr) => {
   })
 }
 
-const Badge = ({ status }) => {
-  const c = STATUS_COLORS[status] || STATUS_COLORS.pending
-  return (
-    <span style={{
-      display: 'inline-block',
-      padding: '3px 10px',
-      borderRadius: 20,
-      fontSize: 12,
-      fontWeight: 600,
-      textTransform: 'capitalize',
-      background: c.bg,
-      color: c.text,
-      border: `1px solid ${c.border}`,
-    }}>
-      {status}
-    </span>
-  )
-}
-
+/* ────────────────────────────────────────────────────────────────────── */
 const AdminReservations = () => {
   const [reservations, setReservations] = useState([])
   const [loading,      setLoading]      = useState(true)
   const [error,        setError]        = useState('')
-  const [updating,     setUpdating]     = useState(null) // id of item being updated
+  const [updating,     setUpdating]     = useState(null)
 
-  // Filters
+  /* Filters */
   const [filterStatus, setFilterStatus] = useState('')
   const [filterDate,   setFilterDate]   = useState('')
   const [search,       setSearch]       = useState('')
 
-  // Pagination
+  /* Pagination */
   const [page,       setPage]       = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const LIMIT = 15
 
   const token = localStorage.getItem('token') || sessionStorage.getItem('token')
 
+  /* ── DATA FETCH (logic unchanged) ───────────────────────────────────── */
   const fetchReservations = useCallback(async () => {
     setLoading(true)
     setError('')
@@ -69,7 +49,6 @@ const AdminReservations = () => {
       if (!res.ok) throw new Error('Failed to load reservations.')
       const data = await res.json()
 
-      // Support both { reservations, pagination } and plain array responses
       if (Array.isArray(data)) {
         setReservations(data)
         setTotalPages(1)
@@ -86,6 +65,7 @@ const AdminReservations = () => {
 
   useEffect(() => { fetchReservations() }, [fetchReservations])
 
+  /* ── STATUS UPDATE (logic unchanged) ────────────────────────────────── */
   const handleStatusChange = async (id, newStatus) => {
     setUpdating(id)
     try {
@@ -106,6 +86,7 @@ const AdminReservations = () => {
     }
   }
 
+  /* ── DELETE (logic unchanged) ───────────────────────────────────────── */
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to permanently delete this reservation?')) return
     try {
@@ -120,143 +101,292 @@ const AdminReservations = () => {
     }
   }
 
-  // ── Client-side search filter (name / email / phone) ──────────────────────
+  /* ── CLIENT-SIDE SEARCH (logic unchanged) ───────────────────────────── */
   const visible = reservations.filter(r => {
     if (!search.trim()) return true
-    const q   = search.toLowerCase()
+    const q    = search.toLowerCase()
     const name = `${r.firstName} ${r.lastName}`.toLowerCase()
     return (
-      name.includes(q)          ||
-      r.email?.toLowerCase().includes(q) ||
+      name.includes(q)                    ||
+      r.email?.toLowerCase().includes(q)  ||
       r.phone?.includes(q)
     )
   })
 
-  // ── Styles ─────────────────────────────────────────────────────────────────
-  const s = {
-    wrap:     { padding: '24px', fontFamily: 'inherit' },
-    header:   { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 12 },
-    title:    { fontSize: 22, fontWeight: 700, margin: 0 },
-    filters:  { display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 16 },
-    input:    { padding: '8px 12px', borderRadius: 8, border: '1px solid #ddd', fontSize: 14, minWidth: 160 },
-    select:   { padding: '8px 12px', borderRadius: 8, border: '1px solid #ddd', fontSize: 14 },
-    table:    { width: '100%', borderCollapse: 'collapse', fontSize: 14 },
-    th:       { textAlign: 'left', padding: '10px 12px', background: '#f8f9fa', fontWeight: 600, borderBottom: '2px solid #e9ecef', whiteSpace: 'nowrap' },
-    td:       { padding: '10px 12px', borderBottom: '1px solid #f0f0f0', verticalAlign: 'middle' },
-    statusSel:{ padding: '4px 8px', borderRadius: 6, border: '1px solid #ddd', fontSize: 13, cursor: 'pointer' },
-    delBtn:   { padding: '4px 10px', borderRadius: 6, background: '#fff0f0', border: '1px solid #f5c2c7', color: '#dc3545', fontSize: 12, cursor: 'pointer', fontWeight: 600 },
-    pager:    { display: 'flex', alignItems: 'center', gap: 10, marginTop: 16, justifyContent: 'flex-end' },
-    pgBtn:    { padding: '6px 14px', borderRadius: 6, border: '1px solid #ddd', cursor: 'pointer', fontSize: 13 },
-    empty:    { textAlign: 'center', padding: 40, color: '#888' },
-    err:      { background: '#fff5f5', border: '1px solid #f5c6cb', borderRadius: 8, padding: 16, color: '#842029', marginBottom: 16 },
-  }
+  /* ── DERIVED STATS ───────────────────────────────────────────────────── */
+  const today      = new Date().toDateString()
+  const totalCount = reservations.length
+  const pendCount  = reservations.filter(r => r.status === 'pending').length
+  const confCount  = reservations.filter(r => r.status === 'confirmed').length
+  const cancCount  = reservations.filter(r => r.status === 'cancelled').length
+  const todayCount = reservations.filter(r =>
+    new Date(r.date).toDateString() === today
+  ).length
 
+  const hasFilters = filterStatus || filterDate || search
+
+  /* ── RENDER ─────────────────────────────────────────────────────────── */
   return (
-    <div style={s.wrap}>
-      <div style={s.header}>
-        <h2 style={s.title}>Reservations</h2>
-        <button style={{ ...s.pgBtn, background: '#f0fdf4', borderColor: '#86efac', color: '#166534' }}
-          onClick={fetchReservations}>
-          ↻ Refresh
-        </button>
-      </div>
+    <div className="admin-dashboard">
+      <div className="admin-container">
 
-      {/* Filters */}
-      <div style={s.filters}>
-        <input
-          style={s.input} type="text" placeholder="Search name, email, phone…"
-          value={search} onChange={e => setSearch(e.target.value)}
-        />
-        <select style={s.select} value={filterStatus} onChange={e => { setFilterStatus(e.target.value); setPage(1) }}>
-          <option value="">All Statuses</option>
-          {STATUS_OPTIONS.map(st => (
-            <option key={st} value={st}>{st.charAt(0).toUpperCase() + st.slice(1)}</option>
-          ))}
-        </select>
-        <input
-          style={s.input} type="date" value={filterDate}
-          onChange={e => { setFilterDate(e.target.value); setPage(1) }}
-        />
-        {(filterStatus || filterDate || search) && (
-          <button style={{ ...s.pgBtn, color: '#666' }} onClick={() => { setFilterStatus(''); setFilterDate(''); setSearch(''); setPage(1) }}>
-            ✕ Clear
-          </button>
-        )}
-      </div>
-
-      {error && <div style={s.err}>⚠ {error}</div>}
-
-      {loading ? (
-        <div style={s.empty}>Loading reservations…</div>
-      ) : visible.length === 0 ? (
-        <div style={s.empty}>No reservations found.</div>
-      ) : (
-        <>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={s.table}>
-              <thead>
-                <tr>
-                  {['Guest', 'Contact', 'Date', 'Time', 'Guests', 'Occasion', 'Seating', 'Status', 'Created', 'Actions'].map(h => (
-                    <th key={h} style={s.th}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {visible.map(r => (
-                  <tr key={r._id} style={{ opacity: updating === r._id ? 0.6 : 1 }}>
-                    <td style={s.td}>
-                      <strong>{r.firstName} {r.lastName}</strong>
-                      {r.specialRequests && (
-                        <div style={{ fontSize: 11, color: '#888', marginTop: 2 }}
-                          title={r.specialRequests}>
-                          📝 Special request
-                        </div>
-                      )}
-                    </td>
-                    <td style={s.td}>
-                      <div>{r.email}</div>
-                      <div style={{ color: '#666', fontSize: 12 }}>{r.phone}</div>
-                    </td>
-                    <td style={{ ...s.td, whiteSpace: 'nowrap' }}>{formatDate(r.date)}</td>
-                    <td style={{ ...s.td, whiteSpace: 'nowrap' }}>{r.time}</td>
-                    <td style={{ ...s.td, textAlign: 'center' }}>{r.guests}</td>
-                    <td style={s.td}>{r.occasion && r.occasion !== 'none' ? r.occasion : '—'}</td>
-                    <td style={s.td}>{r.seatingPreference || '—'}</td>
-                    <td style={s.td}>
-                      <select
-                        style={s.statusSel}
-                        value={r.status}
-                        disabled={updating === r._id}
-                        onChange={e => handleStatusChange(r._id, e.target.value)}
-                      >
-                        {STATUS_OPTIONS.map(st => (
-                          <option key={st} value={st}>{st.charAt(0).toUpperCase() + st.slice(1)}</option>
-                        ))}
-                      </select>
-                    </td>
-                    <td style={{ ...s.td, whiteSpace: 'nowrap', color: '#888', fontSize: 12 }}>
-                      {new Date(r.createdAt).toLocaleDateString()}
-                    </td>
-                    <td style={s.td}>
-                      <button style={s.delBtn} onClick={() => handleDelete(r._id)}>Delete</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        {/* ══════════════════════════════════════════════
+            PAGE HEADER
+        ════════════════════════════════════════════════ */}
+        <div className="dashboard-header">
+          <div>
+            <h1>Reservation Management</h1>
+            <p className="dashboard-subtitle">
+              {totalCount} total reservations — {confCount} confirmed, {pendCount} pending
+            </p>
           </div>
+          <div className="res-header-actions">
+            <button className="btn-secondary" onClick={fetchReservations}>
+              ↻ Refresh
+            </button>
+          </div>
+        </div>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div style={s.pager}>
-              <span style={{ fontSize: 13, color: '#666' }}>Page {page} of {totalPages}</span>
-              <button style={s.pgBtn} disabled={page === 1} onClick={() => setPage(p => p - 1)}>‹ Prev</button>
-              <button style={s.pgBtn} disabled={page === totalPages} onClick={() => setPage(p => p + 1)}>Next ›</button>
-            </div>
+        {/* ── Error banner ── */}
+        {error && <div className="error-message">⚠ {error}</div>}
+
+        {/* ══════════════════════════════════════════════
+            STAT CARDS
+        ════════════════════════════════════════════════ */}
+        <div className="res-stats">
+          <div className="ord-stat-card stat-total">
+            <span className="ord-stat-label">Total</span>
+            <span className="ord-stat-value">{totalCount}</span>
+            <span className="ord-stat-sub">all reservations</span>
+          </div>
+          <div className="ord-stat-card stat-pending">
+            <span className="ord-stat-label">Pending</span>
+            <span className="ord-stat-value">{pendCount}</span>
+            <span className="ord-stat-sub">awaiting confirmation</span>
+          </div>
+          <div className="ord-stat-card stat-confirmed">
+            <span className="ord-stat-label">Confirmed</span>
+            <span className="ord-stat-value">{confCount}</span>
+            <span className="ord-stat-sub">ready to seat</span>
+          </div>
+          <div className="ord-stat-card stat-cancelled">
+            <span className="ord-stat-label">Cancelled</span>
+            <span className="ord-stat-value">{cancCount}</span>
+            <span className="ord-stat-sub">this period</span>
+          </div>
+          <div className="ord-stat-card stat-today">
+            <span className="ord-stat-label">Today</span>
+            <span className="ord-stat-value">{todayCount}</span>
+            <span className="ord-stat-sub">arriving today</span>
+          </div>
+        </div>
+
+        {/* ══════════════════════════════════════════════
+            FILTER BAR
+        ════════════════════════════════════════════════ */}
+        <div className="filter-bar">
+          {/* Search */}
+          <input
+            type="text"
+            placeholder="Search name, email, phone…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="res-search-input"
+          />
+
+          <span className="res-filter-sep" aria-hidden="true" />
+
+          {/* Status filter */}
+          <select
+            className="res-filter-select"
+            value={filterStatus}
+            onChange={e => { setFilterStatus(e.target.value); setPage(1) }}
+          >
+            <option value="">All Statuses</option>
+            {STATUS_OPTIONS.map(st => (
+              <option key={st} value={st}>
+                {st.charAt(0).toUpperCase() + st.slice(1)}
+              </option>
+            ))}
+          </select>
+
+          <span className="res-filter-sep" aria-hidden="true" />
+
+          {/* Date filter */}
+          <input
+            type="date"
+            className="res-filter-date"
+            value={filterDate}
+            onChange={e => { setFilterDate(e.target.value); setPage(1) }}
+          />
+
+          {/* Clear filters */}
+          {hasFilters && (
+            <button
+              className="btn-secondary"
+              onClick={() => { setFilterStatus(''); setFilterDate(''); setSearch(''); setPage(1) }}
+            >
+              ✕ Clear
+            </button>
           )}
-        </>
-      )}
-    </div>
+
+          {/* Result count */}
+          <span className="res-result-count">
+            {visible.length} reservation{visible.length !== 1 ? 's' : ''}
+          </span>
+        </div>
+
+        {/* ══════════════════════════════════════════════
+            TABLE SECTION
+        ════════════════════════════════════════════════ */}
+        <div className="admin-table-section">
+          <h2>Reservations</h2>
+
+          {/* Loading */}
+          {loading ? (
+            <div className="admin-loading">🍖 Loading reservations…</div>
+          ) : visible.length === 0 ? (
+            /* Empty state */
+            <div className="empty-state">
+              <div className="empty-state-icon">🪑</div>
+              <p>No reservations found.</p>
+            </div>
+          ) : (
+            <>
+              {/* ── TABLE ── */}
+              <div className="admin-table-wrapper">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th className="res-col-guest"    scope="col">Guest</th>
+                      <th className="res-col-contact"  scope="col">Contact</th>
+                      <th className="res-col-date"     scope="col">Date</th>
+                      <th className="res-col-time"     scope="col">Time</th>
+                      <th className="res-col-guests"   scope="col">Guests</th>
+                      <th className="res-col-occasion" scope="col">Occasion</th>
+                      <th className="res-col-seating"  scope="col">Seating</th>
+                      <th className="res-col-status"   scope="col">Status</th>
+                      <th className="res-col-created"  scope="col">Created</th>
+                      <th className="res-col-action"   scope="col">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {visible.map(r => (
+                      <tr key={r._id} style={{ opacity: updating === r._id ? 0.6 : 1 }}>
+
+                        {/* — Guest — */}
+                        <td className="res-col-guest" data-label="Guest">
+                          <span className="res-guest-name">
+                            {r.firstName} {r.lastName}
+                          </span>
+                          {r.specialRequests && (
+                            <span className="res-special-req" title={r.specialRequests}>
+                              📝 Special request
+                            </span>
+                          )}
+                        </td>
+
+                        {/* — Contact — */}
+                        <td className="res-col-contact" data-label="Contact">
+                          <span className="res-contact-email">{r.email}</span>
+                          <span className="res-contact-phone">{r.phone}</span>
+                        </td>
+
+                        {/* — Date — */}
+                        <td className="res-col-date" data-label="Date">
+                          {formatDate(r.date)}
+                        </td>
+
+                        {/* — Time — */}
+                        <td className="res-col-time" data-label="Time">
+                          {r.time}
+                        </td>
+
+                        {/* — Guests — */}
+                        <td className="res-col-guests" data-label="Guests">
+                          <span className="res-guest-count">
+                            🪑 {r.guests}
+                          </span>
+                        </td>
+
+                        {/* — Occasion — */}
+                        <td className="res-col-occasion" data-label="Occasion">
+                          {r.occasion && r.occasion !== 'none' ? r.occasion : '—'}
+                        </td>
+
+                        {/* — Seating — */}
+                        <td className="res-col-seating" data-label="Seating">
+                          {r.seatingPreference || '—'}
+                        </td>
+
+                        {/* — Status — */}
+                        <td className="res-col-status" data-label="Status">
+                          <select
+                            className={`res-status-select ${r.status}`}
+                            value={r.status}
+                            disabled={updating === r._id}
+                            onChange={e => handleStatusChange(r._id, e.target.value)}
+                          >
+                            {STATUS_OPTIONS.map(st => (
+                              <option key={st} value={st}>
+                                {st.charAt(0).toUpperCase() + st.slice(1)}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+
+                        {/* — Created — */}
+                        <td className="res-col-created" data-label="Created">
+                          {new Date(r.createdAt).toLocaleDateString()}
+                        </td>
+
+                        {/* — Actions — */}
+                        <td className="res-col-action" data-label="Actions">
+                          <div className="res-action-btns">
+                            <button
+                              className="res-btn-delete"
+                              onClick={() => handleDelete(r._id)}
+                              disabled={updating === r._id}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* ── PAGINATION ── */}
+              {totalPages > 1 && (
+                <div className="res-pagination">
+                  <span className="res-page-info">
+                    Page {page} of {totalPages}
+                  </span>
+                  <button
+                    className="res-page-btn"
+                    disabled={page === 1}
+                    onClick={() => setPage(p => p - 1)}
+                  >
+                    ‹ Prev
+                  </button>
+                  <button
+                    className="res-page-btn"
+                    disabled={page === totalPages}
+                    onClick={() => setPage(p => p + 1)}
+                  >
+                    Next ›
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+      </div>{/* /admin-container */}
+    </div>/* /admin-dashboard */
   )
 }
 

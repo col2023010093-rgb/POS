@@ -1,0 +1,967 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   TEXAS JOE'S  ✦  ADMIN RESERVATIONS  —  AdminReservations.css
+   Design system aligned 1-to-1 with AdminMenu.css & AdminOrders.css
+   Self-contained: only requires AdminDashboard.css for base resets.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────────────────────────────────────────
+   §0  DESIGN TOKENS  (identical to AdminMenu.css / AdminOrders.css)
+   ───────────────────────────────────────────────────────────────────── */
+:root {
+  /* Palette */
+  --oj-wood:       #3B2A1A;
+  --oj-leather:    #6B3E26;
+  --oj-saddle:     #8B5A2B;
+  --oj-copper:     #C4622D;
+  --oj-amber:      #D4A373;
+  --oj-gold:       #E8C570;
+  --oj-parchment:  #F5E6C8;
+  --oj-cream:      #FBF4E4;
+  --oj-smoke:      #EDE0C4;
+  --oj-tan:        #C4996A;
+  --oj-sand:       #F0D9A8;
+
+  /* Reservation status colours */
+  --rs-pending:    #D4A017;
+  --rs-confirmed:  #27AE60;
+  --rs-cancelled:  #C0392B;
+  --rs-completed:  #2980B9;
+
+  /* Spacing scale */
+  --sp-xs: 0.5rem;
+  --sp-sm: 1rem;
+  --sp-md: 1.5rem;
+  --sp-lg: 2rem;
+
+  /* Typography */
+  --f-display: 'Georgia', 'Times New Roman', serif;
+  --f-body:    'Trebuchet MS', 'Segoe UI', sans-serif;
+  --f-mono:    'Courier New', monospace;
+
+  /* Shadows */
+  --sh-card:   0 2px 12px rgba(59,42,26,.12), 0 1px 4px rgba(59,42,26,.08);
+  --sh-raised: 0 4px 24px rgba(59,42,26,.18), 0 2px 8px rgba(59,42,26,.10);
+  --sh-inset:  inset 0 1px 3px rgba(59,42,26,.15);
+
+  /* Borders */
+  --bd-warm:   1px solid rgba(196,153,106,.30);
+  --bd-strong: 1px solid rgba(107,62,38,.25);
+
+  /* Radius */
+  --r-sm:   4px;
+  --r-md:   8px;
+  --r-lg:   12px;
+  --r-pill: 999px;
+
+  /* Transitions */
+  --t-fast: 150ms ease;
+  --t-mid:  250ms ease;
+
+  /* ── RESERVATION TABLE COLUMN WIDTHS ──
+     Total fixed: 160+130+120+80+80+100+115+85+200 = 1070px
+     name col auto → min-width 1080px prevents compression       */
+  --res-col-guest:   170px;
+  --res-col-contact: 170px;
+  --res-col-date:    120px;
+  --res-col-time:     80px;
+  --res-col-guests:   75px;
+  --res-col-occasion: 110px;
+  --res-col-seating:  110px;
+  --res-col-status:   140px;
+  --res-col-created:   95px;
+  --res-col-action:   100px;
+  --res-col-pad:      0.9rem;
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §1  PAGE WRAPPER
+   ───────────────────────────────────────────────────────────────────── */
+.admin-dashboard {
+  background: var(--oj-parchment);
+  min-height: 100vh;
+}
+.admin-dashboard .admin-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: var(--sp-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-md);
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §2  PAGE HEADER
+   ───────────────────────────────────────────────────────────────────── */
+.admin-dashboard .dashboard-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-sm);
+  padding: var(--sp-md) var(--sp-lg);
+  background: linear-gradient(135deg, var(--oj-wood) 0%, var(--oj-leather) 60%, var(--oj-saddle) 100%);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-raised);
+  position: relative;
+  overflow: hidden;
+}
+/* Gold shimmer bar at bottom of header */
+.admin-dashboard .dashboard-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--oj-gold), var(--oj-copper), var(--oj-amber), var(--oj-gold));
+}
+.admin-dashboard .dashboard-header h1 {
+  font-family: var(--f-display);
+  font-size: 1.65rem;
+  font-weight: 700;
+  color: var(--oj-sand);
+  letter-spacing: 0.04em;
+  text-shadow: 0 1px 3px rgba(0,0,0,.40);
+  margin: 0 0 0.25rem;
+  line-height: 1.2;
+}
+.admin-dashboard .dashboard-subtitle {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--f-body);
+  font-size: 0.8rem;
+  color: var(--oj-amber);
+}
+/* Live pulse dot */
+.admin-dashboard .dashboard-subtitle::before {
+  content: '';
+  display: inline-block;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #4CAF50;
+  box-shadow: 0 0 0 2px rgba(76,175,80,.30);
+  animation: res-live-pulse 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+@keyframes res-live-pulse {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(76,175,80,.25); }
+  50%       { box-shadow: 0 0 0 5px rgba(76,175,80,.10); }
+}
+
+/* ── Header action buttons ── */
+.admin-dashboard .res-header-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-shrink: 0;
+}
+.admin-dashboard .res-header-actions .btn-secondary {
+  font-family: var(--f-body);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.5rem 1.1rem;
+  border-radius: var(--r-pill);
+  border: 1.5px solid var(--oj-amber);
+  background: rgba(255,255,255,.10);
+  color: var(--oj-sand);
+  cursor: pointer;
+  transition: all var(--t-fast);
+  white-space: nowrap;
+}
+.admin-dashboard .res-header-actions .btn-secondary:hover {
+  background: rgba(255,255,255,.18);
+  border-color: var(--oj-gold);
+}
+.admin-dashboard .res-header-actions button:focus-visible {
+  outline: 2px solid var(--oj-gold);
+  outline-offset: 2px;
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §3  STATS CARDS  (matches AdminMenu §3 / AdminOrders §3 exactly)
+   ───────────────────────────────────────────────────────────────────── */
+.admin-dashboard .res-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--sp-sm);
+}
+.admin-dashboard .ord-stat-card {
+  background: var(--oj-cream);
+  border: var(--bd-warm);
+  border-radius: var(--r-md);
+  padding: var(--sp-sm) var(--sp-md);
+  box-shadow: var(--sh-card);
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  position: relative;
+  overflow: hidden;
+  transition: transform var(--t-fast), box-shadow var(--t-fast);
+}
+.admin-dashboard .ord-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--sh-raised);
+}
+/* Coloured top accent stripe */
+.admin-dashboard .ord-stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+}
+.admin-dashboard .ord-stat-card.stat-total::before     { background: var(--oj-leather);  }
+.admin-dashboard .ord-stat-card.stat-pending::before   { background: var(--rs-pending);   }
+.admin-dashboard .ord-stat-card.stat-confirmed::before { background: var(--rs-confirmed); }
+.admin-dashboard .ord-stat-card.stat-cancelled::before { background: var(--rs-cancelled); }
+.admin-dashboard .ord-stat-card.stat-today::before     { background: var(--oj-gold);      }
+
+.admin-dashboard .ord-stat-label {
+  font-family: var(--f-body);
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.4px;
+  color: var(--oj-tan);
+}
+.admin-dashboard .ord-stat-value {
+  font-family: var(--f-display);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--oj-wood);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+/* Status-coloured values */
+.admin-dashboard .ord-stat-card.stat-pending   .ord-stat-value { color: var(--rs-pending);   }
+.admin-dashboard .ord-stat-card.stat-confirmed .ord-stat-value { color: var(--rs-confirmed); }
+.admin-dashboard .ord-stat-card.stat-cancelled .ord-stat-value { color: var(--rs-cancelled); }
+.admin-dashboard .ord-stat-card.stat-today     .ord-stat-value { color: var(--oj-saddle);    }
+
+.admin-dashboard .ord-stat-sub {
+  font-size: 0.7rem;
+  color: var(--oj-tan);
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §4  FILTER BAR  (matches AdminMenu §5 / AdminOrders §5)
+   ───────────────────────────────────────────────────────────────────── */
+.admin-dashboard .filter-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-xs);
+  background: var(--oj-cream);
+  border: var(--bd-warm);
+  border-radius: var(--r-md);
+  padding: 0.6rem 0.75rem;
+  box-shadow: var(--sh-card);
+  flex-wrap: wrap;
+}
+
+/* Search input */
+.admin-dashboard .filter-bar .res-search-input {
+  flex: 1;
+  min-width: 180px;
+  border: none;
+  background: transparent;
+  font-family: var(--f-body);
+  font-size: 0.88rem;
+  color: var(--oj-wood);
+  padding: 0.2rem 0.2rem 0.2rem 2rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='%23C4996A' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 0.3rem center;
+  background-size: 15px;
+  outline: none;
+}
+.admin-dashboard .filter-bar .res-search-input::placeholder { color: var(--oj-tan); }
+.admin-dashboard .filter-bar .res-search-input:focus {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='%23C4622D' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
+}
+
+/* Separator between search and dropdowns */
+.admin-dashboard .filter-bar .res-filter-sep {
+  width: 1px;
+  height: 22px;
+  background: rgba(196,153,106,.30);
+  flex-shrink: 0;
+}
+
+/* Select dropdowns inside filter bar */
+.admin-dashboard .filter-bar .res-filter-select {
+  border: none;
+  background: transparent;
+  font-family: var(--f-body);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--oj-saddle);
+  padding: 0.2rem 1.4rem 0.2rem 0.4rem;
+  cursor: pointer;
+  outline: none;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%238B5A2B' stroke-width='3'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.2rem center;
+  background-size: 10px;
+  flex-shrink: 0;
+}
+.admin-dashboard .filter-bar .res-filter-select:focus { color: var(--oj-leather); }
+
+/* Date input inside filter bar */
+.admin-dashboard .filter-bar .res-filter-date {
+  border: none;
+  background: transparent;
+  font-family: var(--f-body);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--oj-saddle);
+  padding: 0.2rem 0.4rem;
+  cursor: pointer;
+  outline: none;
+  flex-shrink: 0;
+}
+.admin-dashboard .filter-bar .res-filter-date:focus { color: var(--oj-leather); }
+
+/* Clear filter button */
+.admin-dashboard .filter-bar .btn-secondary {
+  font-family: var(--f-body);
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+  padding: 0.35rem 0.85rem;
+  border-radius: var(--r-pill);
+  border: var(--bd-strong);
+  background: var(--oj-smoke);
+  color: var(--oj-leather);
+  cursor: pointer;
+  transition: all var(--t-fast);
+}
+.admin-dashboard .filter-bar .btn-secondary:hover {
+  background: var(--oj-saddle);
+  color: var(--oj-sand);
+  border-color: var(--oj-saddle);
+}
+
+/* Result count pill */
+.admin-dashboard .res-result-count {
+  font-family: var(--f-body);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--oj-tan);
+  white-space: nowrap;
+  flex-shrink: 0;
+  padding-left: 0.5rem;
+  border-left: var(--bd-warm);
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §5  TABLE SECTION WRAPPER  (matches AdminMenu §6 / AdminOrders §6)
+   ───────────────────────────────────────────────────────────────────── */
+.admin-dashboard .admin-table-section {
+  background: var(--oj-cream);
+  border: var(--bd-warm);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-card);
+  overflow: hidden;
+}
+/* Section heading with ✦ prefix */
+.admin-dashboard .admin-table-section > h2 {
+  font-family: var(--f-body);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2.5px;
+  color: var(--oj-tan);
+  padding: 0.85rem var(--sp-md);
+  margin: 0;
+  border-bottom: var(--bd-warm);
+  background: linear-gradient(180deg, var(--oj-cream) 0%, var(--oj-parchment) 100%);
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.admin-dashboard .admin-table-section > h2::before {
+  content: '✦';
+  color: var(--oj-gold);
+  font-size: 0.65rem;
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §6  TABLE LAYOUT  (matches AdminMenu §7 / AdminOrders §7)
+   ───────────────────────────────────────────────────────────────────── */
+.admin-dashboard .admin-table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.admin-dashboard .admin-table {
+  table-layout: fixed;
+  width: 100%;
+  min-width: 1080px;
+  border-collapse: collapse;
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §7  COLUMN WIDTHS  (on <th> only; table-layout:fixed propagates)
+   ───────────────────────────────────────────────────────────────────── */
+.admin-dashboard .admin-table th.res-col-guest    { width: var(--res-col-guest);   }
+.admin-dashboard .admin-table th.res-col-contact  { width: var(--res-col-contact); }
+.admin-dashboard .admin-table th.res-col-date     { width: var(--res-col-date);    }
+.admin-dashboard .admin-table th.res-col-time     { width: var(--res-col-time);    }
+.admin-dashboard .admin-table th.res-col-guests   { width: var(--res-col-guests);  }
+.admin-dashboard .admin-table th.res-col-occasion { width: var(--res-col-occasion);}
+.admin-dashboard .admin-table th.res-col-seating  { width: var(--res-col-seating); }
+.admin-dashboard .admin-table th.res-col-status   { width: var(--res-col-status);  }
+.admin-dashboard .admin-table th.res-col-created  { width: var(--res-col-created); }
+.admin-dashboard .admin-table th.res-col-action   { width: var(--res-col-action);  }
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §8  HEADER ROW  (matches AdminMenu §9 / AdminOrders §9)
+   ───────────────────────────────────────────────────────────────────── */
+.admin-dashboard .admin-table thead {
+  background: linear-gradient(180deg, var(--oj-wood) 0%, #2d1f0f 100%);
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  box-shadow: 0 2px 6px rgba(0,0,0,.25);
+}
+.admin-dashboard .admin-table th {
+  padding: 0.9rem var(--res-col-pad);
+  text-align: left;
+  font-family: var(--f-body);
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--oj-amber);
+  white-space: nowrap;
+  overflow: hidden;
+  vertical-align: middle;
+  border-right: 1px solid rgba(255,255,255,.05);
+}
+.admin-dashboard .admin-table th:last-child  { border-right: none; }
+.admin-dashboard .admin-table th.res-col-guests  { text-align: center; }
+.admin-dashboard .admin-table th.res-col-action  { text-align: center; }
+
+/* Reset positional selectors — column classes own sizing */
+.admin-dashboard .admin-table th:first-child,
+.admin-dashboard .admin-table td:first-child { padding-left: var(--res-col-pad); }
+.admin-dashboard .admin-table th:last-child,
+.admin-dashboard .admin-table td:last-child  { padding-right: var(--res-col-pad); }
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §9  BODY CELLS  (matches AdminMenu §10 / AdminOrders §10)
+   ───────────────────────────────────────────────────────────────────── */
+.admin-dashboard .admin-table td {
+  padding: 0.8rem var(--res-col-pad);
+  vertical-align: middle;
+  font-family: var(--f-body);
+  font-size: 0.845rem;
+  color: var(--oj-saddle);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-right: 1px solid rgba(196,153,106,.08);
+}
+.admin-dashboard .admin-table td:last-child { border-right: none; }
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §10  COLUMN-SPECIFIC CELL RULES
+   ───────────────────────────────────────────────────────────────────── */
+
+/* GUEST NAME */
+.admin-dashboard .admin-table td.res-col-guest {
+  white-space: normal;
+  overflow: visible;
+}
+.admin-dashboard .res-guest-name {
+  display: block;
+  font-family: var(--f-display);
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--oj-wood);
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.admin-dashboard .res-special-req {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  margin-top: 0.2rem;
+  font-size: 0.72rem;
+  color: var(--oj-tan);
+  font-style: italic;
+  cursor: default;
+}
+
+/* CONTACT */
+.admin-dashboard .admin-table td.res-col-contact {
+  white-space: normal;
+  overflow: visible;
+}
+.admin-dashboard .res-contact-email {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--oj-leather);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+.admin-dashboard .res-contact-phone {
+  display: block;
+  font-size: 0.74rem;
+  color: var(--oj-tan);
+  margin-top: 0.1rem;
+  font-family: var(--f-mono);
+}
+
+/* DATE */
+.admin-dashboard .admin-table td.res-col-date {
+  font-size: 0.82rem;
+  color: var(--oj-wood);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* TIME */
+.admin-dashboard .admin-table td.res-col-time {
+  font-family: var(--f-mono);
+  font-size: 0.85rem;
+  color: var(--oj-saddle);
+  white-space: nowrap;
+}
+
+/* GUEST COUNT */
+.admin-dashboard .admin-table td.res-col-guests {
+  text-align: center;
+}
+.admin-dashboard .res-guest-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  font-family: var(--f-display);
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--oj-copper);
+}
+
+/* OCCASION & SEATING — truncate gracefully */
+.admin-dashboard .admin-table td.res-col-occasion,
+.admin-dashboard .admin-table td.res-col-seating {
+  font-size: 0.82rem;
+  color: var(--oj-saddle);
+  text-transform: capitalize;
+}
+
+/* CREATED DATE */
+.admin-dashboard .admin-table td.res-col-created {
+  font-size: 0.78rem;
+  color: var(--oj-tan);
+  white-space: nowrap;
+  font-family: var(--f-mono);
+}
+
+/* ACTIONS */
+.admin-dashboard .admin-table td.res-col-action {
+  text-align: center;
+  overflow: visible;
+  white-space: nowrap;
+}
+.admin-dashboard .res-action-btns {
+  display: inline-flex;
+  gap: 0.35rem;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §11  STATUS SELECT DROPDOWN  (matches AdminOrders status-select style)
+   ───────────────────────────────────────────────────────────────────── */
+.admin-dashboard .admin-table td.res-col-status {
+  overflow: visible;
+  white-space: nowrap;
+}
+.admin-dashboard .res-status-select {
+  width: 100%;
+  max-width: 130px;
+  font-family: var(--f-body);
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 0.35rem 1.6rem 0.35rem 0.65rem;
+  border-radius: var(--r-pill);
+  border-width: 1.5px;
+  border-style: solid;
+  cursor: pointer;
+  transition: all var(--t-fast);
+  appearance: none;
+  -webkit-appearance: none;
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  background-size: 10px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='3'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+/* Per-status colour schemes */
+.admin-dashboard .res-status-select.pending   {
+  color: #b8860b;
+  background-color: rgba(212,160,23,.13);
+  border-color: rgba(212,160,23,.45);
+}
+.admin-dashboard .res-status-select.confirmed {
+  color: #1a6b3a;
+  background-color: rgba(39,174,96,.13);
+  border-color: rgba(39,174,96,.45);
+}
+.admin-dashboard .res-status-select.cancelled {
+  color: #922b21;
+  background-color: rgba(192,57,43,.13);
+  border-color: rgba(192,57,43,.45);
+}
+.admin-dashboard .res-status-select.completed {
+  color: #1a5c8a;
+  background-color: rgba(41,128,185,.13);
+  border-color: rgba(41,128,185,.45);
+}
+.admin-dashboard .res-status-select:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.admin-dashboard .res-status-select:focus-visible {
+  outline: 2px solid var(--oj-gold);
+  outline-offset: 1px;
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §12  TABLE ROWS  (matches AdminMenu §12 / AdminOrders §12)
+   ───────────────────────────────────────────────────────────────────── */
+.admin-dashboard .admin-table tbody tr {
+  border-bottom: 1px solid rgba(196,153,106,.10);
+  transition: background var(--t-fast), transform var(--t-fast);
+  background: var(--oj-cream);
+}
+.admin-dashboard .admin-table tbody tr:last-child { border-bottom: none; }
+.admin-dashboard .admin-table tbody tr:nth-child(even) {
+  background: rgba(245,230,200,.45);
+}
+.admin-dashboard .admin-table tbody tr:hover {
+  background: linear-gradient(90deg, rgba(232,197,112,.18) 0%, rgba(245,230,200,.40) 100%);
+  transform: translateX(2px);
+}
+/* Dimmed/updating row */
+.admin-dashboard .admin-table tbody tr[style*="opacity: 0.6"],
+.admin-dashboard .admin-table tbody tr[style*="opacity:0.6"] {
+  pointer-events: none;
+  filter: grayscale(0.4);
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §13  ACTION BUTTONS  (mirrors AdminMenu mnu-edit-btn / btn-delete style)
+   ───────────────────────────────────────────────────────────────────── */
+
+/* Delete button — red tint */
+.admin-dashboard .res-btn-delete {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: var(--f-body);
+  font-size: 0.69rem;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  padding: 0.36rem 0.75rem;
+  border-radius: var(--r-pill);
+  border: 1.5px solid rgba(192,57,43,.40);
+  background: rgba(192,57,43,.10);
+  color: #922b21;
+  cursor: pointer;
+  transition: all var(--t-fast);
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-shadow: var(--sh-card);
+}
+.admin-dashboard .res-btn-delete:hover {
+  background: rgba(192,57,43,.18);
+  border-color: rgba(192,57,43,.60);
+  box-shadow: 0 3px 10px rgba(192,57,43,.25);
+  transform: translateY(-1px);
+}
+.admin-dashboard .res-btn-delete:active  { transform: translateY(0); }
+.admin-dashboard .res-btn-delete:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none !important;
+}
+.admin-dashboard .res-btn-delete:focus-visible {
+  outline: 2px solid var(--oj-gold);
+  outline-offset: 2px;
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §14  NOTICES & ERRORS  (matches AdminMenu §14)
+   ───────────────────────────────────────────────────────────────────── */
+.admin-dashboard .admin-notice {
+  padding: 0.75rem 1rem;
+  background: rgba(39,174,96,.12);
+  border: 1px solid rgba(39,174,96,.30);
+  border-radius: var(--r-md);
+  font-family: var(--f-body);
+  font-size: 0.84rem;
+  color: #1e6b3a;
+  animation: res-slide-down 300ms ease both;
+}
+.admin-dashboard .error-message {
+  padding: 0.75rem 1rem;
+  background: rgba(192,57,43,.10);
+  border: 1px solid rgba(192,57,43,.30);
+  border-radius: var(--r-md);
+  font-family: var(--f-body);
+  font-size: 0.84rem;
+  color: #922b21;
+}
+@keyframes res-slide-down {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §15  EMPTY & LOADING STATES  (matches AdminMenu §15)
+   ───────────────────────────────────────────────────────────────────── */
+.admin-dashboard .empty-state {
+  padding: 4rem 2rem;
+  text-align: center;
+}
+.admin-dashboard .empty-state-icon {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 1rem;
+  animation: res-float 4s ease-in-out infinite;
+}
+@keyframes res-float {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50%       { transform: translateY(-8px) rotate(3deg); }
+}
+.admin-dashboard .empty-state p {
+  font-family: var(--f-display);
+  font-style: italic;
+  color: var(--oj-tan);
+  font-size: 0.95rem;
+}
+.admin-dashboard .admin-loading {
+  padding: 3rem;
+  text-align: center;
+  font-family: var(--f-display);
+  font-style: italic;
+  color: var(--oj-saddle);
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §16  PAGINATION  (new — styled to match western theme)
+   ───────────────────────────────────────────────────────────────────── */
+.admin-dashboard .res-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  padding: 0.85rem var(--sp-md);
+  border-top: var(--bd-warm);
+  background: linear-gradient(180deg, var(--oj-parchment) 0%, var(--oj-cream) 100%);
+}
+.admin-dashboard .res-page-info {
+  font-family: var(--f-body);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--oj-tan);
+  margin-right: 0.25rem;
+}
+.admin-dashboard .res-page-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: var(--f-body);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  padding: 0.38rem 0.9rem;
+  border-radius: var(--r-pill);
+  border: var(--bd-strong);
+  background: var(--oj-cream);
+  color: var(--oj-saddle);
+  cursor: pointer;
+  transition: all var(--t-fast);
+  white-space: nowrap;
+  box-shadow: var(--sh-card);
+}
+.admin-dashboard .res-page-btn:hover:not(:disabled) {
+  background: var(--oj-leather);
+  color: var(--oj-sand);
+  border-color: var(--oj-leather);
+  box-shadow: 0 2px 8px rgba(107,62,38,.30);
+  transform: translateY(-1px);
+}
+.admin-dashboard .res-page-btn:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+.admin-dashboard .res-page-btn:focus-visible {
+  outline: 2px solid var(--oj-gold);
+  outline-offset: 2px;
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §17  RESPONSIVE — 1200px
+   ───────────────────────────────────────────────────────────────────── */
+@media (max-width: 1200px) {
+  :root {
+    --res-col-guest:   155px;
+    --res-col-contact: 155px;
+    --res-col-occasion: 95px;
+    --res-col-seating:  95px;
+    --res-col-status:  130px;
+    --res-col-action:   90px;
+  }
+  .admin-dashboard .admin-table { min-width: 960px; }
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §18  RESPONSIVE — 1024px  (hide occasion + seating columns)
+   ───────────────────────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .admin-dashboard .admin-table th.res-col-occasion,
+  .admin-dashboard .admin-table td.res-col-occasion,
+  .admin-dashboard .admin-table th.res-col-seating,
+  .admin-dashboard .admin-table td.res-col-seating,
+  .admin-dashboard .admin-table th.res-col-created,
+  .admin-dashboard .admin-table td.res-col-created  { display: none; }
+  .admin-dashboard .admin-table { min-width: 720px; }
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §19  RESPONSIVE — 768px  (stacked card layout, matches AdminMenu §18)
+   ───────────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .admin-dashboard .admin-container { padding: var(--sp-sm); gap: var(--sp-sm); }
+  .admin-dashboard .admin-table { table-layout: auto; min-width: unset; }
+  .admin-dashboard .admin-table,
+  .admin-dashboard .admin-table tbody,
+  .admin-dashboard .admin-table tr,
+  .admin-dashboard .admin-table td { display: block; width: 100%; box-sizing: border-box; }
+  .admin-dashboard .admin-table thead { display: none; }
+
+  /* Card per row */
+  .admin-dashboard .admin-table tbody tr {
+    background: var(--oj-cream);
+    border-radius: var(--r-md);
+    margin-bottom: 0.75rem;
+    border: var(--bd-warm);
+    box-shadow: var(--sh-card);
+    padding: 0.9rem;
+    transform: none !important;
+  }
+  .admin-dashboard .admin-table tbody tr:nth-child(even) { background: var(--oj-cream); }
+
+  /* Cells become label + value rows */
+  .admin-dashboard .admin-table td {
+    padding: 0.4rem 0;
+    border: none; border-right: none;
+    max-width: 100%; white-space: normal; overflow: visible;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  .admin-dashboard .admin-table td::before {
+    content: attr(data-label);
+    font-family: var(--f-body);
+    font-size: 0.65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--oj-tan);
+    min-width: 76px;
+    flex-shrink: 0;
+    padding-top: 0.05rem;
+  }
+  .admin-dashboard .admin-table td:first-child,
+  .admin-dashboard .admin-table td:last-child { padding-left: 0; padding-right: 0; }
+
+  /* Guest name row — separator above actions */
+  .admin-dashboard .admin-table td.res-col-guest {
+    border-bottom: var(--bd-warm);
+    padding-bottom: 0.55rem;
+    margin-bottom: 0.25rem;
+  }
+
+  /* Guests centred → left on mobile */
+  .admin-dashboard .admin-table td.res-col-guests { text-align: left; }
+
+  /* Status select full width */
+  .admin-dashboard .admin-table td.res-col-status { overflow: visible; }
+  .admin-dashboard .res-status-select { width: 100%; max-width: none; }
+
+  /* Actions */
+  .admin-dashboard .admin-table td.res-col-action {
+    padding-top: 0.55rem;
+    border-top: var(--bd-warm);
+    margin-top: 0.25rem;
+    text-align: left;
+    overflow: visible;
+  }
+  .admin-dashboard .res-action-btns { justify-content: flex-start; flex-wrap: wrap; }
+
+  /* Layout adjustments */
+  .admin-dashboard .res-stats    { grid-template-columns: repeat(2, 1fr); }
+  .admin-dashboard .dashboard-header { flex-direction: column; align-items: stretch; }
+  .admin-dashboard .res-header-actions { flex-direction: row; flex-wrap: wrap; gap: 0.4rem; }
+  .admin-dashboard .filter-bar   { flex-wrap: wrap; gap: 0.5rem; }
+  .admin-dashboard .res-filter-sep { display: none; }
+  .admin-dashboard .res-search-input { min-width: 100%; }
+  .admin-dashboard .res-pagination { justify-content: center; }
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §20  RESPONSIVE — 480px
+   ───────────────────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .admin-dashboard .res-stats    { grid-template-columns: 1fr 1fr; }
+  .admin-dashboard .ord-stat-value { font-size: 1.3rem; }
+  .admin-dashboard .res-btn-delete { font-size: 0.67rem; padding: 0.32rem 0.68rem; }
+  .admin-dashboard .res-page-btn   { font-size: 0.72rem; padding: 0.34rem 0.75rem; }
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §21  REDUCED MOTION
+   ───────────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .admin-dashboard *,
+  .admin-dashboard *::before,
+  .admin-dashboard *::after {
+    animation-duration:        0.01ms !important;
+    animation-iteration-count: 1      !important;
+    transition-duration:       0.01ms !important;
+  }
+}
