@@ -111,8 +111,10 @@ const Menu = () => {
   }
 
   const isOutOfStock = (item) => {
-    const stock = getStock(item)
-    return stock !== null && stock <= 0
+  if (item.inStock === false) return true      // admin toggled it off
+  const stock = getStock(item)
+  if (stock !== null && stock <= 0) return true // stock count hit zero
+  return false
   }
 
   const getCartQty = (itemId) => {
