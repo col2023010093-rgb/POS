@@ -50,10 +50,10 @@
   --t-mid:  250ms ease;
 
   /* ── COLUMN WIDTHS ─────────────────────────────────────────────────
-     Total: 160+180+72+105+150+110+90 = 867px
+     Total: 200+140+72+105+150+110+90 = 867px
      Table has min-width:867px so layout never compresses below this.  */
-  --col-id:       160px;
-  --col-customer: 180px;
+  --col-id:       200px;
+  --col-customer: 140px;
   --col-items:     72px;
   --col-total:    105px;
   --col-status:   150px;
