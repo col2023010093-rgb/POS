@@ -1823,3 +1823,45 @@
 .item-image {
   position: relative;  /* needed for .oos-image-overlay absolute positioning */
 }
+
+/* ── Modal close button — anchored top-right of the image header ── */
+.modal-header {
+  position: relative;   /* needed for absolute positioning of children */
+}
+
+.modal-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 10;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+
+  background: rgba(20, 10, 4, 0.55);
+  border: 1.5px solid rgba(255, 255, 255, 0.30);
+  border-radius: 50%;
+  color: #fff;
+  font-size: 0.9rem;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+  transition: background 150ms ease, transform 150ms ease, border-color 150ms ease;
+}
+
+.modal-close:hover {
+  background: rgba(192, 57, 43, 0.85);
+  border-color: rgba(255, 255, 255, 0.55);
+  transform: scale(1.1) rotate(90deg);
+}
+
+.modal-close:active {
+  transform: scale(0.95) rotate(90deg);
+}
+
+.modal-close:focus-visible {
+  outline: 2px solid #E8C570;
+  outline-offset: 2px;
+}

@@ -31,25 +31,21 @@ const MenuModal = ({ item, isOpen, onClose, onAddToCart, isOutOfStock = false })
   const decrementQuantity = () => setQuantity(prev => (prev > 1 ? prev - 1 : 1))
 
   const handleOverlayClick = (e) => {
-    if (e.target === e.currentTarget) {
-      handleClose()
-    }
+    if (e.target === e.currentTarget) handleClose()
   }
 
   if (!isOpen && !isClosing) return null
 
   return (
-    <div 
+    <div
       className={`modal-overlay ${isOpen && !isClosing ? 'active' : ''} ${isClosing ? 'closing' : ''}`}
       onClick={handleOverlayClick}
     >
       <div className={`modal-container ${isOpen && !isClosing ? 'active' : ''} ${isClosing ? 'closing' : ''}`}>
-        <button className="modal-close" onClick={handleClose}>
-          <FaTimes />
-        </button>
 
         {item && (
           <>
+            {/* ── Image header with X button anchored top-right ── */}
             <div className="modal-header">
               <div className="modal-image">
                 {item.image ? (
@@ -62,21 +58,31 @@ const MenuModal = ({ item, isOpen, onClose, onAddToCart, isOutOfStock = false })
                   <span className="modal-emoji">🍖</span>
                 )}
               </div>
-              <div className="modal-header-overlay"></div>
+
+              <div className="modal-header-overlay" />
+
+              {/* ── X close button — top-right corner of image ── */}
+              <button
+                className="modal-close"
+                onClick={handleClose}
+                aria-label="Close"
+              >
+                <FaTimes />
+              </button>
+
               {item.popular && !isOutOfStock && (
                 <div className="modal-badge">🔥 Best Seller</div>
               )}
               {isOutOfStock && (
-                <div className="modal-badge out-of-stock-badge">Out of Stock</div>
+                <div className="modal-badge out-of-stock-badge">🚫 Out of Stock</div>
               )}
             </div>
 
+            {/* ── Modal content ── */}
             <div className="modal-content">
               <div className="modal-title-section">
                 <h2 className="modal-title">{item.name}</h2>
-                <div className="modal-price">
-                  ₱{item.price.toFixed(2)}
-                </div>
+                <div className="modal-price">₱{item.price.toFixed(2)}</div>
               </div>
 
               {isOutOfStock && (
@@ -105,7 +111,14 @@ const MenuModal = ({ item, isOpen, onClose, onAddToCart, isOutOfStock = false })
               {item.tags && item.tags.length > 0 && (
                 <div className="modal-tags">
                   {item.tags.map((tag, index) => (
-                    <span key={index} className={`modal-tag ${tag.toLowerCase().includes('spicy') ? 'spicy' : ''} ${tag.toLowerCase().includes('vegetarian') || tag.toLowerCase().includes('vegan') ? 'vegetarian' : ''} ${tag.toLowerCase().includes('best') || tag.toLowerCase().includes('favorite') ? 'popular' : ''}`}>
+                    <span
+                      key={index}
+                      className={`modal-tag
+                        ${tag.toLowerCase().includes('spicy') ? 'spicy' : ''}
+                        ${tag.toLowerCase().includes('vegetarian') || tag.toLowerCase().includes('vegan') ? 'vegetarian' : ''}
+                        ${tag.toLowerCase().includes('best') || tag.toLowerCase().includes('favorite') ? 'popular' : ''}
+                      `.trim()}
+                    >
                       {tag}
                     </span>
                   ))}
@@ -126,7 +139,7 @@ const MenuModal = ({ item, isOpen, onClose, onAddToCart, isOutOfStock = false })
               <div className="modal-quantity-section">
                 <span className="quantity-label">Quantity</span>
                 <div className="quantity-selector">
-                  <button 
+                  <button
                     className="quantity-btn"
                     onClick={decrementQuantity}
                     disabled={quantity <= 1 || isOutOfStock}
@@ -134,7 +147,7 @@ const MenuModal = ({ item, isOpen, onClose, onAddToCart, isOutOfStock = false })
                     <FaMinus />
                   </button>
                   <span className="quantity-value">{quantity}</span>
-                  <button 
+                  <button
                     className="quantity-btn"
                     onClick={incrementQuantity}
                     disabled={isOutOfStock}
