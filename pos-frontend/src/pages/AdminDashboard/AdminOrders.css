@@ -50,15 +50,15 @@
   --t-mid:  250ms ease;
 
   /* ── COLUMN WIDTHS ─────────────────────────────────────────────────
-     Total: 160+180+72+105+150+110+90 = 867px
+     Total: 160+180+72+105+125+110+90 = 867px
      Table has min-width:867px so layout never compresses below this.  */
-  --col-id:       240px;
-  --col-customer:  70px;
+  --col-id:       270px;
+  --col-customer:  80px;
   --col-items:     72px;
-  --col-total:    105px;
-  --col-status:   155px;
-  --col-date:     115px;
-  --col-actions:  90px;
+  --col-total:    95px;
+  --col-status:   125px;
+  --col-date:     105px;
+  --col-actions:  100px;
   --col-pad:       1rem;
 }
 
@@ -416,7 +416,7 @@
 
 /* ORDER # */
 .admin-dashboard .admin-table td.ord-col-id {
-  overflow: visible;
+  overflow: hidden;
   white-space: nowrap;
 }
 .admin-dashboard .admin-table td.ord-col-id strong {
@@ -426,9 +426,9 @@
   font-weight: 700;
   color: var(--oj-leather);
   letter-spacing: 0.02em;
-  overflow: visible;
-  text-overflow: unset;
-  display: inline;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* CUSTOMER */
