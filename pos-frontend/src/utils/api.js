@@ -31,7 +31,13 @@ apiClient.interceptors.response.use(
     const onLoginPage = window.location.pathname === '/login';
     const isLoginReq  = requestUrl.includes('/auth/login');
 
-    if (status === 401 && !isLoginReq && !onLoginPage) {
+    // Only redirect if:
+    // - it's a 401 (expired/invalid token, NOT wrong password)
+    // - the request was NOT any auth endpoint (login, register, verify, resend)
+    // - we are NOT already on the login page
+    const isAuthReq = requestUrl.includes('/auth/');
+
+    if (status === 401 && !isAuthReq && !onLoginPage) {
       console.warn('🔓 401 Unauthorized - clearing token and redirecting');
       localStorage.removeItem('token');
       window.location.href = '/login';
