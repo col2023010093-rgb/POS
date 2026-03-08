@@ -1,6 +1,7 @@
 import React from "react";
 import "./Bottomnav.css";
 import logo from "../../assets/logo.png";
+import { Link } from "react-router-dom";
 import {
   FaFacebook,
   FaInstagram,
@@ -10,124 +11,119 @@ import {
   FaPhone,
   FaEnvelope,
   FaClock,
+  FaFire,
 } from "react-icons/fa";
 
 const Bottomnav = () => {
   return (
     <footer className="footer">
+
+      {/* ── Barbed-wire top border ── */}
+      <div className="footer-wire" aria-hidden="true" />
+
       <div className="footer-container">
-        {/* Brand Section */}
+
+        {/* ── Brand ── */}
         <div className="footer-brand">
           <div className="footer-logo-section">
-            <img src={logo} alt="Restaurant Logo" className="footer-logo" />
+            <img src={logo} alt="Texas Joe's logo" className="footer-logo" />
             <div className="footer-title">
-              <span className="line1">Texas Joe's</span>
-              <span className="line2">House of Ribs</span>
+              <span className="footer-title__main">Texas Joe's</span>
+              <span className="footer-title__sub">House of Ribs</span>
             </div>
           </div>
+
           <p className="footer-description">
-            Authentic Texas-style BBQ with slow-smoked ribs, brisket, and all
-            the fixings. Serving up the best flavors of the West since 1985.
+            Slow-smoked over real hickory wood since 1999 — never boiled,
+            never rushed. Authentic Texas BBQ served the way it was meant to be.
           </p>
+
+          <div className="footer-badge">
+            <FaFire className="footer-badge__icon" />
+            <span>EST. 1999 · HICKORY SMOKED · NEVER BOILED</span>
+          </div>
+
           <div className="footer-social">
-            <a href="#" aria-label="Facebook">
+            <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
               <FaFacebook />
             </a>
-            <a href="#" aria-label="Instagram">
+            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
               <FaInstagram />
             </a>
-            <a href="#" aria-label="Twitter">
+            <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" aria-label="Twitter">
               <FaTwitter />
             </a>
-            <a href="#" aria-label="YouTube">
+            <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" aria-label="YouTube">
               <FaYoutube />
             </a>
           </div>
         </div>
 
-        {/* Quick Links */}
+        {/* ── Quick Links ── */}
         <div className="footer-links">
-          <h3>Quick Links</h3>
+          <h3 className="footer-section-title">Quick Links</h3>
           <ul>
-            <li>
-              <a href="#">Home</a>
-            </li>
-            <li>
-              <a href="#">Menu</a>
-            </li>
-            <li>
-              <a href="#">About Us</a>
-            </li>
-            <li>
-              <a href="#">Contact</a>
-            </li>
-            <li>
-              <a href="#">Reservations</a>
-            </li>
+            <li><Link to="/">Home</Link></li>
+            <li><Link to="/menu">Menu</Link></li>
+            <li><Link to="/reservations">Reservations</Link></li>
+            <li><Link to="/login">Sign In</Link></li>
           </ul>
         </div>
 
-        {/* Menu Categories */}
+        {/* ── Menu Categories ── */}
         <div className="footer-links">
-          <h3>Our Menu</h3>
+          <h3 className="footer-section-title">Our Menu</h3>
           <ul>
-            <li>
-              <a href="#">Signature Ribs</a>
-            </li>
-            <li>
-              <a href="#">Smoked Brisket</a>
-            </li>
-            <li>
-              <a href="#">BBQ Platters</a>
-            </li>
-            <li>
-              <a href="#">Sides & Fixings</a>
-            </li>
-            <li>
-              <a href="#">Desserts</a>
-            </li>
+            <li><Link to="/menu">Spare Ribs</Link></li>
+            <li><Link to="/menu">Baby Back Ribs</Link></li>
+            <li><Link to="/menu">BBQ Platters</Link></li>
+            <li><Link to="/menu">Steaks</Link></li>
+            <li><Link to="/menu">Sides &amp; Desserts</Link></li>
           </ul>
         </div>
 
-        {/* Contact Info */}
+        {/* ── Contact ── */}
         <div className="footer-contact">
-          <h3>Contact Us</h3>
+          <h3 className="footer-section-title">Contact Us</h3>
+
           <div className="contact-item">
-            <FaMapMarkerAlt className="contact-icon" />
-            <span>123 Rodeo Drive, Austin, TX 78701</span>
+            <FaMapMarkerAlt className="contact-icon" aria-hidden="true" />
+            <span>Texas Joe's, House of Ribs · Philippines</span>
           </div>
+
           <div className="contact-item">
-            <FaPhone className="contact-icon" />
-            <span>(512) 555-RIBS</span>
+            <FaPhone className="contact-icon" aria-hidden="true" />
+            <span>+63 (0) 555-RIBS</span>
           </div>
+
           <div className="contact-item">
-            <FaEnvelope className="contact-icon" />
-            <span>info@texasjoes.com</span>
+            <FaEnvelope className="contact-icon" aria-hidden="true" />
+            <span>info@texasjoes.site</span>
           </div>
+
           <div className="contact-item">
-            <FaClock className="contact-icon" />
-            <div className="hours">
-              <span>Mon-Thu: 11AM - 9PM</span>
-              <span>Fri-Sat: 11AM - 11PM</span>
-              <span>Sun: 12PM - 8PM</span>
+            <FaClock className="contact-icon" aria-hidden="true" />
+            <div className="contact-hours">
+              <span>Mon – Thu: 11AM – 9PM</span>
+              <span>Fri – Sat: 11AM – 11PM</span>
+              <span>Sun: 12PM – 8PM</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Footer Bottom */}
+      {/* ── Bottom bar ── */}
       <div className="footer-bottom">
         <div className="footer-bottom-content">
-          <p>&copy; 2025 Texas Joe's House of Ribs. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} Texas Joe's House of Ribs. All rights reserved.</p>
           <div className="footer-bottom-links">
             <a href="#">Privacy Policy</a>
-            <span className="divider">|</span>
+            <span className="footer-divider" aria-hidden="true">|</span>
             <a href="#">Terms of Service</a>
-            <span className="divider">|</span>
-            <a href="#">Careers</a>
           </div>
         </div>
       </div>
+
     </footer>
   );
 };
