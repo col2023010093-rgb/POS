@@ -10,33 +10,43 @@ const apiClient = axios.create({
 
 // ✅ REQUEST INTERCEPTOR - ADD TOKEN
 apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token')
-  console.log('📤 Request to', config.url, 'Token:', token ? '✓' : '✗')
+  const token = localStorage.getItem('token');
+  console.log('📤 Request to', config.url, 'Token:', token ? '✓' : '✗');
   if (token) {
-    config.headers.Authorization = `Bearer ${token}`
+    config.headers.Authorization = `Bearer ${token}`;
   }
-  return config
+  return config;
 });
 
 // ✅ RESPONSE INTERCEPTOR - HANDLE 401
+// Only redirect to /login if:
+//   1. The response is 401
+//   2. The request was NOT the login endpoint itself (wrong password should NOT redirect)
+//   3. We are NOT already on the /login page
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      console.warn('🔓 401 Unauthorized - clearing token')
-      localStorage.removeItem('token')
-      window.location.href = '/login'
+    const status      = error.response?.status;
+    const requestUrl  = error.config?.url || '';
+    const onLoginPage = window.location.pathname === '/login';
+    const isLoginReq  = requestUrl.includes('/auth/login');
+
+    if (status === 401 && !isLoginReq && !onLoginPage) {
+      console.warn('🔓 401 Unauthorized - clearing token and redirecting');
+      localStorage.removeItem('token');
+      window.location.href = '/login';
     }
-    return Promise.reject(error)
+
+    return Promise.reject(error);
   }
 );
 
 export const api = {
   // Generic HTTP methods
-  get:    (url)              => apiClient.get(url),
+  get:    (url)               => apiClient.get(url),
   post:   (url, data, config) => apiClient.post(url, data, config),
   patch:  (url, data, config) => apiClient.patch(url, data, config),
-  delete: (url)              => apiClient.delete(url),
+  delete: (url)               => apiClient.delete(url),
 
   // ========== Auth ==========
   login:    (email, password) => apiClient.post('/auth/login', { email, password }),
@@ -44,10 +54,10 @@ export const api = {
   getMe:    ()                => apiClient.get('/auth/me').catch(() => ({ data: null })),
 
   // ========== Products ==========
-  getProducts:   ()        => apiClient.get('/api/products'),
-  createProduct: (data)    => apiClient.post('/api/products', data),
-  updateProduct: (id, data) => apiClient.patch(`/api/products/${id}`, data),
-  deleteProduct: (id)      => apiClient.delete(`/api/products/${id}`),
+  getProducts:   ()          => apiClient.get('/api/products'),
+  createProduct: (data)      => apiClient.post('/api/products', data),
+  updateProduct: (id, data)  => apiClient.patch(`/api/products/${id}`, data),
+  deleteProduct: (id)        => apiClient.delete(`/api/products/${id}`),
 
   // ========== Orders ==========
   getOrders:    ()     => apiClient.get('/api/orders'),
@@ -69,20 +79,20 @@ export const api = {
   deleteReservation:  (id)       => apiClient.delete(`/api/reservations/${id}`),
 
   // ========== Admin ==========
-  getStats:                ()         => apiClient.get('/api/admin/stats'),
-  getAllOrders:             ()         => apiClient.get('/api/admin/orders'),
-  getAllUsers:              ()         => apiClient.get('/api/admin/users'),
-  deleteUser:              (id)        => apiClient.delete(`/api/admin/users/${id}`),
-  getAdminProducts:        ()         => apiClient.get('/api/admin/products'),
-  getAdminReservations:    ()         => apiClient.get('/api/admin/reservations'),
-  updateOrderStatus:       (id, status) => apiClient.patch(`/api/admin/orders/${id}/status`, { status }),
-  updateReservationStatus: (id, status) => apiClient.patch(`/api/admin/reservations/${id}/status`, { status }),
+  getStats:                ()            => apiClient.get('/api/admin/stats'),
+  getAllOrders:             ()            => apiClient.get('/api/admin/orders'),
+  getAllUsers:              ()            => apiClient.get('/api/admin/users'),
+  deleteUser:              (id)          => apiClient.delete(`/api/admin/users/${id}`),
+  getAdminProducts:        ()            => apiClient.get('/api/admin/products'),
+  getAdminReservations:    ()            => apiClient.get('/api/admin/reservations'),
+  updateOrderStatus:       (id, status)  => apiClient.patch(`/api/admin/orders/${id}/status`, { status }),
+  updateReservationStatus: (id, status)  => apiClient.patch(`/api/admin/reservations/${id}/status`, { status }),
 };
 
 export const updateOrderStatus = (orderId, status) =>
-  apiClient.patch(`/api/admin/orders/${orderId}/status`, { status })
+  apiClient.patch(`/api/admin/orders/${orderId}/status`, { status });
 
 export const updateReservationStatus = (reservationId, status) =>
-  apiClient.patch(`/api/admin/reservations/${reservationId}/status`, { status })
+  apiClient.patch(`/api/admin/reservations/${reservationId}/status`, { status });
 
 export default api;
