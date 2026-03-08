@@ -46,15 +46,14 @@ if (auth && typeof auth === 'function') {
         price: req.body.price,
         category: req.body.category,
         prepTime: req.body.prepTime,
-        inStock: req.body.inStock !== undefined ? req.body.inStock : true,
-        popular: req.body.popular !== undefined ? req.body.popular : false,
+        inStock: req.body.inStock === 'true',
+        popular: req.body.popular === 'true',
         ingredients: req.body.ingredients ? JSON.parse(req.body.ingredients) : []
       };
 
       if (req.file) {
-        productData.image = `/images/products/${req.file.filename}`;
+        productData.image = req.file.path; // full https://res.cloudinary.com/... URL
       }
-
       const product = new Product(productData);
       await product.save();
       res.status(201).json(product);
@@ -73,8 +72,8 @@ if (auth && typeof auth === 'function') {
         price: req.body.price,
         category: req.body.category,
         prepTime: req.body.prepTime,
-        inStock: req.body.inStock,
-        popular: req.body.popular
+        inStock: req.body.inStock === 'true',
+        popular: req.body.popular === 'true'
       };
 
       if (req.body.ingredients) {
