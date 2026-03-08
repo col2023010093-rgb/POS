@@ -50,15 +50,15 @@
   --t-mid:  250ms ease;
 
   /* ── COLUMN WIDTHS ─────────────────────────────────────────────────
-     Total: 160+180+72+105+85+65+50 = 867px
+     Total: 160+180+72+105+150+110+90 = 867px
      Table has min-width:867px so layout never compresses below this.  */
-  --col-id:       300px;
+  --col-id:       200px;
   --col-customer:  80px;
-  --col-items:     42px;
-  --col-total:    65px;
-  --col-status:   85px;
-  --col-date:     65px;
-  --col-actions:  50px;
+  --col-items:     72px;
+  --col-total:    105px;
+  --col-status:   155px;
+  --col-date:     115px;
+  --col-actions:  100px;
   --col-pad:       1rem;
 }
 
@@ -678,21 +678,24 @@
    ───────────────────────────────────────────────────────────────────── */
 .admin-dashboard .modal-backdrop {
   position: fixed;
-  inset: 0;
+  top: 68px;           /* clear the fixed navbar */
+  left: 0;
+  right: 0;
+  bottom: 0;
   background: rgba(30,18,8,.65);
   backdrop-filter: blur(3px);
   z-index: 100;
   display: flex;
-  align-items: center;
+  align-items: flex-start;   /* align to top of available space */
   justify-content: center;
-  padding: var(--sp-sm);
+  padding: 1.5rem var(--sp-sm) var(--sp-sm);
+  overflow-y: auto;
   animation: fade-in 200ms ease both;
 }
 @keyframes fade-in {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
-/* AFTER */
 .admin-dashboard .modal-card.ord-modal {
   background: var(--oj-cream);
   border: var(--bd-strong);
@@ -700,7 +703,7 @@
   box-shadow: 0 20px 60px rgba(30,18,8,.45), 0 4px 16px rgba(30,18,8,.20);
   width: 100%;
   max-width: 560px;
-  max-height: 88vh;
+  max-height: calc(100vh - 68px - 3rem);  /* viewport - navbar - top/bottom padding */
   overflow-y: auto;
   overflow-x: hidden;
   display: flex;
@@ -717,22 +720,16 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.9rem 1.5rem;
+  padding: 0.6rem var(--sp-md);
   background: linear-gradient(135deg, var(--oj-wood) 0%, var(--oj-leather) 100%);
   border-radius: var(--r-lg) var(--r-lg) 0 0;
   position: sticky;
   top: 0;
-  left: 0;
-  right: 0;
-  z-index: 10;
-  flex-shrink: 0;
-  overflow: hidden;
-  /* Gold accent bar */
-  box-shadow: 0 2px 0 var(--oj-gold);
+  z-index: 2;
 }
 .admin-dashboard .modal-header h3 {
   font-family: var(--f-display);
-  font-size: 1.05rem;
+  font-size: 0.9rem;
   font-weight: 700;
   color: var(--oj-sand);
   margin: 0;
@@ -999,7 +996,8 @@
   }
   .admin-dashboard .admin-table td.ord-col-actions .btn-view { width: 100%; justify-content: center; }
   .admin-dashboard .ord-stats-row { grid-template-columns: repeat(2, 1fr); }
-  .admin-dashboard .modal-card.ord-modal { max-width: 100%; max-height: 90vh; border-radius: var(--r-lg) var(--r-lg) 0 0; }
+  .admin-dashboard .modal-backdrop { top: 60px; padding: 0; align-items: flex-end; }
+  .admin-dashboard .modal-card.ord-modal { max-width: 100%; max-height: calc(100vh - 60px); border-radius: var(--r-lg) var(--r-lg) 0 0; }
   .admin-dashboard .ord-modal-status-bar { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
   .admin-dashboard .ord-modal-status-bar .status-select { width: 100%; }
   .admin-dashboard .filter-bar { flex-wrap: wrap; }
