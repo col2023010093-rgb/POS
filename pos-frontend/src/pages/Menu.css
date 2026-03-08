@@ -818,7 +818,7 @@
 .cart-sidebar.open { right: 0; }
 
 .cart-header {
-  display: flex;
+  display: relative;
   justify-content: space-between;
   align-items: center;
   padding: 1.75rem 2rem;
@@ -853,6 +853,10 @@
   justify-content: center;
   cursor: pointer;
   transition: all 0.25s ease;
+  position: absolute;
+  right: 1.5rem;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .close-cart:hover {
