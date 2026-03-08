@@ -7,6 +7,7 @@ import { api } from '../utils/api'
 import { useMenuAnimation } from '../hooks/useMenuAnimation'
 import { useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
+import { useAuth } from '../context/AuthContext'
 import { getImageSrc } from '../utils/image'
 
 // ─── Category emoji map ──────────────────────────────────────────────────────
@@ -32,6 +33,7 @@ const getCategoryIcon = (cat) =>
 // ─── Component ───────────────────────────────────────────────────────────────
 const Menu = () => {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const { cart, addToCart, updateQuantity } = useCart()
 
   const [activeCategory, setActiveCategory] = useState('all')
@@ -43,6 +45,7 @@ const Menu = () => {
   const [showModal, setShowModal]           = useState(false)
   const [loading, setLoading]               = useState(true)
   const [error, setError]                   = useState(null)
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false)
 
   const { isLoaded } = useMenuAnimation(100)
 
@@ -70,18 +73,18 @@ const Menu = () => {
     load()
   }, [])
 
-  // ── Close cart on Escape ────────────────────────────────────────────────────
-  // QA FIX: Keyboard trap — pressing Escape closes the cart sidebar
+  // ── Close cart / modal on Escape ────────────────────────────────────────────
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
+        if (showLoginPrompt) { setShowLoginPrompt(false); return }
         if (showCart)  setShowCart(false)
         if (showModal) closeModal()
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [showCart, showModal])
+  }, [showCart, showModal, showLoginPrompt])
 
   // ── Filtered items ──────────────────────────────────────────────────────────
   const filteredItems = items.filter(item => {
@@ -111,10 +114,10 @@ const Menu = () => {
   }
 
   const isOutOfStock = (item) => {
-  if (item.inStock === false) return true      // admin toggled it off
-  const stock = getStock(item)
-  if (stock !== null && stock <= 0) return true // stock count hit zero
-  return false
+    if (item.inStock === false) return true
+    const stock = getStock(item)
+    if (stock !== null && stock <= 0) return true
+    return false
   }
 
   const getCartQty = (itemId) => {
@@ -131,14 +134,22 @@ const Menu = () => {
 
   const handleAddToCart = (item, qty = 1) => {
     if (!canAddToCart(item, qty)) {
-      // QA FIX: replaced alert() with a non-blocking approach; 
-      // keeping alert for now to preserve existing UX contract
       alert(isOutOfStock(item)
         ? '❌ This item is out of stock.'
         : '⚠️ Not enough stock available.')
       return
     }
     addToCart(item, qty)
+  }
+
+  // ── Checkout handler — requires login ───────────────────────────────────────
+  const handleCheckout = () => {
+    setShowCart(false)
+    if (!user) {
+      setShowLoginPrompt(true)
+      return
+    }
+    navigate('/checkout')
   }
 
   // ── Cart totals ─────────────────────────────────────────────────────────────
@@ -312,7 +323,7 @@ const Menu = () => {
                   <img
                     src={getImageSrc(item.image)}
                     alt={item.name}
-                    onError={(e) => { e.target.style.display = 'none' }} /* QA FIX: broken image fallback */
+                    onError={(e) => { e.target.style.display = 'none' }}
                   />
                   <div className="cart-item-details">
                     <h4>{item.name}</h4>
@@ -353,10 +364,7 @@ const Menu = () => {
             </div>
             <button
               className="checkout-btn"
-              onClick={() => {
-                setShowCart(false)
-                navigate('/checkout')
-              }}
+              onClick={handleCheckout}
             >
               Proceed to Checkout
             </button>
@@ -372,6 +380,42 @@ const Menu = () => {
           aria-hidden="true"
         />
       )}
+
+      {/* ── Login prompt overlay ── */}
+      {showLoginPrompt && (
+        <div
+          className="menu-login-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Sign in required"
+          onClick={e => { if (e.target === e.currentTarget) setShowLoginPrompt(false) }}
+        >
+          <div className="menu-login-modal">
+            <span className="menu-login-modal__icon">🔒</span>
+            <h2 className="menu-login-modal__title">Sign In Required</h2>
+            <p className="menu-login-modal__body">
+              You need to be signed in to place an order.<br />
+              Please sign in or create an account to continue.
+            </p>
+            <div className="menu-login-modal__actions">
+              <button
+                className="checkout-btn"
+                style={{ width: 'auto', padding: '0.9rem 2rem' }}
+                onClick={() => navigate('/login', { state: { from: '/menu' } })}
+              >
+                Sign In
+              </button>
+              <button
+                className="menu-login-cancel-btn"
+                onClick={() => setShowLoginPrompt(false)}
+              >
+                Continue Browsing
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }
