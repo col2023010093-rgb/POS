@@ -42,8 +42,8 @@
      space predictably. Customer gets a fixed width (not free remainder).
      Adjust these if your table wrapper changes width.                  */
   --ord-col-pad:   1.1rem;   /* uniform h-padding for both th and td   */
-  --ord-w-id:      220px;    /* #ORD-XXXXXX-XXXX — wide enough for full number */
-  --ord-w-customer:180px;    /* name + email stacked                    */
+  --ord-w-id:      250px;    /* #ORD-XXXXXX-XXXX — wide enough for full number */
+  --ord-w-customer:160px;    /* name + email stacked                    */
   --ord-w-items:    80px;    /* "X items" — compact                     */
   --ord-w-total:   115px;    /* ₱XX.XX                                  */
   --ord-w-status:  155px;    /* status select                           */
@@ -225,10 +225,12 @@
    §8  COLUMN-SPECIFIC CELL RULES
    ───────────────────────────────────────────────────────────────────── */
 
-/* ORDER # — never clips, always shows full order number */
+/* ORDER # — hard clip at column edge */
 .admin-dashboard .admin-table td.ord-col-id {
   white-space: nowrap;
-  overflow: visible;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: var(--ord-w-id);
 }
 .admin-dashboard .admin-table td.ord-col-id strong {
   font-family: var(--f-heading);
@@ -237,18 +239,25 @@
   color: var(--tx-wood);
   letter-spacing: 0.02em;
   white-space: nowrap;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
-/* CUSTOMER — push content right so it doesn't crowd Order # */
+/* CUSTOMER — isolated column, hard boundaries on both sides */
 .admin-dashboard .admin-table td.ord-col-customer {
-  white-space: normal;
+  white-space: nowrap;
   overflow: hidden;
   vertical-align: middle;
-  line-height: 1;
+  max-width: var(--ord-w-customer);
   padding-left: 2rem;
+  padding-right: 0.5rem;
+  border-left: 8px solid transparent; /* hard column gap, prevents bleed */
 }
 .admin-dashboard .admin-table th.ord-col-customer {
   padding-left: 2rem;
+  border-left: 8px solid transparent;
 }
 .admin-dashboard .ord-customer-name {
   font-weight: 700;
@@ -259,6 +268,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 100%;
+  display: block;
 }
 .admin-dashboard .ord-customer-email {
   font-size: 0.76rem;
@@ -730,7 +740,9 @@
     border-bottom: 1px solid var(--bd-faint);
     padding-bottom: 0.6rem;
     margin-bottom: 0.35rem;
-    overflow: visible;
+    overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: var(--ord-w-id);
   }
   .admin-dashboard .admin-table td.ord-col-customer { overflow: visible; }
   .admin-dashboard .ord-customer-name,
