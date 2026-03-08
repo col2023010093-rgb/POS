@@ -8,16 +8,16 @@ import './AdminOrders.css'
 const STATUS_OPTIONS = ['pending', 'preparing', 'ready', 'completed', 'cancelled']
 
 const AdminOrders = () => {
-  const navigate       = useNavigate()
-  const { user }       = useAuth()
-  const [orders,       setOrders]      = useState([])
-  const [loading,      setLoading]     = useState(true)
-  const [error,        setError]       = useState(null)
-  const [notice,       setNotice]      = useState('')
-  const [search,       setSearch]      = useState('')
-  const [filterStatus, setFilterStatus]= useState('')
-  const [viewOrder,    setViewOrder]   = useState(null)
-  const [updating,     setUpdating]    = useState(null)
+  const navigate        = useNavigate()
+  const { user }        = useAuth()
+  const [orders,        setOrders]       = useState([])
+  const [loading,       setLoading]      = useState(true)
+  const [error,         setError]        = useState(null)
+  const [notice,        setNotice]       = useState('')
+  const [search,        setSearch]       = useState('')
+  const [filterStatus,  setFilterStatus] = useState('')
+  const [viewOrder,     setViewOrder]    = useState(null)
+  const [updating,      setUpdating]     = useState(null)
 
   useEffect(() => {
     if (!user?.role || user?.role !== 'admin') { navigate('/'); return }
@@ -61,20 +61,13 @@ const AdminOrders = () => {
       ? `#${order.orderNumber}`
       : `#ORD-${order._id.slice(-6).toUpperCase()}`
 
-  /**
-   * Resolves the customer object from whichever field your backend uses.
-   * Handles: customerId, userId, user, customer — populated or just an ID string.
-   */
   const resolveCustomer = order =>
     order.customerId || order.userId || order.user || order.customer || null
 
   const getCustomerName = order => {
     const c = resolveCustomer(order)
-    // No customer object at all — try flat fields on the order itself
     if (!c) return order.customerName || order.guestName || '—'
-    // Just an unpopulated ID string
     if (typeof c === 'string') return order.customerName || order.customerEmail || '—'
-    // Populated object
     const name = `${c.firstName || ''} ${c.lastName || ''}`.trim()
     return name || c.name || c.email || '—'
   }
@@ -101,11 +94,19 @@ const AdminOrders = () => {
     return list
   }, [orders, filterStatus, search])
 
-  /* ── status counts for quick tabs ── */
+  /* ── status counts ── */
   const counts = useMemo(() => {
     const c = { all: orders.length }
     STATUS_OPTIONS.forEach(s => { c[s] = orders.filter(o => o.status === s).length })
     return c
+  }, [orders])
+
+  /* ── today's revenue ── */
+  const todayRevenue = useMemo(() => {
+    const today = new Date().toDateString()
+    return orders
+      .filter(o => new Date(o.createdAt).toDateString() === today)
+      .reduce((sum, o) => sum + Number(o.totalAmount || 0), 0)
   }, [orders])
 
   if (loading) {
@@ -134,6 +135,30 @@ const AdminOrders = () => {
         {notice && <div className="admin-notice">{notice}</div>}
         {error  && <div className="error-message">⚠ {error}</div>}
 
+        {/* ── Stats Cards ── */}
+        <div className="ord-stats-row">
+          <div className="ord-stat-card stat-total">
+            <span className="ord-stat-label">Total Orders</span>
+            <span className="ord-stat-value">{counts.all}</span>
+          </div>
+          <div className="ord-stat-card stat-pending">
+            <span className="ord-stat-label">Pending</span>
+            <span className="ord-stat-value">{counts.pending || 0}</span>
+          </div>
+          <div className="ord-stat-card stat-completed">
+            <span className="ord-stat-label">Completed</span>
+            <span className="ord-stat-value">{counts.completed || 0}</span>
+          </div>
+          <div className="ord-stat-card stat-cancelled">
+            <span className="ord-stat-label">Cancelled</span>
+            <span className="ord-stat-value">{counts.cancelled || 0}</span>
+          </div>
+          <div className="ord-stat-card stat-revenue">
+            <span className="ord-stat-label">Revenue Today</span>
+            <span className="ord-stat-value" style={{ fontSize: '1.1rem' }}>{formatPHP(todayRevenue)}</span>
+          </div>
+        </div>
+
         {/* ── Status quick filter tabs ── */}
         <div className="admin-tabs">
           <button className={filterStatus === '' ? 'active' : ''} onClick={() => setFilterStatus('')}>
@@ -146,7 +171,7 @@ const AdminOrders = () => {
           ))}
         </div>
 
-        {/* ── Search / filter bar ── */}
+        {/* ── Search bar ── */}
         <div className="filter-bar">
           <input
             type="text"
@@ -170,7 +195,7 @@ const AdminOrders = () => {
 
           {visible.length === 0 ? (
             <div className="empty-state">
-              <div className="empty-state-icon">🪵</div>
+              <span className="empty-state-icon">🪵</span>
               <p>No orders match your filters.</p>
             </div>
           ) : (
@@ -191,30 +216,25 @@ const AdminOrders = () => {
                   {visible.map(order => (
                     <tr key={order._id} style={{ opacity: updating === order._id ? 0.6 : 1 }}>
 
-                      {/* Order # */}
                       <td className="ord-col-id">
                         <strong>{getOrderLabel(order)}</strong>
                       </td>
 
-                      {/* Customer — name + email sub-line */}
                       <td className="ord-col-customer">
-                        <div className="ord-customer-name">{getCustomerName(order)}</div>
+                        <span className="ord-customer-name">{getCustomerName(order)}</span>
                         {getCustomerEmail(order) && (
-                          <div className="ord-customer-email">{getCustomerEmail(order)}</div>
+                          <span className="ord-customer-email">{getCustomerEmail(order)}</span>
                         )}
                       </td>
 
-                      {/* Items count */}
                       <td className="ord-col-items">
                         {order.items?.length || 0} item{(order.items?.length || 0) !== 1 ? 's' : ''}
                       </td>
 
-                      {/* Total */}
                       <td className="ord-col-total">
                         <strong>{formatPHP(order.totalAmount)}</strong>
                       </td>
 
-                      {/* Status dropdown */}
                       <td className="ord-col-status">
                         <select
                           value={order.status}
@@ -228,14 +248,12 @@ const AdminOrders = () => {
                         </select>
                       </td>
 
-                      {/* Date */}
                       <td className="ord-col-date">
                         {new Date(order.createdAt).toLocaleDateString('en-PH', {
                           month: 'short', day: 'numeric', year: 'numeric',
                         })}
                       </td>
 
-                      {/* Actions */}
                       <td className="ord-col-actions">
                         <button className="btn-view" onClick={() => setViewOrder(order)}>
                           View
@@ -259,7 +277,6 @@ const AdminOrders = () => {
         <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && setViewOrder(null)}>
           <div className="modal-card ord-modal">
 
-            {/* Header */}
             <div className="modal-header">
               <h3>Order {getOrderLabel(viewOrder)}</h3>
               <button className="modal-close" onClick={() => setViewOrder(null)}>×</button>
@@ -267,7 +284,6 @@ const AdminOrders = () => {
 
             <div className="modal-body">
 
-              {/* ── Status bar ── */}
               <div className="ord-modal-status-bar">
                 <span className="ord-modal-status-label">Status:</span>
                 <select
@@ -282,12 +298,9 @@ const AdminOrders = () => {
                 </select>
               </div>
 
-              {/* ── Customer info ── */}
               <div className="ord-modal-section">
                 <div className="ord-modal-section-label">Customer</div>
-                <div className="ord-modal-customer-name">
-                  {getCustomerName(viewOrder)}
-                </div>
+                <div className="ord-modal-customer-name">{getCustomerName(viewOrder)}</div>
                 {getCustomerEmail(viewOrder) && (
                   <div className="ord-modal-meta">{getCustomerEmail(viewOrder)}</div>
                 )}
@@ -296,7 +309,6 @@ const AdminOrders = () => {
                 )}
               </div>
 
-              {/* ── Order items ── */}
               <div className="ord-modal-section">
                 <div className="ord-modal-section-label">Order Items</div>
 
@@ -319,19 +331,16 @@ const AdminOrders = () => {
                   </ul>
                 )}
 
-                {/* Totals row */}
                 <div className="ord-modal-total-row">
                   <span className="ord-modal-total-label">Total</span>
                   <span className="ord-modal-total-value">{formatPHP(viewOrder.totalAmount)}</span>
                 </div>
               </div>
 
-              {/* ── Timestamp ── */}
               <div className="ord-modal-timestamp">
                 Placed: {new Date(viewOrder.createdAt).toLocaleString('en-PH')}
               </div>
 
-              {/* ── Close ── */}
               <div className="modal-actions">
                 <button className="btn-secondary" onClick={() => setViewOrder(null)}>Close</button>
               </div>
