@@ -1,20 +1,31 @@
 /* ═══════════════════════════════════════════════════════════════════════
    TEXAS JOE'S  ✦  ADMIN MENU PAGE
-   AdminMenu.css
+   AdminMenu.css  —  v2 (column-alignment refactor)
    ───────────────────────────────────────────────────────────────────────
    Import order in AdminMenu.jsx:
-     import './AdminDashboard.css'   ← base tokens + shared components
-     import './AdminProducts.css'    ← product-thumb, role-badge overrides
-     import './AdminMenu.css'        ← this file (menu-specific semantic classes)
+     import './AdminDashboard.css'
+     import './AdminProducts.css'
+     import './AdminMenu.css'        ← this file wins all table layout
 
-   All rules scoped under .admin-dashboard
+   Root cause of misalignment (fixed here):
+   ─────────────────────────────────────────
+   1. No table-layout: fixed → browser auto-sized columns by content
+   2. AdminProducts.css uses --pm-col-pad (1.15rem) for th + td padding;
+      AdminMenu.css used 1.1rem → headers and cells drifted
+   3. AdminProducts.css :first-child and :last-child positional selectors
+      applied padding-left:1.5rem and width:72px to the image column
+      regardless of its class, doubling padding on that column
+   4. AdminProducts.css td:nth-child(3)>span applied transforms+padding
+      to the category badge, pushing it out of column alignment
+   5. AdminProducts.css td:last-child>div added a second flex container
+      around the action buttons
+   All five are explicitly neutralised below.
    ═══════════════════════════════════════════════════════════════════════ */
 
 
-/* ───────────────────────────────────────────────────────────────────────
-   §0  TOKEN BRIDGE  (--brand-* used in old inline styles, kept as
-   safety net in case any inline styles remain elsewhere)
-   ─────────────────────────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────────────
+   §0  TOKEN BRIDGE  +  PAGE TOKENS
+   ───────────────────────────────────────────────────────────────────── */
 :root {
   --brand-dark:    var(--tx-leather);
   --brand-saddle:  var(--tx-saddle);
@@ -23,144 +34,188 @@
   --brand-smoke:   var(--tx-smoke);
   --brand-amber:   var(--tx-amber);
   --radius-md:     var(--r-md);
+
+  /* THE ONE TRUE PADDING — used by both th and td */
+  --mnu-col-pad: 1.1rem;
+
+  /* Explicit column widths (applied on <th>, honoured by table-layout:fixed) */
+  --mnu-w-img:     80px;
+  --mnu-w-cat:    150px;
+  --mnu-w-price:  110px;
+  --mnu-w-prep:   110px;
+  --mnu-w-stock:  130px;
+  --mnu-w-action: 210px;
 }
 
 
-/* ───────────────────────────────────────────────────────────────────────
-   §1  HEADER ACTIONS ROW  (.mnu-header-actions)
-   Replaces the inline style={{ display:'flex', gap:'0.6rem' }} div
-   ─────────────────────────────────────────────────────────────────────── */
-.admin-dashboard .mnu-header-actions {
-  display: flex;
-  gap: 0.6rem;
-  align-items: center;
-  flex-shrink: 0;
+/* ─────────────────────────────────────────────────────────────────────
+   §1  TABLE LAYOUT  — fixed columns, scroll wrapper
+   ───────────────────────────────────────────────────────────────────── */
+.admin-dashboard .admin-table {
+  table-layout: fixed;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.admin-dashboard .admin-table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 0 0 var(--r-md) var(--r-md);
 }
 
 
-/* ───────────────────────────────────────────────────────────────────────
-   §2  STATS ROW  (.mnu-stats)
-   4-card grid, tighter bottom margin on the menu page
-   ─────────────────────────────────────────────────────────────────────── */
-.admin-dashboard .mnu-stats {
-  grid-template-columns: repeat(4, 1fr);
-  margin-bottom: 1.75rem;
-}
-
-@media (max-width: 900px) {
-  .admin-dashboard .mnu-stats {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-@media (max-width: 480px) {
-  .admin-dashboard .mnu-stats {
-    grid-template-columns: 1fr;
-  }
-}
+/* ─────────────────────────────────────────────────────────────────────
+   §2  COLUMN WIDTHS  (on <th> — table-layout:fixed propagates to cells)
+   ───────────────────────────────────────────────────────────────────── */
+.admin-dashboard .admin-table th.mnu-col-img    { width: var(--mnu-w-img); }
+.admin-dashboard .admin-table th.mnu-col-cat    { width: var(--mnu-w-cat); }
+.admin-dashboard .admin-table th.mnu-col-price  { width: var(--mnu-w-price); }
+.admin-dashboard .admin-table th.mnu-col-prep   { width: var(--mnu-w-prep); }
+.admin-dashboard .admin-table th.mnu-col-stock  { width: var(--mnu-w-stock); }
+.admin-dashboard .admin-table th.mnu-col-action { width: var(--mnu-w-action); }
+/* mnu-col-name has no width — it takes all remaining space */
 
 
-/* ───────────────────────────────────────────────────────────────────────
-   §3  SEARCH INPUT  (.mnu-search-input)
-   Full-width inside filter-bar, magnifier icon via CSS background
-   ─────────────────────────────────────────────────────────────────────── */
-.admin-dashboard .mnu-search-input {
-  flex: 1;
-  min-width: 0;
-  padding-left: 2.5rem;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23c4996a' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: 0.85rem center;
-  background-size: 15px 15px;
-}
-.admin-dashboard .mnu-search-input:focus {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23d4922a' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
+/* ─────────────────────────────────────────────────────────────────────
+   §3  HEADER ROW  — dark wood-grain, sticky
+   ───────────────────────────────────────────────────────────────────── */
+.admin-dashboard .admin-table thead {
+  background: linear-gradient(135deg, var(--tx-saddle) 0%, var(--tx-wood) 100%);
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  box-shadow: 0 2px 8px rgba(10,6,0,.20);
 }
 
-
-/* ───────────────────────────────────────────────────────────────────────
-   §4  RESULT COUNT  (.mnu-result-count)
-   Replaces the inline-styled result span
-   ─────────────────────────────────────────────────────────────────────── */
-.admin-dashboard .mnu-result-count {
-  margin-left: auto;
+/* Single authoritative th rule using --mnu-col-pad */
+.admin-dashboard .admin-table th {
+  padding: 0.95rem var(--mnu-col-pad);
+  text-align: left;
   font-family: var(--f-ui);
-  font-size: 0.79rem;
+  font-size: 0.61rem;
   font-weight: 700;
-  color: var(--tx-copper);
+  text-transform: uppercase;
+  letter-spacing: 1.8px;
+  color: var(--tx-sand);
   white-space: nowrap;
-  flex-shrink: 0;
+  text-shadow: 0 1px 0 rgba(0,0,0,.40);
+  border-bottom: none;
+  vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ACTIONS header — right-align to match button cluster */
+.admin-dashboard .admin-table th.mnu-col-action {
+  text-align: right;
+}
+
+/* ── NEUTRALISE AdminProducts.css :first-child / :last-child ──
+   Those rules set padding-left:1.5rem + width:72px on :first-child
+   and text-align:right + padding-right:1.5rem on :last-child.
+   We reset them all to the uniform token here.                    */
+.admin-dashboard .admin-table th:first-child,
+.admin-dashboard .admin-table td:first-child {
+  padding-left: var(--mnu-col-pad);
+  width: auto;            /* width is owned by .mnu-col-img on <th> */
+}
+
+.admin-dashboard .admin-table th:last-child,
+.admin-dashboard .admin-table td:last-child {
+  padding-right: var(--mnu-col-pad);
+  text-align: left;       /* overridden to right only on .mnu-col-action */
 }
 
 
-/* ───────────────────────────────────────────────────────────────────────
-   §5  TABLE COLUMN CLASSES
-   ─────────────────────────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────────────
+   §4  BODY CELLS  — uniform padding, no drift
+   ───────────────────────────────────────────────────────────────────── */
+.admin-dashboard .admin-table td {
+  padding: 0.9rem var(--mnu-col-pad);
+  vertical-align: middle;
+  font-size: 0.875rem;
+  color: var(--tx-saddle);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
-/* Image column — fixed, square */
+
+/* ─────────────────────────────────────────────────────────────────────
+   §5  COLUMN-SPECIFIC CELL RULES
+   ───────────────────────────────────────────────────────────────────── */
+
+/* IMAGE — thumbnail centred vertically */
 .admin-dashboard .admin-table td.mnu-col-img {
-  width: 72px;
-  padding-left: 1.5rem;
   vertical-align: middle;
 }
 
-/* Name column */
+/* NAME — flex column, allow text wrap */
 .admin-dashboard .admin-table td.mnu-col-name {
-  min-width: 160px;
+  white-space: normal;
+  overflow: visible;
 }
 .admin-dashboard .admin-table td.mnu-col-name strong {
   font-size: 0.92rem;
   font-weight: 700;
   color: var(--tx-leather);
   letter-spacing: 0.01em;
-  /* Clamp to 2 lines max */
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  line-height: 1.35;
   line-clamp: 2;
 }
 
-/* Category column — no wrap */
-.admin-dashboard .admin-table td.mnu-col-cat {
-  white-space: nowrap;
-}
-
-/* Price column */
-.admin-dashboard .admin-table td.mnu-col-price {
-  white-space: nowrap;
-}
+/* PRICE — serif number styling */
 .admin-dashboard .admin-table td.mnu-col-price strong {
   font-family: var(--f-heading);
   font-size: 0.95rem;
   font-weight: 700;
   color: var(--tx-copper);
+  letter-spacing: -0.01em;
 }
 
-/* Prep time column */
-.admin-dashboard .admin-table td.mnu-col-prep {
-  white-space: nowrap;
-}
-
-/* Stock column — no wrap */
-.admin-dashboard .admin-table td.mnu-col-stock {
-  white-space: nowrap;
-}
-
-/* Actions column — right-align, no wrap */
-.admin-dashboard .admin-table td.mnu-col-actions {
-  white-space: nowrap;
+/* ACTIONS — right-aligned, buttons never clip */
+.admin-dashboard .admin-table td.mnu-col-action {
   text-align: right;
-  padding-right: 1.5rem;
-  min-width: 150px;
+  overflow: visible;
+  white-space: nowrap;
 }
 
 
-/* ───────────────────────────────────────────────────────────────────────
-   §6  IMAGE THUMBNAIL  (.product-thumb already in AdminDashboard.css)
-   .mnu-img-placeholder  — fallback when no image
-   ─────────────────────────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────────────
+   §6  TABLE ROWS  — zebra, hover lift, in-flight dim
+   ───────────────────────────────────────────────────────────────────── */
+.admin-dashboard .admin-table tbody tr {
+  border-bottom: 1px solid rgba(196,153,106,.12);
+  transition:
+    background var(--t-fast) var(--ease-out),
+    transform  var(--t-fast) var(--ease-out);
+}
+.admin-dashboard .admin-table tbody tr:last-child { border-bottom: none; }
 
-/* Override product-thumb size for menu table */
+.admin-dashboard .admin-table tbody tr:nth-child(even) {
+  background-color: rgba(240,231,213,.26);
+}
+.admin-dashboard .admin-table tbody tr:hover {
+  background: linear-gradient(90deg, rgba(244,234,216,.82) 0%, rgba(250,243,228,.45) 100%);
+  transform: translateX(3px);
+}
+.admin-dashboard .admin-table tbody tr:nth-child(even):hover {
+  background: linear-gradient(90deg, rgba(244,234,216,.90) 0%, rgba(250,243,228,.55) 100%);
+}
+.admin-dashboard .admin-table tbody tr[style*="opacity: 0.6"],
+.admin-dashboard .admin-table tbody tr[style*="opacity:0.6"] {
+  pointer-events: none;
+  filter: grayscale(0.35) blur(0.3px);
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §7  PRODUCT THUMBNAIL  (.product-thumb  /  .mnu-img-placeholder)
+   ───────────────────────────────────────────────────────────────────── */
 .admin-dashboard .admin-table .product-thumb {
   width: 52px;
   height: 52px;
@@ -174,14 +229,12 @@
     box-shadow   var(--t-mid) var(--ease-out),
     border-color var(--t-mid) var(--ease-out);
 }
-
 .admin-dashboard .admin-table tbody tr:hover .product-thumb {
   transform: scale(1.12) rotate(-1.5deg);
   box-shadow: var(--sh-md), 0 0 0 2px var(--tx-amber);
   border-color: var(--tx-amber);
 }
 
-/* No-image placeholder */
 .admin-dashboard .mnu-img-placeholder {
   width: 52px;
   height: 52px;
@@ -195,16 +248,17 @@
   box-shadow: inset 0 2px 4px rgba(10,6,0,.05);
   transition: border-color var(--t-fast) var(--ease-out);
 }
-
 .admin-dashboard .admin-table tbody tr:hover .mnu-img-placeholder {
   border-color: var(--tx-amber);
 }
 
 
-/* ───────────────────────────────────────────────────────────────────────
-   §7  CATEGORY BADGE  (.mnu-cat-badge)
-   Replaces the inline-styled span
-   ─────────────────────────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────────────
+   §8  CATEGORY BADGE  (.mnu-cat-badge)
+   No extra margin/padding outside the badge — column padding provides
+   all breathing room.  The AdminProducts.css nth-child(3) rule that
+   applied transforms is explicitly cancelled.
+   ───────────────────────────────────────────────────────────────────── */
 .admin-dashboard .mnu-cat-badge {
   display: inline-flex;
   align-items: center;
@@ -220,58 +274,68 @@
   border: 1.5px solid var(--bd-mid);
   white-space: nowrap;
   box-shadow: var(--sh-xs);
+  vertical-align: middle;
   transition:
-    background    var(--t-fast) var(--ease-out),
-    border-color  var(--t-fast) var(--ease-out);
+    background   var(--t-fast) var(--ease-out),
+    border-color var(--t-fast) var(--ease-out);
 }
-
 .admin-dashboard .admin-table tbody tr:hover .mnu-cat-badge {
   background: linear-gradient(135deg, rgba(212,146,42,.14) 0%, rgba(212,146,42,.08) 100%);
   border-color: var(--bd-amber);
 }
 
+/* NEUTRALISE AdminProducts.css td:nth-child(3) > span transform/padding */
+.admin-dashboard .admin-table td.mnu-col-cat > span {
+  transform: none !important;
+  margin: 0 !important;
+  padding: 0.28rem 0.75rem !important;
+}
 
-/* ───────────────────────────────────────────────────────────────────────
-   §8  PREP TIME  (.mnu-prep-value / .mnu-prep-empty)
-   ─────────────────────────────────────────────────────────────────────── */
+
+/* ─────────────────────────────────────────────────────────────────────
+   §9  PREP TIME  (.mnu-prep-value  /  .mnu-prep-empty)
+   ───────────────────────────────────────────────────────────────────── */
 .admin-dashboard .mnu-prep-value {
   font-size: 0.87rem;
   color: var(--tx-wood);
   font-weight: 500;
 }
-
 .admin-dashboard .mnu-prep-empty {
   font-size: 0.87rem;
   color: var(--tx-tan);
   font-style: italic;
 }
+/* Neutralise AdminProducts.css td:nth-child(5) > span colour override */
+.admin-dashboard .admin-table td.mnu-col-prep > span {
+  color: inherit;
+  font-style: inherit;
+}
 
 
-/* ───────────────────────────────────────────────────────────────────────
-   §9  STOCK BADGE  (.role-badge.in-stock / .role-badge.out-stock)
-   Already defined in AdminDashboard.css — menu-page sizing only
-   ─────────────────────────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────────────
+   §10  STOCK BADGE  (.role-badge)
+   ───────────────────────────────────────────────────────────────────── */
 .admin-dashboard .admin-table .role-badge {
   font-size: 0.65rem;
   padding: 0.32rem 0.85rem;
   letter-spacing: 0.8px;
   font-weight: 800;
+  vertical-align: middle;
+  display: inline-flex;
+  align-items: center;
 }
-
-/* Pulse on out-of-stock to draw admin attention */
 .admin-dashboard .admin-table .role-badge.out-stock {
   animation: mnu-stock-alert 2.8s ease-in-out infinite;
 }
-
 @keyframes mnu-stock-alert {
   0%, 100% { box-shadow: 0 2px 8px rgba(163,24,24,.28); }
   50%       { box-shadow: 0 2px 14px rgba(163,24,24,.55), 0 0 0 3px rgba(163,24,24,.10); }
 }
 
 
-/* ───────────────────────────────────────────────────────────────────────
-   §10  ACTION BUTTONS  (.mnu-action-btns, .mnu-edit-btn)
-   ─────────────────────────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────────────
+   §11  ACTION BUTTONS  (.mnu-action-btns  /  .mnu-edit-btn)
+   ───────────────────────────────────────────────────────────────────── */
 .admin-dashboard .mnu-action-btns {
   display: flex;
   gap: 0.45rem;
@@ -280,30 +344,27 @@
   flex-wrap: nowrap;
 }
 
-/* Mark Out / Mark In button — compact */
 .admin-dashboard .mnu-action-btns .btn-delete,
 .admin-dashboard .mnu-action-btns .btn-view {
   font-size: 0.73rem;
   padding: 0.42rem 0.95rem;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
-/* Edit button — secondary, compact */
 .admin-dashboard .mnu-edit-btn {
   font-size: 0.73rem;
   padding: 0.42rem 0.95rem;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
-/* Disabled during in-flight toggle */
 .admin-dashboard .mnu-action-btns button:disabled {
   opacity: 0.45;
   cursor: not-allowed;
   filter: grayscale(0.4);
   transform: none !important;
 }
-
-/* Focus rings */
 .admin-dashboard .mnu-action-btns button:focus-visible,
 .admin-dashboard .mnu-edit-btn:focus-visible {
   outline: 2px solid var(--tx-amber);
@@ -311,185 +372,144 @@
   border-radius: var(--r-pill);
 }
 
-
-/* ───────────────────────────────────────────────────────────────────────
-   §11  TABLE HEADER  — dark branded header, sticky
-   ─────────────────────────────────────────────────────────────────────── */
-.admin-dashboard .admin-table thead {
-  background: linear-gradient(135deg, var(--tx-saddle) 0%, var(--tx-wood) 100%);
-  position: sticky;
-  top: 0;
-  z-index: 3;
-  box-shadow: 0 2px 8px rgba(10,6,0,.18);
+/* NEUTRALISE AdminProducts.css td:last-child > div flex layer */
+.admin-dashboard .admin-table td.mnu-col-action > div {
+  display: flex !important;
+  gap: 0.45rem !important;
+  justify-content: flex-end !important;
+  transform: none !important;
 }
 
-.admin-dashboard .admin-table th {
-  color: var(--tx-sand);
+
+/* ─────────────────────────────────────────────────────────────────────
+   §12  HEADER ACTIONS ROW  (.mnu-header-actions)
+   ───────────────────────────────────────────────────────────────────── */
+.admin-dashboard .mnu-header-actions {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §13  STATS ROW  (.mnu-stats)
+   ───────────────────────────────────────────────────────────────────── */
+.admin-dashboard .mnu-stats {
+  grid-template-columns: repeat(4, 1fr);
+  margin-bottom: 1.75rem;
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §14  SEARCH + RESULT COUNT
+   ───────────────────────────────────────────────────────────────────── */
+.admin-dashboard .mnu-search-input {
+  flex: 1;
+  min-width: 0;
+  padding-left: 2.5rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23c4996a' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 0.85rem center;
+  background-size: 15px 15px;
+}
+.admin-dashboard .mnu-search-input:focus {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23d4922a' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
+}
+
+.admin-dashboard .mnu-result-count {
+  margin-left: auto;
   font-family: var(--f-ui);
-  font-size: 0.61rem;
+  font-size: 0.79rem;
   font-weight: 700;
-  letter-spacing: 1.8px;
-  text-transform: uppercase;
-  padding: 0.95rem 1.1rem;
-  text-shadow: 0 1px 0 rgba(0,0,0,.4);
-  border-bottom: none;
+  color: var(--tx-copper);
   white-space: nowrap;
-}
-
-/* First column — image, extra left padding */
-.admin-dashboard .admin-table th:first-child {
-  padding-left: 1.5rem;
-  width: 80px;
-}
-
-/* Last column — actions, right-align */
-.admin-dashboard .admin-table th:last-child {
-  text-align: right;
-  padding-right: 1.5rem;
+  flex-shrink: 0;
 }
 
 
-/* ───────────────────────────────────────────────────────────────────────
-   §12  TABLE ROWS  — zebra, hover lift
-   ─────────────────────────────────────────────────────────────────────── */
-.admin-dashboard .admin-table tbody tr {
-  border-bottom: 1px solid rgba(196,153,106,.12);
-  transition:
-    background var(--t-fast) var(--ease-out),
-    transform  var(--t-fast) var(--ease-out);
-}
-
-.admin-dashboard .admin-table tbody tr:last-child {
-  border-bottom: none;
-}
-
-/* Zebra rows */
-.admin-dashboard .admin-table tbody tr:nth-child(even) {
-  background-color: rgba(240,231,213,.26);
-}
-
-/* Hover — warm lift */
-.admin-dashboard .admin-table tbody tr:hover {
-  background: linear-gradient(
-    90deg,
-    rgba(244,234,216,.80) 0%,
-    rgba(250,243,228,.45) 100%
-  );
-  transform: translateX(2px);
-}
-
-.admin-dashboard .admin-table tbody tr:nth-child(even):hover {
-  background: linear-gradient(
-    90deg,
-    rgba(244,234,216,.85) 0%,
-    rgba(250,243,228,.50) 100%
-  );
-}
-
-/* Dimmed while update is in-flight */
-.admin-dashboard .admin-table tbody tr[style*="opacity: 0.6"],
-.admin-dashboard .admin-table tbody tr[style*="opacity:0.6"] {
-  pointer-events: none;
-  filter: grayscale(0.35) blur(0.3px);
-}
-
-/* Cell base padding */
-.admin-dashboard .admin-table td {
-  padding: 0.9rem 1.1rem;
-  vertical-align: middle;
-  font-size: 0.875rem;
-}
-
-
-/* ───────────────────────────────────────────────────────────────────────
-   §13  SECTION TITLE DECORATION
-   ─────────────────────────────────────────────────────────────────────── */
-.admin-dashboard .admin-table-section > h2 {
-  padding-bottom: 1rem;
-  margin-bottom: 1.5rem;
-  border-bottom: 1px solid var(--bd-faint);
-  position: relative;
-}
-
-.admin-dashboard .admin-table-section > h2::after {
-  content: '';
-  position: absolute;
-  bottom: -1px;
-  left: 0;
-  width: 72px;
-  height: 3px;
-  border-radius: var(--r-pill);
-  background: linear-gradient(90deg, var(--tx-amber), var(--tx-ember));
-  box-shadow: 0 0 8px rgba(212,146,42,.40);
-}
-
-
-/* ───────────────────────────────────────────────────────────────────────
-   §14  QA FIXES
-   ─────────────────────────────────────────────────────────────────────── */
-
-/* QA-1: Table scroll on overflow */
-.admin-dashboard .admin-table-wrapper {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-/* QA-2: Tab bar — horizontal scroll on overflow (many categories) */
+/* ─────────────────────────────────────────────────────────────────────
+   §15  CATEGORY TAB BAR
+   ───────────────────────────────────────────────────────────────────── */
 .admin-dashboard .admin-tabs {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   flex-wrap: nowrap;
   padding-bottom: 2px;
+  scrollbar-width: none;
 }
-
-/* QA-3: Filter bar input shouldn't overflow on small screens */
-.admin-dashboard .filter-bar {
-  flex-wrap: nowrap;
-}
-
-/* QA-4: Actions cell — always visible, no text clip */
-.admin-dashboard .admin-table td.mnu-col-actions {
-  min-width: 150px;
-}
-
-/* QA-5: Focus ring on tab buttons */
+.admin-dashboard .admin-tabs::-webkit-scrollbar { display: none; }
 .admin-dashboard .admin-tabs button:focus-visible {
   outline: 2px solid var(--tx-amber);
   outline-offset: 3px;
 }
 
 
-/* ───────────────────────────────────────────────────────────────────────
-   §15  RESPONSIVE — 1200px
-   ─────────────────────────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────────────
+   §16  SECTION TITLE DECORATION
+   ───────────────────────────────────────────────────────────────────── */
+.admin-dashboard .admin-table-section > h2 {
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--bd-faint);
+  position: relative;
+}
+.admin-dashboard .admin-table-section > h2::after {
+  content: '';
+  position: absolute;
+  bottom: -1px; left: 0;
+  width: 72px; height: 3px;
+  border-radius: var(--r-pill);
+  background: linear-gradient(90deg, var(--tx-amber), var(--tx-ember));
+  box-shadow: 0 0 8px rgba(212,146,42,.40);
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §17  RESPONSIVE — 1200px
+   ───────────────────────────────────────────────────────────────────── */
 @media (max-width: 1200px) {
-  /* Give name column a bit less min-width */
-  .admin-dashboard .admin-table td.mnu-col-name { min-width: 130px; }
+  :root {
+    --mnu-w-cat:    130px;
+    --mnu-w-price:  100px;
+    --mnu-w-prep:   100px;
+    --mnu-w-stock:  120px;
+    --mnu-w-action: 190px;
+  }
 }
 
 
-/* ───────────────────────────────────────────────────────────────────────
-   §16  RESPONSIVE — 1024px
-   ─────────────────────────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────────────
+   §18  RESPONSIVE — 1024px  (hide prep-time)
+   ───────────────────────────────────────────────────────────────────── */
 @media (max-width: 1024px) {
-  /* Hide prep time column */
-  .admin-dashboard .admin-table th:nth-child(5),
+  .admin-dashboard .admin-table th.mnu-col-prep,
   .admin-dashboard .admin-table td.mnu-col-prep { display: none; }
+  :root { --mnu-w-action: 180px; }
 }
 
 
-/* ───────────────────────────────────────────────────────────────────────
-   §17  RESPONSIVE — 768px  (stacked card layout)
-   ─────────────────────────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────────────
+   §19  RESPONSIVE — 900px
+   ───────────────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .admin-dashboard .mnu-stats { grid-template-columns: repeat(2, 1fr); }
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §20  RESPONSIVE — 768px  (stacked card layout)
+   ───────────────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  /* Collapse table to block cards */
+  /* Revert fixed layout for block display */
+  .admin-dashboard .admin-table { table-layout: auto; }
+
   .admin-dashboard .admin-table,
   .admin-dashboard .admin-table tbody,
   .admin-dashboard .admin-table tr,
   .admin-dashboard .admin-table td { display: block; width: 100%; }
   .admin-dashboard .admin-table thead { display: none; }
 
-  /* Each row → card */
   .admin-dashboard .admin-table tbody tr {
     background: #fff;
     border-radius: var(--r-md);
@@ -502,81 +522,53 @@
   }
   .admin-dashboard .admin-table tbody tr:nth-child(even) { background: #fff; }
 
-  /* Image — full-width hero at top of card */
   .admin-dashboard .admin-table td.mnu-col-img {
-    padding: 0;
-    width: 100%;
+    padding: 0; width: 100%; overflow: hidden; white-space: normal;
   }
   .admin-dashboard .admin-table td.mnu-col-img .product-thumb {
-    width: 100%;
-    height: 160px;
-    border-radius: 0;
-    border: none;
-    object-fit: cover;
+    width: 100%; height: 160px; border-radius: 0; border: none; object-fit: cover;
   }
   .admin-dashboard .admin-table td.mnu-col-img .mnu-img-placeholder {
-    width: 100%;
-    height: 120px;
-    border-radius: 0;
-    border-left: none;
-    border-right: none;
-    border-top: none;
-    font-size: 2.5rem;
+    width: 100%; height: 120px; border-radius: 0; border: none; font-size: 2.5rem;
   }
 
-  /* Content cells — padded rows */
   .admin-dashboard .admin-table td {
     padding: 0.55rem 1rem;
     border-bottom: 1px solid var(--bd-faint);
-    max-width: 100%;
-    white-space: normal;
+    max-width: 100%; white-space: normal; overflow: visible;
   }
   .admin-dashboard .admin-table td:last-child { border-bottom: none; }
 
-  /* Actions — full width, left-aligned */
-  .admin-dashboard .admin-table td.mnu-col-actions {
-    text-align: left;
-    padding-right: 1rem;
-    min-width: 0;
+  .admin-dashboard .admin-table td.mnu-col-action {
+    text-align: left; padding-right: 1rem;
   }
   .admin-dashboard .mnu-action-btns { justify-content: flex-start; }
+  .admin-dashboard .admin-table td.mnu-col-name { overflow: visible; white-space: normal; }
 
-  /* Filter bar — stack */
   .admin-dashboard .filter-bar {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.6rem;
+    flex-direction: column; align-items: stretch; gap: 0.6rem;
   }
   .admin-dashboard .mnu-search-input { width: 100%; }
   .admin-dashboard .mnu-result-count { text-align: right; margin-left: 0; }
-
-  /* Header actions — stack on narrow */
   .admin-dashboard .mnu-header-actions { flex-direction: column; gap: 0.4rem; }
 }
 
 
-/* ───────────────────────────────────────────────────────────────────────
-   §18  RESPONSIVE — 480px
-   ─────────────────────────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────────────
+   §21  RESPONSIVE — 480px
+   ───────────────────────────────────────────────────────────────────── */
 @media (max-width: 480px) {
-  .admin-dashboard .admin-tabs button {
-    font-size: 0.73rem;
-    padding: 0.42rem 0.7rem;
-    flex-shrink: 0;
-  }
-
+  .admin-dashboard .mnu-stats { grid-template-columns: 1fr; }
+  .admin-dashboard .admin-tabs button { font-size: 0.73rem; padding: 0.42rem 0.7rem; flex-shrink: 0; }
   .admin-dashboard .mnu-action-btns .btn-delete,
   .admin-dashboard .mnu-action-btns .btn-view,
-  .admin-dashboard .mnu-edit-btn {
-    font-size: 0.69rem;
-    padding: 0.38rem 0.75rem;
-  }
+  .admin-dashboard .mnu-edit-btn { font-size: 0.69rem; padding: 0.38rem 0.75rem; }
 }
 
 
-/* ───────────────────────────────────────────────────────────────────────
-   §19  REDUCED MOTION
-   ─────────────────────────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────────────
+   §22  REDUCED MOTION
+   ───────────────────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   .admin-dashboard *,
   .admin-dashboard *::before,

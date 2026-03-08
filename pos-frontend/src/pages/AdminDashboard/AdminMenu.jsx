@@ -201,13 +201,13 @@ const AdminMenu = () => {
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>Image</th>
-                    <th>Name</th>
-                    <th>Category</th>
-                    <th>Price</th>
-                    <th>Prep Time</th>
-                    <th>Stock</th>
-                    <th>Actions</th>
+                    <th className="mnu-col-img">Image</th>
+                    <th className="mnu-col-name">Name</th>
+                    <th className="mnu-col-cat">Category</th>
+                    <th className="mnu-col-price">Price</th>
+                    <th className="mnu-col-prep">Prep Time</th>
+                    <th className="mnu-col-stock">Stock</th>
+                    <th className="mnu-col-action">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -254,7 +254,7 @@ const AdminMenu = () => {
                       </td>
 
                       {/* Actions */}
-                      <td className="mnu-col-actions">
+                      <td className="mnu-col-action">
                         <div className="mnu-action-btns">
                           <button
                             className={p.inStock ? 'btn-delete' : 'btn-view'}
