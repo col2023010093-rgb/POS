@@ -1931,18 +1931,19 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.9rem 1.75rem;
+  gap: .5rem;
+  padding: .875rem 2rem;
   background: transparent;
-  color: var(--burnt-sienna);
-  border: 2px solid var(--burnt-sienna);
-  border-radius: 8px;
-  font-family: var(--font-body);
-  font-size: 0.88rem;
-  font-weight: 700;
+  color: var(--c-sienna);
+  border: 1.5px solid var(--c-sienna);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-ui);
+  font-size: .88rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s, color 0.2s, transform 0.2s;
+  transition: background .2s, color .2s, transform .2s;
   white-space: nowrap;
-  letter-spacing: 0.5px;
+  text-decoration: none;
 }
 
 .menu-login-cancel-btn:hover {
