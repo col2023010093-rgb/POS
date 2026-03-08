@@ -1,1265 +1,604 @@
 /* ═══════════════════════════════════════════════════════════════════════
-   TEXAS JOE'S  ✦  ADMIN PRODUCTS PAGE
-   admin-products.css
-   ─────────────────────────────────────────────────────────────────────
-   Companion stylesheet to AdminDashboard.css.
-   Import in AdminMenu.jsx alongside AdminDashboard.css:
-     import './AdminDashboard.css'
-     import './AdminProducts.css'
-
-   Scope: all styles are scoped under .admin-dashboard to prevent
-   bleed into the public-facing site.
-
-   What this file does:
-   1. Bridges --brand-* tokens (used in JSX inline styles) to the
-      --tx-* / --sh-* / --r-* tokens defined in AdminDashboard.css
-   2. Enhances the product table, thumbnail, category badge, stock
-      badge, action buttons, and image fallback
-   3. Adds the product-card grid view (progressive enhancement)
-   4. Adds form enhancements (add/edit modal fields)
-   5. Adds skeleton loaders for async states
-   6. Adds a polished "no image" placeholder
-   7. Full responsive cascade (1200 → 1024 → 768 → 480)
-   8. QA fixes: spacing, readability, accessibility focus rings,
-      mobile overflow
+   TEXAS JOE'S  ✦  ADMIN PRODUCTS PAGE  —  AdminProducts.css
+   Scoped to the exact class names used in AdminProducts.jsx:
+     .admin-products, .admin-header, .btn-add-new, .products-filter,
+     .products-grid, .product-admin-card, .product-image, .no-image,
+     .product-details, .category, .price, .product-actions,
+     .btn-edit, .btn-delete, .no-products,
+     .modal-backdrop, .modal-card, .modal-header, .modal-close, .modal-body
+   Self-contained — no external token dependencies.
    ═══════════════════════════════════════════════════════════════════════ */
 
-
-/* ───────────────────────────────────────────────────────────────────────
-   §0  LEGACY TOKEN BRIDGE
-   The AdminMenu JSX uses --brand-* and --radius-md in inline styles.
-   Map them to the canonical --tx-* tokens so colours render correctly
-   without touching a single line of JSX.
-   ─────────────────────────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────────────
+   §0  DESIGN TOKENS
+   ───────────────────────────────────────────────────────────────────── */
 :root {
-  /* colour aliases */
-  --brand-dark:    var(--tx-leather);   /* #160d04 – darkest text          */
-  --brand-saddle:  var(--tx-saddle);    /* #3f1f08 – body dark brown       */
-  --brand-copper:  var(--tx-copper);    /* #8b4513 – primary brand accent  */
-  --brand-tan:     var(--tx-tan);       /* #c4996a – muted text / borders  */
-  --brand-smoke:   var(--tx-smoke);     /* #f0e7d5 – bg tint               */
-  --brand-amber:   var(--tx-amber);     /* #d4922a – gold-amber highlight  */
+  --ap-wood:      #3B2A1A;
+  --ap-leather:   #6B3E26;
+  --ap-saddle:    #8B5A2B;
+  --ap-copper:    #C4622D;
+  --ap-amber:     #D4A373;
+  --ap-gold:      #E8C570;
+  --ap-parchment: #F5E6C8;
+  --ap-cream:     #FBF4E4;
+  --ap-smoke:     #EDE0C4;
+  --ap-tan:       #C4996A;
+  --ap-sand:      #F0D9A8;
 
-  /* radius alias */
-  --radius-md:     var(--r-md);         /* 15px                            */
+  --ap-f-display: 'Georgia', 'Times New Roman', serif;
+  --ap-f-body:    'Trebuchet MS', 'Segoe UI', sans-serif;
 
-  /* ── Products-page-specific tokens ── */
-  --pm-row-gap:      1.1rem;
-  --pm-col-pad:      1.15rem;
-  --pm-thumb:        54px;
-  --pm-thumb-radius: var(--r-sm);
-  --pm-badge-pad:    0.28rem 0.7rem;
-  --pm-card-radius:  var(--r-lg);
+  --ap-sh-card:   0 2px 12px rgba(59,42,26,.12), 0 1px 4px rgba(59,42,26,.08);
+  --ap-sh-raised: 0 4px 24px rgba(59,42,26,.18), 0 2px 8px rgba(59,42,26,.10);
 
-  /* Category pill colours — cycling palette */
-  --cat-0: #7b3b10;
-  --cat-1: #145a32;
-  --cat-2: #1a4070;
-  --cat-3: #5c2a80;
-  --cat-4: #7a3b00;
-  --cat-5: #1c5c4a;
+  --ap-bd-warm:   1px solid rgba(196,153,106,.30);
+  --ap-bd-strong: 1px solid rgba(107,62,38,.25);
+
+  --ap-r-sm:   4px;
+  --ap-r-md:   8px;
+  --ap-r-lg:   12px;
+  --ap-r-pill: 999px;
+
+  --ap-t-fast: 150ms ease;
+  --ap-t-mid:  250ms ease;
+
+  --ap-card-img: 165px;
 }
 
 
-/* ───────────────────────────────────────────────────────────────────────
-   §1  PAGE-LEVEL OVERRIDES
-   Anything that should look slightly different on the products page
-   vs. the generic dashboard layout.
-   ─────────────────────────────────────────────────────────────────────── */
-
-/* Give the products stats row a slightly tighter bottom margin */
-.admin-dashboard .stats-grid {
-  margin-bottom: 1.75rem;
-}
-
-/* "Add Item" button in the header gets a pulse on first render to draw
-   attention — subtle, not distracting */
-.admin-dashboard .dashboard-header .btn-primary {
-  animation: btn-attention 2.4s 1.2s var(--spring) both;
-}
-
-@keyframes btn-attention {
-  0%, 100% { box-shadow: 0 4px 16px rgba(63,31,8,.32), 0 1px 4px rgba(63,31,8,.18); }
-  50%       { box-shadow: 0 4px 22px rgba(212,146,42,.55), 0 1px 4px rgba(63,31,8,.22); }
+/* ─────────────────────────────────────────────────────────────────────
+   §1  PAGE WRAPPER  —  .admin-products
+   ───────────────────────────────────────────────────────────────────── */
+.admin-products {
+  min-height: 100vh;
+  background: var(--ap-parchment);
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  font-family: var(--ap-f-body);
+  box-sizing: border-box;
 }
 
 
-/* ───────────────────────────────────────────────────────────────────────
-   §2  PRODUCT TABLE  —  the main inventory grid
-   ─────────────────────────────────────────────────────────────────────── */
-
-/* Section title pinstripe accent (stronger than generic h2) */
-.admin-dashboard .admin-table-section > h2 {
-  padding-bottom: 1rem;
-  margin-bottom: 1.5rem;
-  border-bottom: 1px solid var(--bd-faint);
+/* ─────────────────────────────────────────────────────────────────────
+   §2  PAGE HEADER  —  .admin-header
+   ───────────────────────────────────────────────────────────────────── */
+.admin-products .admin-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.5rem 2rem;
+  background: linear-gradient(135deg, var(--ap-wood) 0%, var(--ap-leather) 60%, var(--ap-saddle) 100%);
+  border-radius: var(--ap-r-lg);
+  box-shadow: var(--ap-sh-raised);
   position: relative;
+  overflow: hidden;
+  flex-wrap: wrap;
 }
-
-/* Decorative rope-style underline after the title */
-.admin-dashboard .admin-table-section > h2::after {
+/* Gold shimmer bar */
+.admin-products .admin-header::after {
   content: '';
   position: absolute;
-  bottom: -1px;
-  left: 0;
-  width: 80px;
+  bottom: 0; left: 0; right: 0;
   height: 3px;
-  border-radius: var(--r-pill);
-  background: linear-gradient(90deg, var(--tx-amber), var(--tx-ember));
-  box-shadow: 0 0 8px rgba(212,146,42,.45);
+  background: linear-gradient(90deg, var(--ap-gold), var(--ap-copper), var(--ap-amber), var(--ap-gold));
 }
 
-/* ── Table header ── */
-.admin-dashboard .admin-table thead {
-  background: linear-gradient(
-    135deg,
-    var(--tx-saddle) 0%,
-    var(--tx-wood)   100%
-  );
-}
-
-.admin-dashboard .admin-table th {
-  color: var(--tx-sand);
-  font-size: 0.62rem;
-  letter-spacing: 1.8px;
-  padding: 0.95rem var(--pm-col-pad);
-  border-bottom: none;
-  /* subtle emboss */
-  text-shadow: 0 1px 0 rgba(0,0,0,.35);
-}
-
-/* First column (image) — narrower */
-.admin-dashboard .admin-table th:first-child,
-.admin-dashboard .admin-table td:first-child {
-  padding-left: 1.5rem;
-  width: 72px;
-}
-
-/* Last column (actions) — right-aligned header */
-.admin-dashboard .admin-table th:last-child {
-  text-align: right;
-  padding-right: 1.5rem;
-}
-
-/* ── Table body rows ── */
-.admin-dashboard .admin-table tbody tr {
-  border-bottom: 1px solid rgba(196,153,106,.12);
-  transition:
-    background var(--t-fast) var(--ease-out),
-    transform  var(--t-fast) var(--ease-out);
-}
-
-/* Lift the entire row on hover — creates depth */
-.admin-dashboard .admin-table tbody tr:hover {
-  background: linear-gradient(
-    90deg,
-    rgba(244,234,216,.75) 0%,
-    rgba(250,243,228,.4)  100%
-  );
-  transform: translateX(2px);
-}
-
-/* Zebra — every other row gets an ultra-subtle tint */
-.admin-dashboard .admin-table tbody tr:nth-child(even) {
-  background-color: rgba(240,231,213,.28);
-}
-.admin-dashboard .admin-table tbody tr:nth-child(even):hover {
-  background: linear-gradient(
-    90deg,
-    rgba(244,234,216,.85) 0%,
-    rgba(250,243,228,.5)  100%
-  );
-}
-
-/* Dimmed row while stock toggle is in-flight */
-.admin-dashboard .admin-table tbody tr[style*="opacity: 0.6"],
-.admin-dashboard .admin-table tbody tr[style*="opacity:0.6"] {
-  pointer-events: none;
-  filter: grayscale(0.35);
-}
-
-/* Cell padding */
-.admin-dashboard .admin-table td {
-  padding: 0.9rem var(--pm-col-pad);
-  font-size: 0.875rem;
-  vertical-align: middle;
-}
-
-/* Actions cell — right-align */
-.admin-dashboard .admin-table td:last-child {
-  text-align: right;
-  padding-right: 1.5rem;
-}
-
-/* Product name — slightly larger weight */
-.admin-dashboard .admin-table td strong {
-  font-size: 0.9rem;
-  color: var(--tx-leather);
-  letter-spacing: 0.01em;
-}
-
-
-/* ───────────────────────────────────────────────────────────────────────
-   §3  PRODUCT THUMBNAIL  — .product-thumb
-   ─────────────────────────────────────────────────────────────────────── */
-.admin-dashboard .product-thumb {
-  width:  var(--pm-thumb);
-  height: var(--pm-thumb);
-  object-fit: cover;
-  border-radius: var(--pm-thumb-radius);
-  border: 2.5px solid var(--bd-light);
-  display: block;
-  box-shadow: var(--sh-sm);
-  /* Warm vignette overlay using outline trick */
-  outline: 1px solid rgba(139,69,19,.10);
-  outline-offset: 2px;
-  transition:
-    transform    var(--t-mid) var(--ease-out),
-    box-shadow   var(--t-mid) var(--ease-out),
-    border-color var(--t-mid) var(--ease-out);
-}
-
-.admin-dashboard .admin-table tbody tr:hover .product-thumb {
-  transform: scale(1.15) rotate(-2deg);
-  box-shadow: var(--sh-md), 0 0 0 2px var(--tx-amber);
-  border-color: var(--tx-amber);
-}
-
-/* ── No-image placeholder (inline div in JSX) ── */
-/* The JSX renders a div with inline styles when there's no image.
-   We can't add a class there, but we can target it through the td */
-.admin-dashboard .admin-table td:first-child > div {
-  /* Override the inline width/height/border with something more polished */
-  width:  var(--pm-thumb)   !important;
-  height: var(--pm-thumb)   !important;
-  border-radius: var(--pm-thumb-radius) !important;
-  background: linear-gradient(
-    135deg,
-    var(--tx-smoke) 0%,
-    var(--tx-fog)   100%
-  ) !important;
-  border: 2px dashed var(--bd-mid) !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  font-size: 1.4rem !important;
-  box-shadow: inset 0 2px 6px rgba(10,6,0,.06);
-  transition: all var(--t-mid) var(--ease-out);
-}
-
-.admin-dashboard .admin-table tbody tr:hover td:first-child > div {
-  border-color: var(--tx-amber) !important;
-  background: linear-gradient(
-    135deg,
-    var(--tx-fog)   0%,
-    var(--tx-smoke) 100%
-  ) !important;
-}
-
-
-/* ───────────────────────────────────────────────────────────────────────
-   §4  CATEGORY BADGE  (inline span in JSX)
-   The JSX applies all styles inline — we can't add a class directly,
-   but we can target it via the cell and use :not to avoid hitting stock
-   badges. We override the inline styles with higher specificity.
-   ─────────────────────────────────────────────────────────────────────── */
-
-/* Target the category cell span specifically (3rd td) */
-.admin-dashboard .admin-table tbody td:nth-child(3) > span {
-  display: inline-flex !important;
-  align-items: center;
-  gap: 0.3rem;
-  padding: var(--pm-badge-pad) !important;
-  border-radius: var(--r-pill) !important;
-  font-family: var(--f-ui) !important;
-  font-size: 0.68rem !important;
-  font-weight: 700 !important;
-  text-transform: capitalize !important;
-  letter-spacing: 0.5px;
-  background: linear-gradient(
-    135deg,
-    rgba(139,69,19,.10) 0%,
-    rgba(139,69,19,.06) 100%
-  ) !important;
-  color: var(--tx-copper) !important;
-  border: 1.5px solid var(--bd-mid) !important;
-  box-shadow: var(--sh-xs);
-  transition:
-    background    var(--t-fast) var(--ease-out),
-    border-color  var(--t-fast) var(--ease-out),
-    transform     var(--t-fast) var(--ease-out);
-}
-
-.admin-dashboard .admin-table tbody tr:hover td:nth-child(3) > span {
-  background: linear-gradient(
-    135deg,
-    rgba(212,146,42,.14) 0%,
-    rgba(212,146,42,.08) 100%
-  ) !important;
-  border-color: var(--bd-amber) !important;
-  transform: scale(1.03);
-}
-
-/* ── Prep time muted dash ── */
-.admin-dashboard .admin-table td:nth-child(5) > span {
-  color: var(--tx-tan);
-  font-style: italic;
-  font-size: 0.85rem;
-}
-
-
-/* ───────────────────────────────────────────────────────────────────────
-   §5  STOCK BADGES  — .role-badge.in-stock / .role-badge.out-stock
-   These are already defined in AdminDashboard.css.
-   Here we add products-specific sizing and a pulse on out-of-stock.
-   ─────────────────────────────────────────────────────────────────────── */
-.admin-dashboard .admin-table .role-badge {
-  font-size: 0.64rem;
-  padding: 0.3rem 0.8rem;
-  letter-spacing: 0.9px;
-}
-
-/* Subtle pulse on out-of-stock — draws admin attention */
-.admin-dashboard .admin-table .role-badge.out-stock {
-  animation: stock-alert 2.5s ease-in-out infinite;
-}
-
-@keyframes stock-alert {
-  0%, 100% { box-shadow: 0 2px 8px rgba(163,24,24,.30); }
-  50%       { box-shadow: 0 2px 14px rgba(163,24,24,.55), 0 0 0 3px rgba(163,24,24,.12); }
-}
-
-
-/* ───────────────────────────────────────────────────────────────────────
-   §6  ACTION BUTTONS  (inside the table)
-   The JSX wraps them in a flex div with inline gap.
-   We enhance without touching the markup.
-   ─────────────────────────────────────────────────────────────────────── */
-
-/* Wrapper flex div inside the actions cell */
-.admin-dashboard .admin-table td:last-child > div {
-  display: flex !important;
-  gap: 0.4rem !important;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  align-items: center;
-}
-
-/* "Mark Out" (btn-delete) inside table — compact variant */
-.admin-dashboard .admin-table .btn-delete {
-  font-size: 0.72rem !important;
-  padding: 0.42rem 0.9rem !important;
-  white-space: nowrap;
-}
-
-/* "Mark In" (btn-view) inside table — compact variant */
-.admin-dashboard .admin-table .btn-view {
-  font-size: 0.72rem !important;
-  padding: 0.42rem 0.9rem !important;
-  white-space: nowrap;
-}
-
-/* "Edit" (btn-secondary) inside table */
-.admin-dashboard .admin-table .btn-secondary {
-  font-size: 0.72rem !important;
-  padding: 0.42rem 0.9rem !important;
-  white-space: nowrap;
-}
-
-/* Disabled state during in-flight toggle */
-.admin-dashboard .admin-table button:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-  transform: none !important;
-  filter: grayscale(0.4);
-}
-
-/* Focus ring — accessibility */
-.admin-dashboard .admin-table button:focus-visible {
-  outline: 2px solid var(--tx-amber);
-  outline-offset: 2px;
-  border-radius: var(--r-pill);
-}
-
-
-/* ───────────────────────────────────────────────────────────────────────
-   §7  STATS ROW  — products-specific card overrides
-   ─────────────────────────────────────────────────────────────────────── */
-
-/* On the products page, show only 4 cards max in a row before wrapping */
-.admin-dashboard .stats-grid {
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-}
-
-/* Larger icon on products page stat cards */
-.admin-dashboard .stats-grid .stat-icon {
-  font-size: 2.2rem;
-}
-
-/* "Total Items" card — amber accent (default) already handled */
-
-/* "Categories" card — purple accent for variety */
-.admin-dashboard .stats-grid .stat-card:last-child {
-  border-top-color: var(--st-completed);
-}
-.admin-dashboard .stats-grid .stat-card:last-child .stat-number {
-  color: var(--st-completed);
-}
-
-
-/* ───────────────────────────────────────────────────────────────────────
-   §8  CATEGORY TABS  — .admin-tabs (products-specific)
-   The generic .admin-tabs is styled in AdminDashboard.css.
-   Here we make the products category tabs visually heavier.
-   ─────────────────────────────────────────────────────────────────────── */
-.admin-dashboard .admin-tabs {
-  /* Slide the tabs in from the left, staggered */
-  animation: tabs-appear var(--t-slow) var(--ease-out) both;
-}
-
-@keyframes tabs-appear {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: none; }
-}
-
-/* "All" tab — always the first button; give it extra presence */
-.admin-dashboard .admin-tabs button:first-child {
+.admin-products .admin-header h1 {
+  font-family: var(--ap-f-display);
+  font-size: 1.65rem;
   font-weight: 700;
-  border-style: solid;
+  color: var(--ap-sand);
+  letter-spacing: 0.04em;
+  text-shadow: 0 1px 3px rgba(0,0,0,.40);
+  margin: 0 0 0.3rem;
+  line-height: 1.2;
 }
 
-/* Active tab — stronger glow on products page */
-.admin-dashboard .admin-tabs button.active {
-  box-shadow:
-    0 4px 16px rgba(63,31,8,.40),
-    0 1px 4px rgba(63,31,8,.22),
-    inset 0 1px 0 rgba(255,255,255,.10);
+.admin-products .admin-user {
+  font-family: var(--ap-f-body);
+  font-size: 0.8rem;
+  color: var(--ap-amber);
+  margin: 0;
 }
 
-
-/* ───────────────────────────────────────────────────────────────────────
-   §9  FILTER / SEARCH BAR  — .filter-bar (products-specific)
-   ─────────────────────────────────────────────────────────────────────── */
-
-/* Give the search input a left icon area (magnifier via placeholder) */
-.admin-dashboard .filter-bar input[type="text"] {
-  padding-left: 1rem;
-  /* Use a CSS background SVG magnifier */
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23c4996a' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: 0.8rem center;
-  background-size: 15px 15px;
-  padding-left: 2.4rem;
-}
-
-.admin-dashboard .filter-bar input[type="text"]:focus {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23d4922a' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
-}
-
-/* Result count text (inline span in JSX) */
-.admin-dashboard .filter-bar > span {
-  font-family: var(--f-ui);
-  font-size: 0.79rem;
+/* ── Add Product button ── */
+.admin-products .btn-add-new {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--ap-f-body);
+  font-size: 0.82rem;
   font-weight: 700;
-  color: var(--tx-tan);
-  letter-spacing: 0.2px;
+  padding: 0.55rem 1.3rem;
+  border-radius: var(--ap-r-pill);
+  border: 1.5px solid var(--ap-gold);
+  background: linear-gradient(135deg, var(--ap-gold) 0%, var(--ap-amber) 100%);
+  color: var(--ap-wood);
+  cursor: pointer;
+  transition: all var(--ap-t-fast);
   white-space: nowrap;
-  /* Override the JSX inline color with the correct token */
-  color: var(--tx-copper) !important;
+  box-shadow: 0 2px 8px rgba(232,197,112,.30);
+  align-self: center;
+  flex-shrink: 0;
+}
+.admin-products .btn-add-new:hover {
+  background: linear-gradient(135deg, #f0d06a 0%, #e0b040 100%);
+  box-shadow: 0 3px 14px rgba(232,197,112,.50);
+  transform: translateY(-1px);
+}
+.admin-products .btn-add-new:active  { transform: translateY(0); }
+.admin-products .btn-add-new:focus-visible {
+  outline: 2px solid var(--ap-gold);
+  outline-offset: 2px;
 }
 
 
-/* ───────────────────────────────────────────────────────────────────────
-   §10  PRODUCT CARD VIEW  (progressive enhancement)
-   If a future version adds a card grid view, these classes will activate.
-   Classes: .pm-cards-grid  .pm-card  .pm-card__img  .pm-card__body
-            .pm-card__name  .pm-card__cat  .pm-card__price  .pm-card__footer
-   ─────────────────────────────────────────────────────────────────────── */
-.pm-cards-grid {
+/* ─────────────────────────────────────────────────────────────────────
+   §3  CATEGORY FILTER TABS  —  .products-filter
+   ───────────────────────────────────────────────────────────────────── */
+.admin-products .products-filter {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding: 0.25rem 0.15rem;
+  scrollbar-width: none;
+}
+.admin-products .products-filter::-webkit-scrollbar { display: none; }
+
+.admin-products .products-filter button {
+  font-family: var(--ap-f-body);
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+  padding: 0.45rem 1rem;
+  border-radius: var(--ap-r-pill);
+  border: var(--ap-bd-strong);
+  background: var(--ap-cream);
+  color: var(--ap-saddle);
+  cursor: pointer;
+  transition: all var(--ap-t-fast);
+}
+.admin-products .products-filter button:hover {
+  background: var(--ap-smoke);
+  color: var(--ap-leather);
+}
+.admin-products .products-filter button.active {
+  background: var(--ap-leather);
+  border-color: var(--ap-leather);
+  color: var(--ap-sand);
+  box-shadow: 0 2px 8px rgba(107,62,38,.35);
+}
+.admin-products .products-filter button:focus-visible {
+  outline: 2px solid var(--ap-gold);
+  outline-offset: 2px;
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §4  PRODUCT CARD GRID  —  .products-grid
+   ───────────────────────────────────────────────────────────────────── */
+.admin-products .products-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 1.25rem;
-  padding-top: 0.25rem;
+  gap: 1rem;
 }
 
-.pm-card {
-  background: #fff;
-  border-radius: var(--pm-card-radius);
-  border: 1.5px solid var(--bd-faint);
-  border-top: 4px solid var(--tx-amber);
-  box-shadow: var(--sh-md);
+
+/* ─────────────────────────────────────────────────────────────────────
+   §5  PRODUCT CARD  —  .product-admin-card
+   ───────────────────────────────────────────────────────────────────── */
+.admin-products .product-admin-card {
+  background: var(--ap-cream);
+  border: var(--ap-bd-warm);
+  border-radius: var(--ap-r-lg);
+  box-shadow: var(--ap-sh-card);
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  transition:
-    transform    var(--t-mid) var(--ease-out),
-    box-shadow   var(--t-mid) var(--ease-out),
-    border-color var(--t-mid) var(--ease-out);
-  animation: card-rise var(--t-slow) var(--ease-out) both;
+  position: relative;
+  transition: transform var(--ap-t-mid), box-shadow var(--ap-t-mid);
+}
+.admin-products .product-admin-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--ap-sh-raised);
+}
+/* Amber top accent stripe */
+.admin-products .product-admin-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--ap-gold), var(--ap-copper));
+  z-index: 1;
 }
 
-.pm-card:hover {
-  transform: translateY(-6px);
-  box-shadow: var(--sh-lg), var(--sh-amber);
-  border-top-color: var(--tx-ember);
-}
 
-.pm-card:hover .pm-card__img img {
+/* ─────────────────────────────────────────────────────────────────────
+   §6  CARD IMAGE  —  .product-image / img / .no-image
+   ───────────────────────────────────────────────────────────────────── */
+.admin-products .product-image {
+  height: var(--ap-card-img);
+  overflow: hidden;
+  background: var(--ap-smoke);
+  position: relative;
+  flex-shrink: 0;
+}
+.admin-products .product-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform var(--ap-t-mid);
+}
+.admin-products .product-admin-card:hover .product-image img {
   transform: scale(1.06);
 }
 
-/* Image container */
-.pm-card__img {
-  position: relative;
-  height: 160px;
-  overflow: hidden;
-  background: var(--tx-smoke);
-}
-
-.pm-card__img img {
+/* No-image fallback */
+.admin-products .no-image {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  transition: transform var(--t-slow) var(--ease-out);
-}
-
-/* No-image fallback inside card */
-.pm-card__img--empty {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100%;
-  font-size: 3rem;
-  background: linear-gradient(135deg, var(--tx-smoke), var(--tx-fog));
-  color: var(--tx-tan);
-}
-
-/* Stock indicator ribbon on card image */
-.pm-card__stock-ribbon {
-  position: absolute;
-  top: 10px;
-  right: -1px;
-  padding: 0.22rem 0.7rem 0.22rem 0.6rem;
-  font-family: var(--f-ui);
-  font-size: 0.6rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.9px;
-  color: #fff;
-  border-radius: var(--r-sm) 0 0 var(--r-sm);
-  box-shadow: -2px 2px 8px rgba(10,6,0,.2);
-}
-.pm-card__stock-ribbon.in-stock  { background: linear-gradient(135deg, #082b18, var(--st-ready)); }
-.pm-card__stock-ribbon.out-stock {
-  background: linear-gradient(135deg, #3a0505, var(--st-cancelled));
-  animation: stock-alert 2.5s ease-in-out infinite;
-}
-
-/* Card body */
-.pm-card__body {
-  padding: 1.1rem 1.25rem 0.85rem;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-}
-
-.pm-card__name {
-  font-family: var(--f-heading);
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--tx-leather);
-  line-height: 1.3;
-}
-
-.pm-card__cat {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.22rem 0.65rem;
-  border-radius: var(--r-pill);
-  background: rgba(139,69,19,.09);
-  border: 1.5px solid var(--bd-mid);
-  color: var(--tx-copper);
-  font-size: 0.65rem;
-  font-weight: 700;
-  text-transform: capitalize;
-  letter-spacing: 0.5px;
-  width: fit-content;
-}
-
-.pm-card__price {
-  font-family: var(--f-heading);
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: var(--tx-wood);
-  letter-spacing: -0.02em;
-}
-
-.pm-card__prep {
-  font-size: 0.75rem;
-  color: var(--tx-tan);
-  font-style: italic;
-}
-
-/* Card footer — action buttons */
-.pm-card__footer {
-  display: flex;
-  gap: 0.4rem;
-  padding: 0.85rem 1.25rem 1rem;
-  border-top: 1px solid var(--bd-faint);
-  background: linear-gradient(135deg, #fff 0%, var(--tx-smoke) 100%);
-}
-
-.pm-card__footer .btn-view,
-.pm-card__footer .btn-delete,
-.pm-card__footer .btn-secondary {
-  flex: 1;
-  justify-content: center;
-  font-size: 0.74rem !important;
-  padding: 0.45rem 0.7rem !important;
-}
-
-
-/* ───────────────────────────────────────────────────────────────────────
-   §11  ADD / EDIT PRODUCT FORM
-   Classes: .pm-form  .pm-form__grid  .pm-form__field  .pm-form__label
-            .pm-form__input  .pm-form__textarea  .pm-form__hint
-            .pm-form__error  .pm-form__image-preview
-   ─────────────────────────────────────────────────────────────────────── */
-.pm-form {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-
-.pm-form__grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.2rem;
-  margin-bottom: 1.2rem;
-}
-
-.pm-form__field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.38rem;
-}
-
-/* Full-width field */
-.pm-form__field--full { grid-column: span 2; }
-
-.pm-form__label {
-  font-family: var(--f-ui);
-  font-size: 0.65rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1.3px;
-  color: var(--tx-copper);
-}
-
-/* Required asterisk */
-.pm-form__label .required {
-  color: var(--st-cancelled);
-  margin-left: 2px;
-}
-
-/* Optional label */
-.pm-form__label .optional {
-  font-weight: 400;
-  text-transform: none;
-  letter-spacing: 0;
-  font-style: italic;
-  color: var(--tx-tan);
-  margin-left: 4px;
-  font-size: 0.62rem;
-}
-
-/* Text inputs */
-.pm-form__input,
-.pm-form__select {
-  font-family: var(--f-ui);
-  font-size: 0.9rem;
-  padding: 0.65rem 1rem;
-  border: 1.5px solid var(--bd-mid);
-  border-radius: var(--r-sm);
-  background: var(--tx-parchment);
-  color: var(--tx-saddle);
-  outline: none;
-  width: 100%;
-  transition:
-    border-color var(--t-fast) var(--ease-out),
-    background   var(--t-fast) var(--ease-out),
-    box-shadow   var(--t-fast) var(--ease-out);
-}
-
-.pm-form__input::placeholder { color: var(--tx-tan); font-style: italic; }
-
-.pm-form__input:focus,
-.pm-form__select:focus {
-  border-color: var(--tx-amber);
-  background: #fff;
-  box-shadow: 0 0 0 3px rgba(212,146,42,.18);
-}
-
-/* Valid state */
-.pm-form__input:valid:not(:placeholder-shown) {
-  border-color: rgba(24,117,62,.5);
-}
-.pm-form__input:valid:not(:placeholder-shown):focus {
-  box-shadow: 0 0 0 3px rgba(24,117,62,.15);
-}
-
-/* Invalid / error state */
-.pm-form__input.is-error,
-.pm-form__input:invalid:not(:placeholder-shown):not(:focus) {
-  border-color: rgba(163,24,24,.5);
-  background: #fff8f8;
-}
-
-/* Textarea */
-.pm-form__textarea {
-  font-family: var(--f-ui);
-  font-size: 0.9rem;
-  padding: 0.7rem 1rem;
-  border: 1.5px solid var(--bd-mid);
-  border-radius: var(--r-sm);
-  background: var(--tx-parchment);
-  color: var(--tx-saddle);
-  outline: none;
-  width: 100%;
-  min-height: 90px;
-  resize: vertical;
-  transition:
-    border-color var(--t-fast) var(--ease-out),
-    background   var(--t-fast) var(--ease-out),
-    box-shadow   var(--t-fast) var(--ease-out);
-}
-.pm-form__textarea:focus {
-  border-color: var(--tx-amber);
-  background: #fff;
-  box-shadow: 0 0 0 3px rgba(212,146,42,.18);
-}
-
-/* Helper hint text */
-.pm-form__hint {
-  font-size: 0.72rem;
-  color: var(--tx-tan);
-  font-style: italic;
-  margin-top: 0.1rem;
-}
-
-/* Inline error text */
-.pm-form__error {
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--st-cancelled);
-  display: flex;
-  align-items: center;
   gap: 0.3rem;
-  margin-top: 0.1rem;
+  font-family: var(--ap-f-display);
+  font-size: 0.78rem;
+  font-style: italic;
+  color: var(--ap-tan);
+  background: linear-gradient(135deg, var(--ap-smoke) 0%, var(--ap-parchment) 100%);
+  letter-spacing: 0.05em;
+}
+.admin-products .no-image::before {
+  content: '🍽';
+  font-style: normal;
+  font-size: 2.2rem;
+  opacity: 0.55;
 }
 
-.pm-form__error::before {
-  content: '✕';
-  font-size: 0.6rem;
-  background: var(--st-cancelled);
-  color: #fff;
-  width: 13px;
-  height: 13px;
-  border-radius: 50%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
 
-/* Image upload preview area */
-.pm-form__image-preview {
-  width: 100%;
-  border-radius: var(--r-md);
-  border: 2px solid var(--bd-light);
-  overflow: hidden;
-  position: relative;
-}
-
-.pm-form__image-preview img {
-  width: 100%;
-  max-height: 200px;
-  object-fit: cover;
-  display: block;
-}
-
-/* Image overlay actions on hover */
-.pm-form__image-preview::after {
-  content: '🔄 Change image';
-  position: absolute;
-  inset: 0;
-  background: rgba(10,6,0,.45);
-  color: #fff;
-  font-family: var(--f-ui);
-  font-size: 0.8rem;
-  font-weight: 700;
+/* ─────────────────────────────────────────────────────────────────────
+   §7  CARD BODY  —  .product-details
+   ───────────────────────────────────────────────────────────────────── */
+.admin-products .product-details {
+  padding: 0.9rem 1.1rem 0.5rem;
+  flex: 1;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity var(--t-fast) var(--ease-out);
-  cursor: pointer;
-}
-.pm-form__image-preview:hover::after { opacity: 1; }
-
-/* Stock toggle checkbox row */
-.pm-form__toggle-row {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  background: var(--tx-smoke);
-  border-radius: var(--r-sm);
-  border: 1.5px solid var(--bd-faint);
-  cursor: pointer;
-  transition: border-color var(--t-fast) var(--ease-out);
-}
-.pm-form__toggle-row:hover { border-color: var(--bd-amber); }
-
-.pm-form__toggle-row input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  accent-color: var(--tx-amber);
-  cursor: pointer;
-  flex-shrink: 0;
+  flex-direction: column;
+  gap: 0.35rem;
 }
 
-.pm-form__toggle-label {
-  font-family: var(--f-ui);
-  font-size: 0.88rem;
-  font-weight: 600;
-  color: var(--tx-wood);
-  cursor: pointer;
-}
-
-
-/* ───────────────────────────────────────────────────────────────────────
-   §12  SKELETON LOADERS  — .pm-skel  .pm-skel-row
-   ─────────────────────────────────────────────────────────────────────── */
-.pm-skel {
-  background: linear-gradient(
-    90deg,
-    rgba(196,153,106,.12) 25%,
-    rgba(196,153,106,.28) 50%,
-    rgba(196,153,106,.12) 75%
-  );
-  background-size: 200% 100%;
-  border-radius: var(--r-xs);
-  animation: shimmer 1.8s linear infinite;
-}
-
-/* Full table-row skeleton */
-.pm-skel-row {
-  display: grid;
-  grid-template-columns: 60px 1fr 1fr 90px 80px 90px 120px;
-  gap: 0 var(--pm-col-pad);
-  align-items: center;
-  padding: 0.9rem var(--pm-col-pad);
-  border-bottom: 1px solid rgba(196,153,106,.12);
-}
-
-.pm-skel-row > span {
-  display: block;
-  border-radius: var(--r-xs);
-}
-
-.pm-skel-row .pm-skel-thumb  { width: 50px; height: 50px; border-radius: var(--r-sm); }
-.pm-skel-row .pm-skel-text   { height: 14px; }
-.pm-skel-row .pm-skel-badge  { height: 22px; width: 80px; border-radius: var(--r-pill); }
-.pm-skel-row .pm-skel-price  { height: 16px; width: 70px; }
-.pm-skel-row .pm-skel-btn    { height: 30px; border-radius: var(--r-pill); }
-
-/* shimmer keyframe is defined in AdminDashboard.css — shared */
-
-
-/* ───────────────────────────────────────────────────────────────────────
-   §13  TABLE STICKY HEADER
-   ─────────────────────────────────────────────────────────────────────── */
-/* Make the header sticky within its scrolling wrapper */
-.admin-dashboard .admin-table thead tr {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  /* Drop shadow to indicate content scrolling beneath */
-  box-shadow: 0 2px 8px rgba(10,6,0,.14);
-}
-
-
-/* ───────────────────────────────────────────────────────────────────────
-   §14  PRICE COLUMN  — .pm-price
-   Applied via inline strong on td — we target the cell
-   ─────────────────────────────────────────────────────────────────────── */
-/* Price cell (4th td) */
-.admin-dashboard .admin-table td:nth-child(4) strong {
-  font-family: var(--f-heading);
+.admin-products .product-details h3 {
+  font-family: var(--ap-f-display);
   font-size: 0.95rem;
   font-weight: 700;
-  color: var(--tx-copper);
-  letter-spacing: -0.01em;
-}
-
-
-/* ───────────────────────────────────────────────────────────────────────
-   §15  EMPTY STATE  (products-specific copy)
-   ─────────────────────────────────────────────────────────────────────── */
-.admin-dashboard .empty-state {
-  padding: 5rem 2rem;
-}
-
-.admin-dashboard .empty-state-icon {
-  font-size: 3.5rem;
-  margin-bottom: 0.5rem;
-  display: block;
-  text-align: center;
-  animation: float 3s ease-in-out infinite;
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50%       { transform: translateY(-8px); }
-}
-
-.admin-dashboard .empty-state p {
-  font-size: 1.05rem;
-  max-width: 340px;
-  margin: 0 auto;
-}
-
-/* Hint link below the empty state message */
-.pm-empty-hint {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  margin-top: 1.25rem;
-  font-family: var(--f-ui);
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--tx-copper);
-  text-decoration: none;
-  border-bottom: 1.5px dashed var(--tx-amber);
-  padding-bottom: 1px;
-  transition: color var(--t-fast), border-color var(--t-fast);
-}
-.pm-empty-hint:hover {
-  color: var(--tx-amber);
-  border-color: var(--tx-ember);
-}
-
-
-/* ───────────────────────────────────────────────────────────────────────
-   §16  ADMIN-LOADING (products variant)
-   ─────────────────────────────────────────────────────────────────────── */
-.admin-dashboard .admin-loading {
-  position: relative;
-}
-
-/* Fire glow behind the emoji */
-.admin-dashboard .admin-loading::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(212,146,42,.18) 0%, transparent 70%);
-  animation: fire-glow 1.8s ease-in-out infinite;
-}
-
-@keyframes fire-glow {
-  0%, 100% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.6; }
-  50%       { transform: translate(-50%, -50%) scale(1.4); opacity: 1;   }
-}
-
-
-/* ───────────────────────────────────────────────────────────────────────
-   §17  QA FIXES
-   Issues found during audit and their CSS-only resolutions.
-   ─────────────────────────────────────────────────────────────────────── */
-
-/* QA-1: Table horizontal scroll clipping on narrow containers */
-.admin-dashboard .admin-table-wrapper {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-/* QA-2: Buttons stacking vertically on hover due to transform + flex */
-.admin-dashboard .admin-table td:last-child > div {
-  transform: none !important; /* prevent child transforms from causing reflow */
-}
-
-/* QA-3: Long product names overflowing their cell */
-.admin-dashboard .admin-table td:nth-child(2) {
-  max-width: 220px;
-  word-break: break-word;
-}
-.admin-dashboard .admin-table td:nth-child(2) strong {
+  color: var(--ap-wood);
+  margin: 0;
+  line-height: 1.3;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   line-clamp: 2;
-  box-orient: vertical;
 }
 
-/* QA-4: Category column — no wrapping */
-.admin-dashboard .admin-table th:nth-child(3),
-.admin-dashboard .admin-table td:nth-child(3) {
+/* .category pill */
+.admin-products .product-details .category {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 0.22rem 0.65rem;
+  border-radius: var(--ap-r-pill);
+  font-family: var(--ap-f-body);
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: capitalize;
+  letter-spacing: 0.4px;
+  background: rgba(139,69,19,.09);
+  color: var(--ap-copper);
+  border: var(--ap-bd-strong);
+  margin: 0;
+}
+
+/* .price */
+.admin-products .product-details .price {
+  font-family: var(--ap-f-display);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--ap-copper);
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §8  CARD ACTIONS  —  .product-actions / .btn-edit / .btn-delete
+   ───────────────────────────────────────────────────────────────────── */
+.admin-products .product-actions {
+  display: flex;
+  gap: 0.4rem;
+  padding: 0.7rem 1.1rem 0.9rem;
+  border-top: var(--ap-bd-warm);
+  background: linear-gradient(180deg, var(--ap-cream) 0%, var(--ap-parchment) 100%);
+  flex-shrink: 0;
+}
+
+/* Shared base */
+.admin-products .product-actions .btn-edit,
+.admin-products .product-actions .btn-delete {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  font-family: var(--ap-f-body);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  padding: 0.42rem 0.7rem;
+  border-radius: var(--ap-r-pill);
+  cursor: pointer;
+  transition: all var(--ap-t-fast);
   white-space: nowrap;
 }
 
-/* QA-5: Ensure stock badge never truncates */
-.admin-dashboard .admin-table td:nth-child(6) {
-  white-space: nowrap;
+/* Edit — leather fill */
+.admin-products .product-actions .btn-edit {
+  border: 1.5px solid var(--ap-leather);
+  background: linear-gradient(135deg, var(--ap-leather) 0%, var(--ap-wood) 100%);
+  color: var(--ap-sand);
+  box-shadow: 0 1px 4px rgba(59,42,26,.22);
+}
+.admin-products .product-actions .btn-edit:hover {
+  background: linear-gradient(135deg, var(--ap-copper) 0%, var(--ap-leather) 100%);
+  border-color: var(--ap-copper);
+  box-shadow: 0 3px 10px rgba(196,98,45,.35);
+  transform: translateY(-1px);
 }
 
-/* QA-6: Footer actions should never clip on very narrow screens */
-.admin-dashboard .admin-table td:last-child {
-  min-width: 120px;
+/* Delete — red tint */
+.admin-products .product-actions .btn-delete {
+  border: 1.5px solid rgba(192,57,43,.40);
+  background: rgba(192,57,43,.10);
+  color: #922b21;
+  box-shadow: var(--ap-sh-card);
+}
+.admin-products .product-actions .btn-delete:hover {
+  background: rgba(192,57,43,.18);
+  border-color: rgba(192,57,43,.60);
+  box-shadow: 0 3px 10px rgba(192,57,43,.25);
+  transform: translateY(-1px);
 }
 
-/* QA-7: Focus-visible on the tab filter buttons */
-.admin-dashboard .admin-tabs button:focus-visible {
-  outline: 2px solid var(--tx-amber);
-  outline-offset: 3px;
-}
-
-/* QA-8: Filter bar input shouldn't exceed container on mobile */
-.admin-dashboard .filter-bar input {
-  min-width: 0;
-}
-
-/* QA-9: Stats grid minimum doesn't break on 320px screens */
-.admin-dashboard .stats-grid {
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-}
-
-/* QA-10: Notice / error messages shouldn't have double margin */
-.admin-dashboard .admin-notice + .error-message,
-.admin-dashboard .error-message + .admin-notice {
-  margin-top: -0.5rem;
-}
-
-
-/* ───────────────────────────────────────────────────────────────────────
-   §18  RESPONSIVE — 1200px
-   ─────────────────────────────────────────────────────────────────────── */
-@media (max-width: 1200px) {
-  /* Reduce thumbnail to keep table from crowding */
-  :root { --pm-thumb: 46px; }
-
-  .admin-dashboard .admin-table td:nth-child(2) { max-width: 180px; }
+.admin-products .product-actions .btn-edit:active,
+.admin-products .product-actions .btn-delete:active  { transform: translateY(0); }
+.admin-products .product-actions .btn-edit:focus-visible,
+.admin-products .product-actions .btn-delete:focus-visible {
+  outline: 2px solid var(--ap-gold);
+  outline-offset: 2px;
 }
 
 
-/* ───────────────────────────────────────────────────────────────────────
-   §19  RESPONSIVE — 1024px
-   ─────────────────────────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────────────
+   §9  EMPTY STATE  —  .no-products
+   ───────────────────────────────────────────────────────────────────── */
+.admin-products .no-products {
+  padding: 4rem 2rem;
+  text-align: center;
+  font-family: var(--ap-f-display);
+  font-style: italic;
+  color: var(--ap-tan);
+  font-size: 1rem;
+  background: var(--ap-cream);
+  border: var(--ap-bd-warm);
+  border-radius: var(--ap-r-lg);
+  box-shadow: var(--ap-sh-card);
+}
+.admin-products .no-products::before {
+  content: '🍖';
+  display: block;
+  font-size: 3rem;
+  font-style: normal;
+  margin-bottom: 0.75rem;
+  animation: ap-float 4s ease-in-out infinite;
+}
+@keyframes ap-float {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50%       { transform: translateY(-8px) rotate(3deg); }
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §10  INLINE LOADING ("Loading..." paragraph)
+   ───────────────────────────────────────────────────────────────────── */
+.admin-products > p {
+  padding: 3rem;
+  text-align: center;
+  font-family: var(--ap-f-display);
+  font-style: italic;
+  color: var(--ap-saddle);
+  font-size: 1rem;
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §11  MODAL BACKDROP  —  .modal-backdrop
+   ───────────────────────────────────────────────────────────────────── */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(30,18,8,.65);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  animation: ap-fade-in 200ms ease both;
+}
+@keyframes ap-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §12  MODAL CARD  —  .modal-card
+   ───────────────────────────────────────────────────────────────────── */
+.modal-backdrop .modal-card {
+  background: var(--ap-cream);
+  border: var(--ap-bd-strong);
+  border-radius: var(--ap-r-lg);
+  box-shadow: 0 20px 60px rgba(30,18,8,.45), 0 4px 16px rgba(30,18,8,.20);
+  width: 100%;
+  max-width: 560px;
+  max-height: 88vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  animation: ap-modal-rise 260ms cubic-bezier(0.34, 1.4, 0.64, 1) both;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ap-tan) transparent;
+}
+@keyframes ap-modal-rise {
+  from { opacity: 0; transform: translateY(18px) scale(0.97); }
+  to   { opacity: 1; transform: none; }
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §13  MODAL HEADER  —  .modal-header / .modal-close
+   ───────────────────────────────────────────────────────────────────── */
+.modal-backdrop .modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9rem 1.5rem;
+  background: linear-gradient(135deg, var(--ap-wood) 0%, var(--ap-leather) 100%);
+  border-radius: var(--ap-r-lg) var(--ap-r-lg) 0 0;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+}
+/* Gold accent bar */
+.modal-backdrop .modal-header::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--ap-gold), var(--ap-copper), var(--ap-amber));
+}
+
+.modal-backdrop .modal-header h2 {
+  font-family: var(--ap-f-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--ap-sand);
+  margin: 0;
+  letter-spacing: 0.03em;
+  text-shadow: 0 1px 2px rgba(0,0,0,.30);
+}
+
+.modal-backdrop .modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,.22);
+  background: rgba(255,255,255,.08);
+  color: var(--ap-sand);
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all var(--ap-t-fast);
+  line-height: 1;
+  flex-shrink: 0;
+}
+.modal-backdrop .modal-close:hover {
+  background: rgba(255,255,255,.20);
+  border-color: rgba(255,255,255,.45);
+}
+.modal-backdrop .modal-close:focus-visible {
+  outline: 2px solid var(--ap-gold);
+  outline-offset: 2px;
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §14  MODAL BODY  —  .modal-body
+   ───────────────────────────────────────────────────────────────────── */
+.modal-backdrop .modal-body {
+  padding: 1.5rem;
+  flex: 1;
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §15  RESPONSIVE — 1024px
+   ───────────────────────────────────────────────────────────────────── */
 @media (max-width: 1024px) {
-  :root { --pm-thumb: 42px; --pm-col-pad: 0.9rem; }
-
-  /* Hide prep-time column — recoverable via horizontal scroll */
-  .admin-dashboard .admin-table th:nth-child(5),
-  .admin-dashboard .admin-table td:nth-child(5) {
-    display: none;
+  .admin-products { padding: 1.5rem; gap: 1rem; }
+  .admin-products .products-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   }
-
-  .pm-form__grid { grid-template-columns: 1fr; }
-  .pm-form__field--full { grid-column: span 1; }
-
-  .pm-cards-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+  :root { --ap-card-img: 145px; }
 }
 
 
-/* ───────────────────────────────────────────────────────────────────────
-   §20  RESPONSIVE — 768px
-   ─────────────────────────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────────────
+   §16  RESPONSIVE — 768px
+   ───────────────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  :root { --pm-thumb: 38px; --pm-col-pad: 0.75rem; }
-
-  /* On mobile, collapse the table to a card-like list view */
-  .admin-dashboard .admin-table,
-  .admin-dashboard .admin-table tbody,
-  .admin-dashboard .admin-table tr,
-  .admin-dashboard .admin-table td {
-    display: block;
-    width: 100%;
-  }
-
-  /* Hide the thead (labels shown via data-label) */
-  .admin-dashboard .admin-table thead { display: none; }
-
-  /* Each row becomes a card */
-  .admin-dashboard .admin-table tbody tr {
-    background: #fff;
-    border-radius: var(--r-md);
-    margin-bottom: 0.9rem;
-    border: 1.5px solid var(--bd-faint);
-    box-shadow: var(--sh-sm);
-    padding: 0;
-    overflow: hidden;
-    transform: none !important; /* disable row hover lift on mobile */
-  }
-
-  .admin-dashboard .admin-table tbody tr:nth-child(even) {
-    background: #fff; /* reset zebra on mobile */
-  }
-
-  /* Image cell — full-width hero */
-  .admin-dashboard .admin-table td:first-child {
-    padding: 0;
-    width: 100%;
-  }
-  .admin-dashboard .admin-table td:first-child .product-thumb {
-    width: 100% !important;
-    height: 160px;
-    border-radius: 0;
-    object-fit: cover;
-    border: none;
-    outline: none;
-  }
-  /* No-image fallback full-width */
-  .admin-dashboard .admin-table td:first-child > div {
-    width: 100% !important;
-    height: 120px !important;
-    border-radius: 0 !important;
-    border-left: none !important;
-    border-right: none !important;
-    border-top: none !important;
-  }
-
-  /* Content cells */
-  .admin-dashboard .admin-table td {
-    padding: 0.55rem 1rem;
-    border-bottom: 1px solid var(--bd-faint);
-    max-width: 100%;
-  }
-
-  /* Last cell — remove bottom border */
-  .admin-dashboard .admin-table td:last-child {
-    border-bottom: none;
-    padding-right: 1rem;
-    text-align: left;
-  }
-
-  /* Action buttons — full-width row on mobile */
-  .admin-dashboard .admin-table td:last-child > div {
-    justify-content: flex-start !important;
-    flex-wrap: nowrap;
-  }
-  .admin-dashboard .admin-table td:last-child .btn-delete,
-  .admin-dashboard .admin-table td:last-child .btn-view,
-  .admin-dashboard .admin-table td:last-child .btn-secondary {
-    flex: 1;
-    justify-content: center;
-    max-width: 50%;
-  }
-
-  /* Data labels via pseudo-element */
-  .admin-dashboard .admin-table td::before {
-    content: attr(data-label);
-    display: block;
-    font-size: 0.6rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1.2px;
-    color: var(--tx-copper);
-    margin-bottom: 0.2rem;
-  }
-  /* Don't show label on image and actions cells */
-  .admin-dashboard .admin-table td:first-child::before,
-  .admin-dashboard .admin-table td:last-child::before { display: none; }
-
-  /* Product name cell */
-  .admin-dashboard .admin-table td:nth-child(2) {
-    max-width: 100%;
-    padding-top: 0.75rem;
-  }
-
-  /* Category — inline */
-  .admin-dashboard .admin-table td:nth-child(3) { white-space: normal; }
-
-  .pm-cards-grid { grid-template-columns: 1fr 1fr; }
-
-  .admin-dashboard .filter-bar {
+  .admin-products { padding: 1rem; gap: 1rem; }
+  .admin-products .admin-header {
+    padding: 1rem 1.25rem;
     flex-direction: column;
     align-items: stretch;
   }
-  .admin-dashboard .filter-bar input { width: 100%; }
-  .admin-dashboard .filter-bar > span { margin-left: 0 !important; text-align: right; }
+  .admin-products .btn-add-new {
+    width: 100%;
+    justify-content: center;
+  }
+  .admin-products .products-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .modal-backdrop .modal-card {
+    max-width: 100%;
+    max-height: 92vh;
+  }
 }
 
 
-/* ───────────────────────────────────────────────────────────────────────
-   §21  RESPONSIVE — 480px
-   ─────────────────────────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────────────
+   §17  RESPONSIVE — 480px
+   ───────────────────────────────────────────────────────────────────── */
 @media (max-width: 480px) {
-  :root { --pm-thumb: 34px; }
-
-  .pm-cards-grid { grid-template-columns: 1fr; }
-
-  /* Reduce tab button size */
-  .admin-dashboard .admin-tabs button {
-    font-size: 0.74rem;
-    padding: 0.42rem 0.75rem;
-  }
-
-  /* Stats cards — single column, horizontal layout */
-  .admin-dashboard .stats-grid {
-    grid-template-columns: 1fr;
-  }
-  .admin-dashboard .stat-card {
-    flex-direction: row;
-    align-items: center;
-    gap: 1rem;
-    padding: 1rem 1.2rem;
-  }
-  .admin-dashboard .stat-card .stat-icon { margin-bottom: 0; font-size: 1.6rem; }
-  .admin-dashboard .stat-card .stat-number { font-size: 1.45rem; }
-
-  /* Mobile card: image height reduced */
-  .admin-dashboard .admin-table td:first-child .product-thumb {
-    height: 120px;
-  }
+  .admin-products .products-grid { grid-template-columns: 1fr; }
+  :root { --ap-card-img: 130px; }
+  .admin-products .products-filter button { font-size: 0.72rem; padding: 0.4rem 0.75rem; }
+  .admin-products .admin-header h1 { font-size: 1.3rem; }
 }
 
 
-/* ───────────────────────────────────────────────────────────────────────
-   §22  PRINT STYLES  (basic — hide chrome, show table)
-   ─────────────────────────────────────────────────────────────────────── */
-@media print {
-  .admin-dashboard .dashboard-header .btn-primary,
-  .admin-dashboard .dashboard-header .btn-secondary,
-  .admin-dashboard .admin-tabs,
-  .admin-dashboard .filter-bar,
-  .admin-dashboard .admin-table td:last-child { display: none !important; }
-
-  .admin-dashboard .admin-table thead {
-    background: #f0e7d5 !important;
-    print-color-adjust: exact;
-  }
-
-  .admin-dashboard .admin-table tbody tr { break-inside: avoid; }
-
-  .admin-dashboard .admin-table th,
-  .admin-dashboard .admin-table td { font-size: 0.75rem; padding: 0.5rem 0.75rem; }
-}
-
-
-/* ───────────────────────────────────────────────────────────────────────
-   §23  REDUCED MOTION
-   ─────────────────────────────────────────────────────────────────────── */
+/* ─────────────────────────────────────────────────────────────────────
+   §18  REDUCED MOTION
+   ───────────────────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
-  .admin-dashboard *,
-  .admin-dashboard *::before,
-  .admin-dashboard *::after {
+  .admin-products *,
+  .admin-products *::before,
+  .admin-products *::after,
+  .modal-backdrop,
+  .modal-backdrop * {
     animation-duration:        0.01ms !important;
     animation-iteration-count: 1      !important;
     transition-duration:       0.01ms !important;
