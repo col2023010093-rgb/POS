@@ -31,52 +31,51 @@ apiClient.interceptors.response.use(
   }
 );
 
-// ✅ SINGLE API EXPORT - ALL METHODS HERE
 export const api = {
   // Generic HTTP methods
-  post: (url, data, config) => apiClient.post(url, data, config),
-  patch: (url, data, config) => apiClient.patch(url, data, config),
-  patch: (url, data) => apiClient.patch(url, data),
-  delete: (url) => apiClient.delete(url),
+  get:    (url)              => apiClient.get(url),
+  post:   (url, data, config) => apiClient.post(url, data, config),
+  patch:  (url, data, config) => apiClient.patch(url, data, config),
+  delete: (url)              => apiClient.delete(url),
 
   // ========== Auth ==========
-  login: (email, password) => apiClient.post('/auth/login', { email, password }),
-  register: (data) => apiClient.post('/auth/register', data),
-  getMe: () => apiClient.get('/auth/me').catch(() => ({ data: null })),
+  login:    (email, password) => apiClient.post('/auth/login', { email, password }),
+  register: (data)            => apiClient.post('/auth/register', data),
+  getMe:    ()                => apiClient.get('/auth/me').catch(() => ({ data: null })),
 
   // ========== Products ==========
-  getProducts: () => apiClient.get('/api/products'),
-  createProduct: (data) => apiClient.post('/api/products', data),
+  getProducts:   ()        => apiClient.get('/api/products'),
+  createProduct: (data)    => apiClient.post('/api/products', data),
   updateProduct: (id, data) => apiClient.patch(`/api/products/${id}`, data),
-  deleteProduct: (id) => apiClient.delete(`/api/products/${id}`),
+  deleteProduct: (id)      => apiClient.delete(`/api/products/${id}`),
 
   // ========== Orders ==========
-  getOrders: () => apiClient.get('/api/orders'),
-  createOrder: (data) => apiClient.post('/api/orders', data),
-  getOrderById: (id) => apiClient.get(`/api/orders/${id}`),
+  getOrders:    ()     => apiClient.get('/api/orders'),
+  createOrder:  (data) => apiClient.post('/api/orders', data),
+  getOrderById: (id)   => apiClient.get(`/api/orders/${id}`),
 
   // ========== Payments ==========
   createPaymentIntent: (data) => apiClient.post('/api/payments/intent', data),
-  confirmPayment: (data) => apiClient.post('/api/payments/confirm', data),
+  confirmPayment:      (data) => apiClient.post('/api/payments/confirm', data),
 
   // ========== Notifications ==========
-  getNotifications: () => apiClient.get('/api/notifications').catch(() => ({ data: [] })),
+  getNotifications:     ()   => apiClient.get('/api/notifications').catch(() => ({ data: [] })),
   markNotificationRead: (id) => apiClient.patch(`/api/notifications/${id}/read`),
 
   // ========== Reservations ==========
-  createReservation: (data) => apiClient.post('/api/reservations', data),
-  getReservations: () => apiClient.get('/api/reservations'),
-  updateReservation: (id, data) => apiClient.patch(`/api/reservations/${id}`, data),
-  deleteReservation: (id) => apiClient.delete(`/api/reservations/${id}`),
+  createReservation:  (data)     => apiClient.post('/api/reservations', data),
+  getReservations:    ()         => apiClient.get('/api/reservations'),
+  updateReservation:  (id, data) => apiClient.patch(`/api/reservations/${id}`, data),
+  deleteReservation:  (id)       => apiClient.delete(`/api/reservations/${id}`),
 
   // ========== Admin ==========
-  getStats: () => apiClient.get('/api/admin/stats'),
-  getAllOrders: () => apiClient.get('/api/admin/orders'),
-  getAllUsers: () => apiClient.get('/api/admin/users'),
-  deleteUser: (id) => apiClient.delete(`/api/admin/users/${id}`),
-  getAdminProducts: () => apiClient.get('/api/admin/products'),
-  getAdminReservations: () => apiClient.get('/api/admin/reservations'),
-  updateOrderStatus: (id, status) => apiClient.patch(`/api/admin/orders/${id}/status`, { status }),
+  getStats:                ()         => apiClient.get('/api/admin/stats'),
+  getAllOrders:             ()         => apiClient.get('/api/admin/orders'),
+  getAllUsers:              ()         => apiClient.get('/api/admin/users'),
+  deleteUser:              (id)        => apiClient.delete(`/api/admin/users/${id}`),
+  getAdminProducts:        ()         => apiClient.get('/api/admin/products'),
+  getAdminReservations:    ()         => apiClient.get('/api/admin/reservations'),
+  updateOrderStatus:       (id, status) => apiClient.patch(`/api/admin/orders/${id}/status`, { status }),
   updateReservationStatus: (id, status) => apiClient.patch(`/api/admin/reservations/${id}/status`, { status }),
 };
 
