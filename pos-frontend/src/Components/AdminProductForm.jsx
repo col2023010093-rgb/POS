@@ -78,7 +78,7 @@ const AdminProductForm = ({ onSuccess, existingProduct }) => {
       let response;
       if (existingProduct) {
         // ✅ Fixed: use /api/admin/products route (consistent with rest of admin)
-        response = await api.patch(`/api/admin/products/${existingProduct._id}`, data);
+        response = await api.patch(`/api/products/${existingProduct._id}`, data);
         alert('✅ Product updated successfully!');
       } else {
         response = await api.post('/api/products', data);
