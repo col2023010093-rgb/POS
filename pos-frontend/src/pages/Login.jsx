@@ -734,22 +734,6 @@ const Login = () => {
             ════════════════════════════════════════════════════════════════ */}
         <div className="form-container sign-up">
           <form onSubmit={handleRegister} noValidate aria-label="Sign up form">
-
-            {/* Mobile-only: branding + nav (hidden on desktop via CSS) */}
-            <div className="mobile-brand">
-              <img src={logo} alt="Texas Joe's" />
-              <div className="mobile-brand-text">
-                <span className="line1">Texas Joe's</span>
-                <span className="line2">House of Ribs</span>
-              </div>
-            </div>
-            <div className="mobile-nav">
-              <button type="button" className="btn-secondary" onClick={() => navigate('/')}>Home</button>
-              <button type="button" className="btn-secondary" onClick={() => navigate('/menu')}>Menu</button>
-              <button type="button" className="btn-secondary" onClick={() => navigate('/contact')}>Contact</button>
-              <button type="button" className="btn-secondary" onClick={() => navigate('/about')}>About</button>
-            </div>
-
             <h1 className="t-sign">Create Account</h1>
             {regError   && <div className="login-error-message"   role="alert" >❌ {regError}</div>}
             {regSuccess && <div className="login-success-message" role="status">✅ {regSuccess}</div>}
@@ -846,22 +830,6 @@ const Login = () => {
             ════════════════════════════════════════════════════════════════ */}
         <div className="form-container sign-in">
           <form onSubmit={handleLoginSubmit} noValidate aria-label="Sign in form">
-
-            {/* Mobile-only: branding + nav (hidden on desktop via CSS) */}
-            <div className="mobile-brand">
-              <img src={logo} alt="Texas Joe's" />
-              <div className="mobile-brand-text">
-                <span className="line1">Texas Joe's</span>
-                <span className="line2">House of Ribs</span>
-              </div>
-            </div>
-            <div className="mobile-nav">
-              <button type="button" className="btn-secondary" onClick={() => navigate('/')}>Home</button>
-              <button type="button" className="btn-secondary" onClick={() => navigate('/menu')}>Menu</button>
-              <button type="button" className="btn-secondary" onClick={() => navigate('/contact')}>Contact</button>
-              <button type="button" className="btn-secondary" onClick={() => navigate('/about')}>About</button>
-            </div>
-
             <h1 className="t-sign">Log in to your Account</h1>
             <p>Welcome back! Log in to your account:</p>
 
