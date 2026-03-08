@@ -34,8 +34,8 @@ apiClient.interceptors.response.use(
 // ✅ SINGLE API EXPORT - ALL METHODS HERE
 export const api = {
   // Generic HTTP methods
-  get: (url) => apiClient.get(url),
-  post: (url, data) => apiClient.post(url, data),
+  post: (url, data, config) => apiClient.post(url, data, config),
+  patch: (url, data, config) => apiClient.patch(url, data, config),
   patch: (url, data) => apiClient.patch(url, data),
   delete: (url) => apiClient.delete(url),
 

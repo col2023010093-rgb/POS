@@ -44,9 +44,9 @@ const AdminProductForm = ({ onSuccess, existingProduct }) => {
       data.append('price', formData.price);
       data.append('category', formData.category);
       data.append('prepTime', formData.prepTime);
-      data.append('inStock', formData.inStock);
-      data.append('popular', formData.popular);
-      
+      data.append('inStock', String(formData.inStock));
+      data.append('popular', String(formData.popular));
+
       // Convert ingredients string to array
       const ingredientsArray = formData.ingredients
         .split(',')
@@ -60,14 +60,10 @@ const AdminProductForm = ({ onSuccess, existingProduct }) => {
 
       let response;
       if (existingProduct) {
-        response = await api.patch(`/api/products/${existingProduct._id}`, data, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        response = await api.patch(`/api/products/${existingProduct._id}`, data);
         alert('Product updated successfully!');
       } else {
-        response = await api.post('/api/products', data, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        response = await api.post('/api/products', data);
         alert('Product created successfully!');
       }
 
@@ -110,8 +106,7 @@ const AdminProductForm = ({ onSuccess, existingProduct }) => {
         {preview && (
           <div className="image-preview">
             <img 
-              src={preview.startsWith('blob:') ? preview : `${import.meta.env.VITE_API_URL || 'http://localhost:4000'}${preview}`} 
-              alt="Preview" 
+              src={preview}
             />
           </div>
         )}

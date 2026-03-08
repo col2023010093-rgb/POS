@@ -186,7 +186,7 @@ const AdminProducts = () => {
               <div className="product-image">
                 {product.image ? (
                   <img 
-                    src={`http://localhost:4000${product.image}`}
+                    src={product.image}
                     alt={product.name}
                     onError={(e) => e.target.src = 'https://via.placeholder.com/200x150'}
                   />
