@@ -26,19 +26,20 @@ apiClient.interceptors.request.use((config) => {
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    const status      = error.response?.status;
-    const requestUrl  = error.config?.url || '';
-    const onLoginPage = window.location.pathname === '/login';
-    const isLoginReq  = requestUrl.includes('/auth/login');
+    const status     = error.response?.status;
+    const requestUrl = error.config?.url || '';
 
-    // Only redirect if:
-    // - it's a 401 (expired/invalid token, NOT wrong password)
-    // - the request was NOT any auth endpoint (login, register, verify, resend)
-    // - we are NOT already on the login page
-    const isAuthReq = requestUrl.includes('/auth/');
+    // Never redirect for ANY /auth/ request — covers login, register, verify, resend
+    const isAuthReq   = requestUrl.includes('/auth/');
+    // Support both path-based (/login) and hash-based (#/login) routing
+    const onLoginPage = window.location.href.includes('/login');
+
+    // Save to localStorage so we can read it AFTER a page refresh
+    const debugInfo = { status, requestUrl, isAuthReq, onLoginPage, time: new Date().toISOString() };
+    localStorage.setItem('last_interceptor_hit', JSON.stringify(debugInfo));
 
     if (status === 401 && !isAuthReq && !onLoginPage) {
-      console.warn('🔓 401 Unauthorized - clearing token and redirecting');
+      console.warn('🔓 Session expired — redirecting to login');
       localStorage.removeItem('token');
       window.location.href = '/login';
     }
