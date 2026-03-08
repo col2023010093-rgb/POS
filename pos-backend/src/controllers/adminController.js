@@ -162,6 +162,7 @@ exports.deleteUser = async (req, res) => {
     console.error('❌ Error deleting user:', error);
     res.status(500).json({ message: error.message });
   }
+};
 
 // ✅ Update product (inStock toggle + full edit)
 exports.updateProduct = async (req, res) => {
@@ -178,6 +179,5 @@ exports.updateProduct = async (req, res) => {
     console.error('❌ Error updating product:', error);
     res.status(500).json({ message: error.message });
   }
-};
-
+  
 };

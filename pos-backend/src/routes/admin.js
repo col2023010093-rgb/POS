@@ -12,6 +12,7 @@ router.patch('/orders/:id/status', authMiddleware, adminController.updateOrderSt
 
 // ✅ Products
 router.get('/products', authMiddleware, adminController.getAllProducts);
+router.patch('/products/:id', authMiddleware, adminController.updateProduct);
 
 // ✅ Users
 router.get('/users', authMiddleware, adminController.getAllUsers);
