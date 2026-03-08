@@ -50,7 +50,7 @@
   --t-mid:  250ms ease;
 
   /* ── COLUMN WIDTHS ─────────────────────────────────────────────────
-     Total: 160+180+72+105+85+65+50 = 867px
+     Total: 160+180+72+105+150+110+90 = 867px
      Table has min-width:867px so layout never compresses below this.  */
   --col-id:       300px;
   --col-customer:  80px;
@@ -722,7 +722,7 @@
 }
 .admin-dashboard .modal-header h3 {
   font-family: var(--f-display);
-  font-size: 1.05rem;
+  font-size: 0.9rem;
   font-weight: 700;
   color: var(--oj-sand);
   margin: 0;
