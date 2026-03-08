@@ -48,12 +48,13 @@
   --t-mid:  250ms ease;
 
   /* ── MENU COLUMN WIDTHS ── */
-  --mnu-col-img:    90px;
+  --mnu-col-img:    165px;
+  --mnu-col-name:   150px;
   --mnu-col-cat:    145px;
   --mnu-col-price:  115px;
   --mnu-col-prep:   110px;
   --mnu-col-stock:  128px;
-  --mnu-col-action: 175px;
+  --mnu-col-action: 230px;
   --mnu-col-pad:    1rem;
 }
 
