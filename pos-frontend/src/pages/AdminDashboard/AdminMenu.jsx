@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import { api } from '../../utils/api'
+import api from '../../api'
 // AdminProducts.css removed — AdminMenu.css is now fully self-contained
 import './AdminDashboard.css'
 import './AdminMenu.css'
@@ -25,10 +25,10 @@ const AdminMenu = () => {
     fetchProducts()
   }, [user, navigate])
 
-  const fetchProducts = async () => {
+ const fetchProducts = async () => {
     setLoading(true); setError(null)
     try {
-      const res  = await api.getAdminProducts()
+      const res  = await api.get('/api/admin/products')
       const data = Array.isArray(res.data) ? res.data : (res.data?.products || [])
       setProducts(data)
     } catch (err) {
@@ -47,7 +47,7 @@ const AdminMenu = () => {
   const handleToggleStock = async (product) => {
     setUpdating(product._id)
     try {
-      await api.updateProduct(product._id, { inStock: !product.inStock })
+      await api.patch(`/api/admin/products/${product._id}`, { inStock: !product.inStock })
       setProducts(prev =>
         prev.map(p => p._id === product._id ? { ...p, inStock: !p.inStock } : p)
       )
