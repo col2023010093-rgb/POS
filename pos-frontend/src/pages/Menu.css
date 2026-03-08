@@ -818,7 +818,8 @@
 .cart-sidebar.open { right: 0; }
 
 .cart-header {
-  display: flex;
+  position: relative;  /* keeps close-cart absolute positioning working */
+  display: flex;       /* ← THIS was missing/wrong */
   justify-content: space-between;
   align-items: center;
   padding: 1.75rem 2rem;
