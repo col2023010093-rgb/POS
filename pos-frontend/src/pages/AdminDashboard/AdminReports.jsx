@@ -193,6 +193,16 @@ const AdminReports = () => {
     )
   }
 
+  const IconRevenue        = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+  const IconOrders         = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+  const IconCompleted      = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+  const IconCancelled      = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+  const IconPending        = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+  const IconPreparing      = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10"/><path d="M12 6v6l4 2"/><path d="M18 2v4M20 4h-4"/></svg>
+  const IconAvgOrder       = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
+  const IconCompletionRate = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><path d="M3 20h18"/></svg>
+  const IconCancelRate     = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="14"/><line x1="12" y1="20" x2="12" y2="10"/><line x1="6" y1="20" x2="6" y2="16"/><path d="M3 20h18"/><line x1="4" y1="4" x2="20" y2="4" strokeWidth="1.25" strokeDasharray="2 2"/><line x1="3" y1="3" x2="21" y2="21" strokeWidth="1.5"/></svg>
+
   return (
     <div className="admin-dashboard">
       <div className="admin-container">
@@ -253,15 +263,15 @@ const AdminReports = () => {
           <>
             <div className="stats-grid">
               {[
-                { icon: '💰', label: 'Revenue',          value: formatPHP(filteredRevenue),  alert: false },
-                { icon: '📦', label: 'Total Orders',     value: filteredOrders.length,        alert: false },
-                { icon: '✅', label: 'Completed',        value: completedOrders.length,       alert: false },
-                { icon: '❌', label: 'Cancelled',        value: cancelledOrders.length,       alert: true  },
-                { icon: '⏳', label: 'Pending',          value: pendingOrders.length,         alert: false },
-                { icon: '🍳', label: 'Preparing',        value: preparingOrders.length,       alert: false },
-                { icon: '💵', label: 'Avg Order Value',  value: formatPHP(avgOrderValue),     alert: false },
-                { icon: '📈', label: 'Completion Rate',  value: `${completionRate}%`,         alert: false },
-                { icon: '📉', label: 'Cancellation Rate',value: `${cancellationRate}%`,       alert: true  },
+                { icon: <IconRevenue />,        label: 'Revenue',           value: formatPHP(filteredRevenue), alert: false },
+                { icon: <IconOrders />,         label: 'Total Orders',      value: filteredOrders.length,       alert: false },
+                { icon: <IconCompleted />,      label: 'Completed',         value: completedOrders.length,      alert: false },
+                { icon: <IconCancelled />,      label: 'Cancelled',         value: cancelledOrders.length,      alert: true  },
+                { icon: <IconPending />,        label: 'Pending',           value: pendingOrders.length,        alert: false },
+                { icon: <IconPreparing />,      label: 'Preparing',         value: preparingOrders.length,      alert: false },
+                { icon: <IconAvgOrder />,       label: 'Avg Order Value',   value: formatPHP(avgOrderValue),    alert: false },
+                { icon: <IconCompletionRate />, label: 'Completion Rate',   value: `${completionRate}%`,        alert: false },
+                { icon: <IconCancelRate />,     label: 'Cancellation Rate', value: `${cancellationRate}%`,      alert: true  },
               ].map((s, i) => (
                 <div className={`stat-card${s.alert ? ' alert' : ''}`} key={i}>
                   <span className="stat-icon">{s.icon}</span>
