@@ -27,7 +27,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import ReactDOM from 'react-dom';
-import { useNavigate }          from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth }              from '../context/AuthContext';
 import api                      from '../api';
 import { FaEye, FaEyeSlash }   from 'react-icons/fa';
