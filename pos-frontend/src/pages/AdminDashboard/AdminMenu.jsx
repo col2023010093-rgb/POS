@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../utils/api'
 import './AdminDashboard.css'
-import './AdminProducts.css'
+import '../../AdminProducts.css'
 import './AdminMenu.css'
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:4000'
