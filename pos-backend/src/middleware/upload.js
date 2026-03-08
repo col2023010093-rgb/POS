@@ -9,13 +9,19 @@ cloudinary.config({
 });
 
 const storage = new CloudinaryStorage({
-  cloudinary,
-  params: {
-    folder: 'texas-joes/products',
-    allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
-    transformation: [{ width: 800, height: 600, crop: 'limit', quality: 'auto' }],
+  cloudinary: cloudinary,
+  params: async (req, file) => {
+    return {
+      folder: 'texas-joes/products',
+      allowed_formats: ['jpg', 'jpeg', 'png', 'webp', 'gif'],
+      transformation: [{ width: 800, height: 600, crop: 'limit', quality: 'auto' }],
+    };
   },
 });
 
-const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }
+});
+
 module.exports = upload;
