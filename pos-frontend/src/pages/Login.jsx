@@ -26,6 +26,7 @@
  */
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import ReactDOM from 'react-dom';
 import { useNavigate }          from 'react-router-dom';
 import { useAuth }              from '../context/AuthContext';
 import api                      from '../api';
@@ -473,7 +474,9 @@ function VerificationModal({ verifyEmail, password, loginFn, onSuccess, onCancel
 
 const Login = () => {
   const { user, login, logout, loading: authLoading } = useAuth();
-  const navigate = useNavigate();
+  const navigate = useNavigate()
+  const location  = useLocation()
+  const returnTo  = location.state?.from || null;
 
   // ── UI state ───────────────────────────────────────────────────────────────
   const [step,             setStep]             = useState('login');  // 'login' | 'verify'
@@ -571,7 +574,7 @@ const Login = () => {
       setApiMsg({ type: 'success', text: 'Login successful! Redirecting…' });
       setTimeout(() => {
         const role = result.user?.role || result.data?.role;
-        navigate(role === 'admin' ? '/admin/dashboard' : '/');
+        navigate(role === 'admin' ? '/admin/dashboard' : (returnTo || '/'));
       }, 500);
     } else {
       if (result.code === 'TOO_MANY_REQUESTS' || String(result.error).includes('429')) {
@@ -926,25 +929,23 @@ const Login = () => {
       </div>
 
       {/* ════════════════════════════════════════════════════════════════════
-          VERIFICATION MODAL — rendered OUTSIDE .container
-          Covers the full viewport; VerificationModal manages its own state.
-          Login.jsx only provides: email, password, login function, callbacks.
+          MODALS — rendered via portal directly into document.body
+          Escapes .login-page overflow:hidden which traps fixed overlays.
           ════════════════════════════════════════════════════════════════════ */}
-      {step === 'verify' && verifyEmail && (
+      {step === 'verify' && verifyEmail && ReactDOM.createPortal(
         <VerificationModal
           verifyEmail={verifyEmail}
           password={formData.password}
           loginFn={login}
           onSuccess={handleVerifySuccess}
           onCancel={handleVerifyCancel}
-        />
+        />,
+        document.body
       )}
 
-      {/* ════════════════════════════════════════════════════════════════════
-          FORGOT PASSWORD MODAL — rendered OUTSIDE .container
-          ════════════════════════════════════════════════════════════════════ */}
-      {showForgotModal && (
-        <ForgotPasswordModal onClose={() => setShowForgotModal(false)} />
+      {showForgotModal && ReactDOM.createPortal(
+        <ForgotPasswordModal onClose={() => setShowForgotModal(false)} />,
+        document.body
       )}
 
     </div>
