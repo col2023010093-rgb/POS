@@ -702,6 +702,7 @@
   max-width: 560px;
   max-height: 88vh;
   overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
   animation: modal-rise 260ms cubic-bezier(0.34, 1.4, 0.64, 1) both;
@@ -721,9 +722,13 @@
   border-radius: var(--r-lg) var(--r-lg) 0 0;
   position: sticky;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 10;
   flex-shrink: 0;
   overflow: hidden;
+  /* Gold accent bar */
+  box-shadow: 0 2px 0 var(--oj-gold);
 }
 .admin-dashboard .modal-header h3 {
   font-family: var(--f-display);
