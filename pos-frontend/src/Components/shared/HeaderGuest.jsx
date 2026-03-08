@@ -100,6 +100,7 @@ const HeaderGuest = () => {
     setIsProfileOpen(prev => !prev)
   }
 
+
   const handleLogout = (e) => {
     e.stopPropagation()
     logout()

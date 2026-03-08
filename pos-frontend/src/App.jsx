@@ -57,28 +57,14 @@ function AppWrapper() {
         <Route path="/profile"      element={<ProtectedRoute><Profile /></ProtectedRoute>} />
         <Route path="/orders"       element={<ProtectedRoute><Orders /></ProtectedRoute>} />
         <Route path="/checkout"     element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
-        <Route path="/reservations" element={<ProtectedRoute><Reservation /></ProtectedRoute>} />
+        <Route path="/reservations" element={<Reservation />} />
 
         <Route path="/admin/dashboard"    element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
         <Route path="/admin/orders"       element={<ProtectedRoute><AdminOrders /></ProtectedRoute>} />
         <Route path="/admin/menu"         element={<ProtectedRoute><AdminMenu /></ProtectedRoute>} />
         <Route path="/admin/reservations" element={<ProtectedRoute><AdminReservations /></ProtectedRoute>} />
         <Route path="/admin/products"     element={<ProtectedRoute><AdminProducts /></ProtectedRoute>} />
-/*************  ✨ Windsurf Command ⭐  *************/
-/**
- * The main App component.
- *
- * This component renders the application's routes and providers.
- *
- * It is the top-level component that is rendered by the React Router.
- *
- * It provides the CartProvider context to its children, which allows
- * them to access the cart state and dispatch actions to update it.
- *
- * It also renders the AppWrapper component, which is responsible for
- * rendering the application's header, footer, and routes.
- */
-/*******  2e5f90b2-9563-4d61-b854-545ad577d9cc  *******/        <Route path="/admin/reports"      element={<ProtectedRoute><AdminReports /></ProtectedRoute>} />
+        <Route path="/admin/reports"      element={<ProtectedRoute><AdminReports /></ProtectedRoute>} />
         <Route path="/admin/users"        element={<ProtectedRoute><AdminUsers /></ProtectedRoute>} />
       </Routes>
 
