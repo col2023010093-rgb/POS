@@ -753,12 +753,6 @@
 
 .add-to-cart-btn:active { transform: translateY(0); }
 
-/* Out-of-stock card state */
-.menu-item-card.out-of-stock-card {
-  opacity: 0.65;
-  pointer-events: none;
-}
-
 /* Stock warning */
 .stock-warning {
   font-size: 0.72rem;
@@ -1705,4 +1699,127 @@
   outline: 2px solid var(--amber-gold);
   outline-offset: 3px;
   border-radius: 4px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   OUT-OF-STOCK  —  MenuItem visual treatment
+   Add these rules to Menu.css (or import as a separate chunk)
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Card-level dimming ───────────────────────────────────────────────── */
+.menu-item-card.out-of-stock {
+  cursor: default;           /* no pointer — item is unavailable            */
+  opacity: 0.72;             /* dim the whole card                          */
+}
+.menu-item-card.out-of-stock:hover {
+  transform: none !important;
+  box-shadow: none !important; /* suppress any lift/glow on hover            */
+}
+
+/* ── Image grayscale ─────────────────────────────────────────────────── */
+.menu-item-card.out-of-stock .item-img,
+.menu-item-card.out-of-stock .item-emoji {
+  filter: grayscale(85%) brightness(0.85);
+  transition: filter 0.3s ease;
+}
+
+/* ── Image overlay (sits on top of the image) ────────────────────────── */
+.oos-image-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(20, 12, 4, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: inherit;
+  pointer-events: none;
+}
+.oos-overlay-text {
+  font-family: 'Georgia', serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #fff;
+  background: rgba(192, 57, 43, 0.80);
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  border: 1.5px solid rgba(255,255,255,.30);
+  backdrop-filter: blur(2px);
+}
+
+/* ── Stock badge (top-right of card) ─────────────────────────────────── */
+.stock-badge {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: #fff;
+  background: rgba(192, 57, 43, 0.92);
+  padding: 0.28rem 0.65rem 0.28rem 0.5rem;
+  border-radius: 999px;
+  box-shadow: 0 2px 8px rgba(192, 57, 43, 0.45);
+  pointer-events: none;
+}
+.stock-badge-icon {
+  font-size: 0.72rem;
+  line-height: 1;
+}
+
+/* ── Price strikethrough when OOS ────────────────────────────────────── */
+.item-price--oos {
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+
+/* ── Add-to-cart button: disabled/OOS state ──────────────────────────── */
+.add-to-cart-btn.disabled {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #d1c9bc !important;     /* muted parchment grey               */
+  color: #7a6a5a !important;          /* desaturated text                   */
+  border-color: #bfb5a8 !important;
+  cursor: not-allowed !important;
+  pointer-events: none;               /* belt-and-suspenders: no clicks      */
+  box-shadow: none !important;
+  transform: none !important;
+  opacity: 1;                         /* opacity handled at card level        */
+}
+.add-to-cart-btn.disabled:hover {
+  background: #d1c9bc !important;
+  transform: none !important;
+}
+.btn-oos-icon {
+  font-size: 0.8rem;
+  line-height: 1;
+}
+
+/* ── Quick-add overlay: hide entirely when OOS ───────────────────────── */
+.menu-item-card.out-of-stock .image-overlay {
+  display: none;
+}
+
+/* ── "Currently unavailable" notice ─────────────────────────────────── */
+.oos-notice {
+  font-family: 'Trebuchet MS', sans-serif;
+  font-size: 0.7rem;
+  font-style: italic;
+  color: #b08070;
+  margin: 0.35rem 0 0;
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+
+/* ── Ensure image container is position:relative for overlay ─────────── */
+.item-image {
+  position: relative;  /* needed for .oos-image-overlay absolute positioning */
 }
