@@ -54,8 +54,8 @@
      Table has min-width:867px so layout never compresses below this.  */
   --col-id:       300px;
   --col-customer:  80px;
-  --col-items:     72px;
-  --col-total:    95px;
+  --col-items:     42px;
+  --col-total:    65px;
   --col-status:   85px;
   --col-date:     65px;
   --col-actions:  50px;
