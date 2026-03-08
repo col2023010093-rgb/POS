@@ -162,25 +162,25 @@ const AdminHeader = () => {
             </button>
 
             {isNotifOpen && (
-              <div className="admin-notif-dropdown">
-                <div className="admin-notif-title">Notifications</div>
-                {notifications.length === 0 && (
-                  <div className="admin-notif-empty">No notifications</div>
-                )}
-                {notifications.map(n => (
-                  <div
-                    key={n._id}
-                    className={`admin-notif-item ${n.read ? '' : 'unread'}`}
-                    onClick={() => markRead(n._id)}
-                  >
-                    <div className="admin-notif-message">{n.message}</div>
-                    <div className="admin-notif-time">
-                      {new Date(n.createdAt).toLocaleString()}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                <div className="notif-dropdown">
+                  <div className="notif-title">Notifications</div>
+                  {notifications.length === 0
+                    ? <div className="notif-empty">No notifications</div>
+                    : notifications.map(n => (
+                        <div
+                          key={n._id}
+                          className={`notif-item ${n.read ? '' : 'unread'}`}
+                          onClick={() => markRead(n._id)}
+                        >
+                          <div className="notif-message">{n.message}</div>
+                          <div className="notif-time">
+                            {new Date(n.createdAt).toLocaleString()}
+                          </div>
+                        </div>
+                      ))
+                  }
+                </div>
+              )}
           </div>
 
           {/* Profile Dropdown */}
