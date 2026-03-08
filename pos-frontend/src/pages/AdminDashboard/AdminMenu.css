@@ -1,11 +1,11 @@
 /* ═══════════════════════════════════════════════════════════════════════
    TEXAS JOE'S  ✦  ADMIN MENU PAGE
-   AdminMenu.css  —  v2 (column-alignment refactor)
+   AdminMenu.css  —  v3 (aligned to AdminDashboard.css token system)
    ───────────────────────────────────────────────────────────────────────
    Import order in AdminMenu.jsx:
-     import './AdminDashboard.css'
+     import './AdminDashboard.css'    ← defines --tx-*, --f-ui, --r-*, etc.
      import './AdminProducts.css'
-     import './AdminMenu.css'        ← this file wins all table layout
+     import './AdminMenu.css'         ← this file wins all table layout
 
    Root cause of misalignment (fixed here):
    ─────────────────────────────────────────
@@ -67,11 +67,11 @@
 /* ─────────────────────────────────────────────────────────────────────
    §2  COLUMN WIDTHS  (on <th> — table-layout:fixed propagates to cells)
    ───────────────────────────────────────────────────────────────────── */
-.admin-dashboard .admin-table th.mnu-col-img    { width: var(--mnu-w-img); }
-.admin-dashboard .admin-table th.mnu-col-cat    { width: var(--mnu-w-cat); }
-.admin-dashboard .admin-table th.mnu-col-price  { width: var(--mnu-w-price); }
-.admin-dashboard .admin-table th.mnu-col-prep   { width: var(--mnu-w-prep); }
-.admin-dashboard .admin-table th.mnu-col-stock  { width: var(--mnu-w-stock); }
+.admin-dashboard .admin-table th.mnu-col-img    { width: var(--mnu-w-img);    }
+.admin-dashboard .admin-table th.mnu-col-cat    { width: var(--mnu-w-cat);    }
+.admin-dashboard .admin-table th.mnu-col-price  { width: var(--mnu-w-price);  }
+.admin-dashboard .admin-table th.mnu-col-prep   { width: var(--mnu-w-prep);   }
+.admin-dashboard .admin-table th.mnu-col-stock  { width: var(--mnu-w-stock);  }
 .admin-dashboard .admin-table th.mnu-col-action { width: var(--mnu-w-action); }
 /* mnu-col-name has no width — it takes all remaining space */
 
@@ -117,13 +117,13 @@
 .admin-dashboard .admin-table th:first-child,
 .admin-dashboard .admin-table td:first-child {
   padding-left: var(--mnu-col-pad);
-  width: auto;            /* width is owned by .mnu-col-img on <th> */
+  width: auto; /* width is owned by .mnu-col-img on <th> */
 }
 
 .admin-dashboard .admin-table th:last-child,
 .admin-dashboard .admin-table td:last-child {
   padding-right: var(--mnu-col-pad);
-  text-align: left;       /* overridden to right only on .mnu-col-action */
+  text-align: left; /* overridden to right only on .mnu-col-action */
 }
 
 
