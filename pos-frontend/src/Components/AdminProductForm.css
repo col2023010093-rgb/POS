@@ -1,116 +1,409 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   TEXAS JOE'S  ✦  ADMIN PRODUCT FORM  —  AdminProductForm.css
+   Scoped to .admin-product-form — Texas Wild West theme
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ─────────────────────────────────────────────────────────────────────
+   §0  TOKENS
+   ───────────────────────────────────────────────────────────────────── */
+:root {
+  --pf-wood:      #3B2A1A;
+  --pf-leather:   #6B3E26;
+  --pf-saddle:    #8B5A2B;
+  --pf-copper:    #C4622D;
+  --pf-amber:     #D4A373;
+  --pf-gold:      #E8C570;
+  --pf-parchment: #F5E6C8;
+  --pf-cream:     #FBF4E4;
+  --pf-smoke:     #EDE0C4;
+  --pf-tan:       #C4996A;
+  --pf-sand:      #F0D9A8;
+  --pf-green:     #27AE60;
+  --pf-red:       #C0392B;
+
+  --pf-f-display: 'Georgia', 'Times New Roman', serif;
+  --pf-f-body:    'Trebuchet MS', 'Segoe UI', sans-serif;
+
+  --pf-sh-card:   0 2px 12px rgba(59,42,26,.12), 0 1px 4px rgba(59,42,26,.08);
+  --pf-sh-focus:  0 0 0 3px rgba(232,197,112,.25);
+  --pf-sh-error:  0 0 0 3px rgba(192,57,43,.15);
+
+  --pf-bd-warm:   1px solid rgba(196,153,106,.35);
+  --pf-bd-strong: 1px solid rgba(107,62,38,.28);
+  --pf-bd-focus:  1px solid var(--pf-amber);
+  --pf-bd-error:  1px solid rgba(192,57,43,.55);
+
+  --pf-r-sm:   4px;
+  --pf-r-md:   8px;
+  --pf-r-lg:   12px;
+  --pf-r-pill: 999px;
+
+  --pf-t-fast: 150ms ease;
+  --pf-t-mid:  250ms ease;
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §1  FORM WRAPPER  —  .admin-product-form
+   The modal-body already provides padding so we reset outer spacing
+   ───────────────────────────────────────────────────────────────────── */
 .admin-product-form {
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 2rem;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-.admin-product-form h2 {
-  margin-bottom: 1.5rem;
-  color: #333;
-  text-align: center;
-}
-
-.form-group {
-  margin-bottom: 1.5rem;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 600;
-  color: #555;
-}
-
-.form-group input,
-.form-group textarea,
-.form-group select {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
   width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
-  transition: border-color 0.3s;
-}
-
-.form-group input:focus,
-.form-group textarea:focus,
-.form-group select:focus {
-  outline: none;
-  border-color: #ff6b35;
-}
-
-.form-group input[type="file"] {
-  padding: 0.5rem;
-}
-
-.image-preview {
-  margin-top: 1rem;
-  text-align: center;
-}
-
-.image-preview img {
   max-width: 100%;
-  max-height: 300px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+  font-family: var(--pf-f-body);
 }
 
-.form-row {
+/* Hide the internal h2 — the modal-header already shows the title */
+.admin-product-form h2 {
+  display: none;
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §2  IMAGE UPLOAD ZONE
+   ───────────────────────────────────────────────────────────────────── */
+.admin-product-form .form-group:first-of-type {
+  margin-bottom: 1.25rem;
+}
+
+/* File input styled as a drag-drop-style zone */
+.admin-product-form input[type="file"] {
+  width: 100%;
+  padding: 0.9rem 1rem;
+  border: 2px dashed rgba(196,153,106,.50);
+  border-radius: var(--pf-r-md);
+  background: linear-gradient(135deg, var(--pf-smoke) 0%, var(--pf-parchment) 100%);
+  color: var(--pf-saddle);
+  font-family: var(--pf-f-body);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: border-color var(--pf-t-fast), background var(--pf-t-fast);
+  box-sizing: border-box;
+}
+.admin-product-form input[type="file"]:hover {
+  border-color: var(--pf-amber);
+  background: linear-gradient(135deg, var(--pf-parchment) 0%, var(--pf-cream) 100%);
+}
+.admin-product-form input[type="file"]:focus-visible {
+  outline: none;
+  border-color: var(--pf-gold);
+  box-shadow: var(--pf-sh-focus);
+}
+
+/* Image preview */
+.admin-product-form .image-preview {
+  margin-top: 0.75rem;
+  border-radius: var(--pf-r-md);
+  overflow: hidden;
+  border: var(--pf-bd-warm);
+  position: relative;
+  box-shadow: var(--pf-sh-card);
+}
+.admin-product-form .image-preview img {
+  width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  display: block;
+  border-radius: var(--pf-r-md);
+}
+/* "Change image" overlay on hover */
+.admin-product-form .image-preview::after {
+  content: '🔄  Change Image';
+  position: absolute;
+  inset: 0;
+  background: rgba(30,18,8,.50);
+  color: var(--pf-sand);
+  font-family: var(--pf-f-body);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  border-radius: var(--pf-r-md);
+  transition: opacity var(--pf-t-fast);
+  pointer-events: none;
+}
+.admin-product-form .image-preview:hover::after { opacity: 1; }
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §3  FORM GROUPS  —  .form-group
+   ───────────────────────────────────────────────────────────────────── */
+.admin-product-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.38rem;
+  margin-bottom: 1.1rem;
+}
+.admin-product-form .form-group:last-of-type {
+  margin-bottom: 0;
+}
+
+/* Labels */
+.admin-product-form .form-group label {
+  font-family: var(--pf-f-body);
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.4px;
+  color: var(--pf-tan);
+  display: block;
+  margin-bottom: 0;
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §4  INPUTS, TEXTAREA, SELECT
+   ───────────────────────────────────────────────────────────────────── */
+.admin-product-form .form-group input:not([type="file"]):not([type="checkbox"]),
+.admin-product-form .form-group textarea,
+.admin-product-form .form-group select {
+  width: 100%;
+  padding: 0.62rem 0.9rem;
+  border: var(--pf-bd-warm);
+  border-radius: var(--pf-r-md);
+  background: var(--pf-parchment);
+  color: var(--pf-wood);
+  font-family: var(--pf-f-body);
+  font-size: 0.88rem;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color var(--pf-t-fast), box-shadow var(--pf-t-fast), background var(--pf-t-fast);
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.admin-product-form .form-group input:not([type="file"]):not([type="checkbox"])::placeholder,
+.admin-product-form .form-group textarea::placeholder {
+  color: var(--pf-tan);
+  font-style: italic;
+}
+
+/* Focus */
+.admin-product-form .form-group input:not([type="file"]):not([type="checkbox"]):focus,
+.admin-product-form .form-group textarea:focus,
+.admin-product-form .form-group select:focus {
+  border-color: var(--pf-amber);
+  background: var(--pf-cream);
+  box-shadow: var(--pf-sh-focus);
+}
+
+/* Select — custom chevron */
+.admin-product-form .form-group select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23C4996A' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.8rem center;
+  background-size: 13px;
+  padding-right: 2.2rem;
+  cursor: pointer;
+}
+.admin-product-form .form-group select:focus {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23D4A373' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+}
+
+/* Textarea */
+.admin-product-form .form-group textarea {
+  min-height: 80px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+/* Number input — hide spinners */
+.admin-product-form .form-group input[type="number"]::-webkit-inner-spin-button,
+.admin-product-form .form-group input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+}
+.admin-product-form .form-group input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield; /* Add standard property for compatibility */
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §5  FORM ROW  —  .form-row (price + category side by side)
+   ───────────────────────────────────────────────────────────────────── */
+.admin-product-form .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  gap: 0.85rem;
+  margin-bottom: 1.1rem;
+}
+.admin-product-form .form-row .form-group {
+  margin-bottom: 0;
 }
 
-.form-row.checkboxes {
+
+/* ─────────────────────────────────────────────────────────────────────
+   §6  CHECKBOXES  —  .form-row.checkboxes
+   ───────────────────────────────────────────────────────────────────── */
+.admin-product-form .form-row.checkboxes {
   display: flex;
-  gap: 2rem;
-  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  grid-template-columns: unset;
 }
 
-.checkbox-label {
+.admin-product-form .checkbox-label {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-weight: normal;
+  padding: 0.55rem 1rem;
+  border-radius: var(--pf-r-md);
+  border: var(--pf-bd-warm);
+  background: var(--pf-smoke);
   cursor: pointer;
-}
-
-.checkbox-label input[type="checkbox"] {
-  width: auto;
-  cursor: pointer;
-}
-
-.btn-submit {
-  width: 100%;
-  padding: 1rem;
-  background: #ff6b35;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 1rem;
+  transition: border-color var(--pf-t-fast), background var(--pf-t-fast);
+  font-family: var(--pf-f-body);
+  font-size: 0.82rem;
   font-weight: 600;
+  color: var(--pf-wood);
+  flex: 1;
+  justify-content: center;
+  user-select: none;
+}
+.admin-product-form .checkbox-label:hover {
+  border-color: var(--pf-amber);
+  background: var(--pf-parchment);
+}
+
+.admin-product-form .checkbox-label input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--pf-amber);
   cursor: pointer;
-  transition: background 0.3s;
+  flex-shrink: 0;
+  margin: 0;
 }
 
-.btn-submit:hover:not(:disabled) {
-  background: #e55a28;
+/* Checked state — highlight the whole pill */
+.admin-product-form .checkbox-label:has(input:checked) {
+  border-color: rgba(232,197,112,.55);
+  background: rgba(232,197,112,.15);
+  color: var(--pf-leather);
 }
 
-.btn-submit:disabled {
-  background: #ccc;
+
+/* ─────────────────────────────────────────────────────────────────────
+   §7  DIVIDER between sections
+   ───────────────────────────────────────────────────────────────────── */
+.admin-product-form .form-row.checkboxes::before {
+  display: none;
+}
+
+/* Visual section separator above checkboxes */
+.admin-product-form .form-row.checkboxes {
+  padding-top: 1rem;
+  border-top: var(--pf-bd-warm);
+  margin-top: 0.15rem;
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §8  SUBMIT BUTTON  —  .btn-submit
+   ───────────────────────────────────────────────────────────────────── */
+.admin-product-form .btn-submit {
+  width: 100%;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--pf-r-pill);
+  border: 1.5px solid var(--pf-gold);
+  background: linear-gradient(135deg, var(--pf-gold) 0%, var(--pf-amber) 100%);
+  color: var(--pf-wood);
+  font-family: var(--pf-f-body);
+  font-size: 0.88rem;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all var(--pf-t-fast);
+  box-shadow: 0 2px 10px rgba(232,197,112,.30);
+  margin-top: 0.25rem;
+  position: relative;
+  overflow: hidden;
+}
+/* Shimmer sweep on hover */
+.admin-product-form .btn-submit::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.22), transparent);
+  transition: left 400ms ease;
+}
+.admin-product-form .btn-submit:hover:not(:disabled)::before {
+  left: 160%;
+}
+.admin-product-form .btn-submit:hover:not(:disabled) {
+  background: linear-gradient(135deg, #f0d06a 0%, #e0b040 100%);
+  box-shadow: 0 4px 16px rgba(232,197,112,.50);
+  transform: translateY(-1px);
+}
+.admin-product-form .btn-submit:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(232,197,112,.25);
+}
+.admin-product-form .btn-submit:focus-visible {
+  outline: 2px solid var(--pf-gold);
+  outline-offset: 2px;
+}
+
+/* Disabled / loading state */
+.admin-product-form .btn-submit:disabled {
+  background: linear-gradient(135deg, var(--pf-smoke) 0%, var(--pf-parchment) 100%);
+  border-color: rgba(196,153,106,.30);
+  color: var(--pf-tan);
   cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+.admin-product-form .btn-submit:disabled::after {
+  content: '';
+  display: inline-block;
+  width: 12px; height: 12px;
+  border: 2px solid var(--pf-tan);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: pf-spin 0.7s linear infinite;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
+@keyframes pf-spin {
+  to { transform: rotate(360deg); }
 }
 
-@media (max-width: 768px) {
-  .admin-product-form {
-    padding: 1rem;
-  }
 
-  .form-row {
+/* ─────────────────────────────────────────────────────────────────────
+   §9  RESPONSIVE — 480px
+   ───────────────────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .admin-product-form .form-row {
     grid-template-columns: 1fr;
+  }
+  .admin-product-form .form-row.checkboxes {
+    flex-direction: column;
+  }
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §10  REDUCED MOTION
+   ───────────────────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .admin-product-form *,
+  .admin-product-form *::before,
+  .admin-product-form *::after {
+    animation-duration:        0.01ms !important;
+    animation-iteration-count: 1      !important;
+    transition-duration:       0.01ms !important;
   }
 }
