@@ -785,3 +785,7 @@
     transition-duration:       0.01ms !important;
   }
 }
+
+td.ord-col-customer  { padding-left: 2rem; }   /* shifts content right */
+th.ord-col-customer  { padding-left: 2rem; }   /* keeps header aligned */
+td.ord-col-id        { overflow: hidden; text-overflow: ellipsis; }  /* clips long order #s */
