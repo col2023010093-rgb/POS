@@ -3,20 +3,21 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../utils/api'
 import './AdminDashboard.css'
+import './AdminOrders.css'
 
 const STATUS_OPTIONS = ['pending', 'preparing', 'ready', 'completed', 'cancelled']
 
 const AdminOrders = () => {
-  const navigate      = useNavigate()
-  const { user }      = useAuth()
-  const [orders,      setOrders]      = useState([])
-  const [loading,     setLoading]     = useState(true)
-  const [error,       setError]       = useState(null)
-  const [notice,      setNotice]      = useState('')
-  const [search,      setSearch]      = useState('')
-  const [filterStatus,setFilterStatus]= useState('')
-  const [viewOrder,   setViewOrder]   = useState(null)
-  const [updating,    setUpdating]    = useState(null)
+  const navigate       = useNavigate()
+  const { user }       = useAuth()
+  const [orders,       setOrders]      = useState([])
+  const [loading,      setLoading]     = useState(true)
+  const [error,        setError]       = useState(null)
+  const [notice,       setNotice]      = useState('')
+  const [search,       setSearch]      = useState('')
+  const [filterStatus, setFilterStatus]= useState('')
+  const [viewOrder,    setViewOrder]   = useState(null)
+  const [updating,     setUpdating]    = useState(null)
 
   useEffect(() => {
     if (!user?.role || user?.role !== 'admin') { navigate('/'); return }
@@ -55,6 +56,18 @@ const AdminOrders = () => {
   const formatPHP = v =>
     new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(Number(v || 0))
 
+  const getOrderLabel = order =>
+    order.orderNumber
+      ? `#${order.orderNumber}`
+      : `#ORD-${order._id.slice(-6).toUpperCase()}`
+
+  const getCustomerName = order => {
+    const c = order.customerId
+    if (!c) return '—'
+    const name = `${c.firstName || ''} ${c.lastName || ''}`.trim()
+    return name || c.email || '—'
+  }
+
   /* ── filtered + searched list ── */
   const visible = useMemo(() => {
     let list = [...orders].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
@@ -63,8 +76,9 @@ const AdminOrders = () => {
       const q = search.toLowerCase()
       list = list.filter(o =>
         (o.orderNumber || '').toLowerCase().includes(q) ||
-        (`${o.customerId?.firstName} ${o.customerId?.lastName}`).toLowerCase().includes(q) ||
-        o.customerId?.email?.toLowerCase().includes(q)
+        (o._id || '').toLowerCase().includes(q) ||
+        getCustomerName(o).toLowerCase().includes(q) ||
+        (o.customerId?.email || '').toLowerCase().includes(q)
       )
     }
     return list
@@ -122,14 +136,13 @@ const AdminOrders = () => {
             placeholder="Search by order #, customer, email…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            style={{ flex: 1, minWidth: 220 }}
           />
           {(search || filterStatus) && (
             <button className="btn-secondary" onClick={() => { setSearch(''); setFilterStatus('') }}>
               ✕ Clear
             </button>
           )}
-          <span style={{ marginLeft: 'auto', fontSize: '0.82rem', color: 'var(--brand-tan)', fontWeight: 600 }}>
+          <span className="ord-result-count">
             {visible.length} result{visible.length !== 1 ? 's' : ''}
           </span>
         </div>
@@ -160,20 +173,32 @@ const AdminOrders = () => {
                 <tbody>
                   {visible.map(order => (
                     <tr key={order._id} style={{ opacity: updating === order._id ? 0.6 : 1 }}>
-                      <td><strong>#{order.orderNumber || order._id.slice(-6).toUpperCase()}</strong></td>
-                      <td>
-                        <div style={{ fontWeight: 600 }}>
-                          {order.customerId?.firstName} {order.customerId?.lastName}
-                        </div>
+
+                      {/* Order # — single line, no wrap */}
+                      <td className="ord-col-id">
+                        <strong>{getOrderLabel(order)}</strong>
+                      </td>
+
+                      {/* Customer — name + email sub-line */}
+                      <td className="ord-col-customer">
+                        <div className="ord-customer-name">{getCustomerName(order)}</div>
                         {order.customerId?.email && (
-                          <div style={{ fontSize: '0.78rem', color: 'var(--brand-tan)' }}>
-                            {order.customerId.email}
-                          </div>
+                          <div className="ord-customer-email">{order.customerId.email}</div>
                         )}
                       </td>
-                      <td>{order.items?.length || 0} item{(order.items?.length || 0) !== 1 ? 's' : ''}</td>
-                      <td><strong>{formatPHP(order.totalAmount)}</strong></td>
-                      <td>
+
+                      {/* Items count */}
+                      <td className="ord-col-items">
+                        {order.items?.length || 0} item{(order.items?.length || 0) !== 1 ? 's' : ''}
+                      </td>
+
+                      {/* Total */}
+                      <td className="ord-col-total">
+                        <strong>{formatPHP(order.totalAmount)}</strong>
+                      </td>
+
+                      {/* Status dropdown */}
+                      <td className="ord-col-status">
                         <select
                           value={order.status}
                           onChange={e => handleStatusUpdate(order._id, e.target.value)}
@@ -185,16 +210,21 @@ const AdminOrders = () => {
                           ))}
                         </select>
                       </td>
-                      <td>
+
+                      {/* Date */}
+                      <td className="ord-col-date">
                         {new Date(order.createdAt).toLocaleDateString('en-PH', {
                           month: 'short', day: 'numeric', year: 'numeric',
                         })}
                       </td>
-                      <td>
+
+                      {/* Actions */}
+                      <td className="ord-col-actions">
                         <button className="btn-view" onClick={() => setViewOrder(order)}>
                           View
                         </button>
                       </td>
+
                     </tr>
                   ))}
                 </tbody>
@@ -205,22 +235,24 @@ const AdminOrders = () => {
 
       </div>
 
-      {/* ── Order Detail Modal ── */}
+      {/* ══════════════════════════════════════
+          ORDER DETAIL MODAL
+          ══════════════════════════════════════ */}
       {viewOrder && (
         <div className="modal-backdrop" onClick={e => e.target === e.currentTarget && setViewOrder(null)}>
-          <div className="modal-card">
+          <div className="modal-card ord-modal">
+
+            {/* Header */}
             <div className="modal-header">
-              <h3>Order #{viewOrder.orderNumber || viewOrder._id.slice(-6).toUpperCase()}</h3>
+              <h3>Order {getOrderLabel(viewOrder)}</h3>
               <button className="modal-close" onClick={() => setViewOrder(null)}>×</button>
             </div>
+
             <div className="modal-body">
 
-              {/* Status update inside modal */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem',
-                            padding: '0.75rem 1rem', background: 'var(--brand-smoke)', borderRadius: 'var(--radius-md)' }}>
-                <span style={{ fontWeight: 700, fontSize: '0.82rem', color: 'var(--brand-copper)', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
-                  Status:
-                </span>
+              {/* ── Status bar ── */}
+              <div className="ord-modal-status-bar">
+                <span className="ord-modal-status-label">Status:</span>
                 <select
                   value={viewOrder.status}
                   onChange={e => handleStatusUpdate(viewOrder._id, e.target.value)}
@@ -233,54 +265,60 @@ const AdminOrders = () => {
                 </select>
               </div>
 
-              {/* Customer info */}
-              <div style={{ marginBottom: '1.5rem' }}>
-                <div style={{ fontWeight: 700, fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--brand-copper)', marginBottom: '0.5rem' }}>
-                  Customer
-                </div>
-                <div style={{ fontWeight: 600, color: 'var(--brand-dark)' }}>
-                  {viewOrder.customerId?.firstName} {viewOrder.customerId?.lastName}
+              {/* ── Customer info ── */}
+              <div className="ord-modal-section">
+                <div className="ord-modal-section-label">Customer</div>
+                <div className="ord-modal-customer-name">
+                  {getCustomerName(viewOrder)}
                 </div>
                 {viewOrder.customerId?.email && (
-                  <div style={{ fontSize: '0.85rem', color: 'var(--brand-tan)' }}>{viewOrder.customerId.email}</div>
+                  <div className="ord-modal-meta">{viewOrder.customerId.email}</div>
                 )}
                 {viewOrder.customerId?.phone && (
-                  <div style={{ fontSize: '0.85rem', color: 'var(--brand-tan)' }}>{viewOrder.customerId.phone}</div>
+                  <div className="ord-modal-meta">{viewOrder.customerId.phone}</div>
                 )}
               </div>
 
-              {/* Items */}
-              <div style={{ marginBottom: '1.5rem' }}>
-                <div style={{ fontWeight: 700, fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--brand-copper)', marginBottom: '0.75rem' }}>
-                  Order Items
-                </div>
-                <ul className="order-items-list">
-                  {(viewOrder.items || []).map((item, i) => (
-                    <li className="order-item" key={i}>
-                      <span className="order-item-name">{item.productId?.name || item.name || 'Item'}</span>
-                      <span className="order-item-qty">× {item.quantity || 1}</span>
-                      <span className="order-item-price">
-                        {formatPHP(Number(item.price || 0) * Number(item.quantity || 1))}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.75rem',
-                              borderTop: '2px solid var(--brand-smoke)', paddingTop: '0.75rem' }}>
-                  <span style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--brand-saddle)', fontFamily: 'Playfair Display, serif' }}>
-                    Total: {formatPHP(viewOrder.totalAmount)}
-                  </span>
+              {/* ── Order items ── */}
+              <div className="ord-modal-section">
+                <div className="ord-modal-section-label">Order Items</div>
+
+                {(!viewOrder.items || viewOrder.items.length === 0) ? (
+                  <div className="ord-modal-empty">No items recorded for this order.</div>
+                ) : (
+                  <ul className="order-items-list">
+                    {viewOrder.items.map((item, i) => {
+                      const name  = item.productId?.name || item.name || 'Item'
+                      const qty   = Number(item.quantity || 1)
+                      const price = Number(item.price || item.productId?.price || 0)
+                      return (
+                        <li className="order-item" key={i}>
+                          <span className="order-item-name">{name}</span>
+                          <span className="order-item-qty">× {qty}</span>
+                          <span className="order-item-price">{formatPHP(price * qty)}</span>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                )}
+
+                {/* Totals row */}
+                <div className="ord-modal-total-row">
+                  <span className="ord-modal-total-label">Total</span>
+                  <span className="ord-modal-total-value">{formatPHP(viewOrder.totalAmount)}</span>
                 </div>
               </div>
 
-              {/* Timestamps */}
-              <div style={{ fontSize: '0.78rem', color: 'var(--brand-tan)' }}>
+              {/* ── Timestamp ── */}
+              <div className="ord-modal-timestamp">
                 Placed: {new Date(viewOrder.createdAt).toLocaleString('en-PH')}
               </div>
 
+              {/* ── Close ── */}
               <div className="modal-actions">
                 <button className="btn-secondary" onClick={() => setViewOrder(null)}>Close</button>
               </div>
+
             </div>
           </div>
         </div>

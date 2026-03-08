@@ -1,94 +1,226 @@
 /* ═══════════════════════════════════════════════════════════════════════
-   TEXAS JOE'S  ✦  ADMIN PRODUCTS PAGE
-   admin-products.css
-   ─────────────────────────────────────────────────────────────────────
-   Companion stylesheet to AdminDashboard.css.
-   Import in AdminMenu.jsx alongside AdminDashboard.css:
+   TEXAS JOE'S  ✦  ADMIN ORDERS
+   AdminOrders.css
+   ───────────────────────────────────────────────────────────────────────
+   Companion to AdminDashboard.css.
+   Import in AdminOrders.jsx alongside the base sheet:
      import './AdminDashboard.css'
-     import './AdminProducts.css'
+     import './AdminOrders.css'
 
-   Scope: all styles are scoped under .admin-dashboard to prevent
-   bleed into the public-facing site.
+   Architecture
+   ────────────
+   All rules are scoped under .admin-dashboard to prevent bleed.
+   Inline styles in the JSX use --brand-* tokens; §0 bridges those to
+   the canonical --tx-* tokens defined in AdminDashboard.css so colours
+   render correctly without touching a single line of JSX.
 
-   What this file does:
-   1. Bridges --brand-* tokens (used in JSX inline styles) to the
-      --tx-* / --sh-* / --r-* tokens defined in AdminDashboard.css
-   2. Enhances the product table, thumbnail, category badge, stock
-      badge, action buttons, and image fallback
-   3. Adds the product-card grid view (progressive enhancement)
-   4. Adds form enhancements (add/edit modal fields)
-   5. Adds skeleton loaders for async states
-   6. Adds a polished "no image" placeholder
-   7. Full responsive cascade (1200 → 1024 → 768 → 480)
-   8. QA fixes: spacing, readability, accessibility focus rings,
-      mobile overflow
+   Sections
+   ────────
+   §0  Token bridge  (--brand-* → --tx-*)
+   §1  Page header overrides
+   §2  Status tab bar
+   §3  Search / filter bar
+   §4  Orders table — layout, zebra, sticky header, hover
+   §5  Customer cell (name + email sub-line)
+   §6  Status select dropdown
+   §7  "View" button inside table
+   §8  Order detail modal — full anatomy
+   §9  Modal status update bar
+   §10 Modal section labels (inline-styled divs)
+   §11 Order items list & totals row
+   §12 Timestamps line
+   §13 Empty state
+   §14 Loading state
+   §15 Skeleton rows
+   §16 QA fixes (spacing, overflow, a11y focus, mobile)
+   §17 Responsive — 1024px
+   §18 Responsive — 768px (stacked card table)
+   §19 Responsive — 480px
+   §20 Reduced motion
    ═══════════════════════════════════════════════════════════════════════ */
 
 
 /* ───────────────────────────────────────────────────────────────────────
-   §0  LEGACY TOKEN BRIDGE
-   The AdminMenu JSX uses --brand-* and --radius-md in inline styles.
-   Map them to the canonical --tx-* tokens so colours render correctly
-   without touching a single line of JSX.
+   §0  TOKEN BRIDGE
+   The AdminOrders JSX references --brand-* and --radius-md in inline
+   styles. Map them onto the canonical --tx-* system so they resolve
+   correctly without changing the JSX.
    ─────────────────────────────────────────────────────────────────────── */
 :root {
   /* colour aliases */
-  --brand-dark:    var(--tx-leather);   /* #160d04 – darkest text          */
-  --brand-saddle:  var(--tx-saddle);    /* #3f1f08 – body dark brown       */
-  --brand-copper:  var(--tx-copper);    /* #8b4513 – primary brand accent  */
-  --brand-tan:     var(--tx-tan);       /* #c4996a – muted text / borders  */
-  --brand-smoke:   var(--tx-smoke);     /* #f0e7d5 – bg tint               */
-  --brand-amber:   var(--tx-amber);     /* #d4922a – gold-amber highlight  */
+  --brand-dark:   var(--tx-leather);   /* deepest text / headings      */
+  --brand-saddle: var(--tx-saddle);    /* body dark                    */
+  --brand-copper: var(--tx-copper);    /* primary accent               */
+  --brand-tan:    var(--tx-tan);       /* muted text, sub-labels       */
+  --brand-smoke:  var(--tx-smoke);     /* section bg tint              */
+  --brand-amber:  var(--tx-amber);     /* highlight gold               */
 
-  /* radius alias */
-  --radius-md:     var(--r-md);         /* 15px                            */
+  /* geometry alias */
+  --radius-md:    var(--r-md);         /* 15px                         */
 
-  /* ── Products-page-specific tokens ── */
-  --pm-row-gap:      1.1rem;
-  --pm-col-pad:      1.15rem;
-  --pm-thumb:        54px;
-  --pm-thumb-radius: var(--r-sm);
-  --pm-badge-pad:    0.28rem 0.7rem;
-  --pm-card-radius:  var(--r-lg);
-
-  /* Category pill colours — cycling palette */
-  --cat-0: #7b3b10;
-  --cat-1: #145a32;
-  --cat-2: #1a4070;
-  --cat-3: #5c2a80;
-  --cat-4: #7a3b00;
-  --cat-5: #1c5c4a;
+  /* Orders-page-specific sizing */
+  --ord-col-pad:  1.1rem;
+  --ord-row-h:    58px;                /* min row height for readability */
 }
 
 
 /* ───────────────────────────────────────────────────────────────────────
-   §1  PAGE-LEVEL OVERRIDES
-   Anything that should look slightly different on the products page
-   vs. the generic dashboard layout.
+   §1  PAGE HEADER
    ─────────────────────────────────────────────────────────────────────── */
 
-/* Give the products stats row a slightly tighter bottom margin */
-.admin-dashboard .stats-grid {
-  margin-bottom: 1.75rem;
+/* "Order Management" headline */
+.admin-dashboard .dashboard-header h1 {
+  /* Already styled globally; reinforce on orders page */
+  letter-spacing: 0.05em;
 }
 
-/* "Add Item" button in the header gets a pulse on first render to draw
-   attention — subtle, not distracting */
-.admin-dashboard .dashboard-header .btn-primary {
-  animation: btn-attention 2.4s 1.2s var(--spring) both;
+/* Subtitle — "X total orders in the pit" */
+.admin-dashboard .dashboard-subtitle {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
 }
 
-@keyframes btn-attention {
-  0%, 100% { box-shadow: 0 4px 16px rgba(63,31,8,.32), 0 1px 4px rgba(63,31,8,.18); }
-  50%       { box-shadow: 0 4px 22px rgba(212,146,42,.55), 0 1px 4px rgba(63,31,8,.22); }
+/* Live dot — indicates real-time data */
+.admin-dashboard .dashboard-subtitle::before {
+  content: '';
+  display: inline-block;
+  width:  8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--st-ready);
+  box-shadow: 0 0 0 2px rgba(24,117,62,.25);
+  animation: live-pulse 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes live-pulse {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(24,117,62,.25); }
+  50%       { box-shadow: 0 0 0 5px rgba(24,117,62,.10); }
+}
+
+/* Refresh button — align right in header */
+.admin-dashboard .dashboard-header > button.btn-secondary {
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 
 /* ───────────────────────────────────────────────────────────────────────
-   §2  PRODUCT TABLE  —  the main inventory grid
+   §2  STATUS TAB BAR  (.admin-tabs)
+   Orders-specific: tabs map 1-to-1 to status colours.
+   ─────────────────────────────────────────────────────────────────────── */
+.admin-dashboard .admin-tabs {
+  animation: tabs-slide-in var(--t-slow) var(--ease-out) both;
+}
+
+@keyframes tabs-slide-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* "All" tab — 1st button always */
+.admin-dashboard .admin-tabs button:first-child {
+  font-weight: 700;
+}
+
+/* Pending tab active */
+.admin-dashboard .admin-tabs button:nth-child(2).active {
+  background: linear-gradient(135deg, #5c2800 0%, var(--st-pending) 100%);
+}
+
+/* Preparing tab active */
+.admin-dashboard .admin-tabs button:nth-child(3).active {
+  background: linear-gradient(135deg, #071e40 0%, var(--st-preparing) 100%);
+}
+
+/* Ready tab active */
+.admin-dashboard .admin-tabs button:nth-child(4).active {
+  background: linear-gradient(135deg, #082b18 0%, var(--st-ready) 100%);
+}
+
+/* Completed tab active */
+.admin-dashboard .admin-tabs button:nth-child(5).active {
+  background: linear-gradient(135deg, #2a0d48 0%, var(--st-completed) 100%);
+}
+
+/* Cancelled tab active */
+.admin-dashboard .admin-tabs button:nth-child(6).active {
+  background: linear-gradient(135deg, #3d0505 0%, var(--st-cancelled) 100%);
+}
+
+/* Count badge inside each tab button */
+.admin-dashboard .admin-tabs button > span,
+.admin-dashboard .admin-tabs button .tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--r-pill);
+  font-size: 0.62rem;
+  font-weight: 800;
+  background: rgba(255,255,255,.18);
+  margin-left: 4px;
+  letter-spacing: 0;
+}
+
+/* Focus ring — accessibility */
+.admin-dashboard .admin-tabs button:focus-visible {
+  outline: 2px solid var(--tx-amber);
+  outline-offset: 3px;
+}
+
+
+/* ───────────────────────────────────────────────────────────────────────
+   §3  SEARCH / FILTER BAR  (.filter-bar)
+   ─────────────────────────────────────────────────────────────────────── */
+.admin-dashboard .filter-bar {
+  animation: card-rise var(--t-slow) 60ms var(--ease-out) both;
+}
+
+/* Search input — magnifier icon via background SVG */
+.admin-dashboard .filter-bar input[type="text"] {
+  padding-left: 2.5rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23c4996a' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 0.85rem center;
+  background-size: 15px 15px;
+  min-width: 0;
+}
+
+.admin-dashboard .filter-bar input[type="text"]:focus {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23d4922a' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
+}
+
+/* Result count span (inline-styled in JSX — override with brand token) */
+.admin-dashboard .filter-bar > span {
+  font-family: var(--f-ui) !important;
+  font-size: 0.79rem !important;
+  font-weight: 700 !important;
+  color: var(--tx-copper) !important;   /* override --brand-tan with more readable token */
+  white-space: nowrap;
+  letter-spacing: 0.2px;
+}
+
+/* Clear button */
+.admin-dashboard .filter-bar .btn-secondary {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+
+/* ───────────────────────────────────────────────────────────────────────
+   §4  ORDERS TABLE  (.admin-table)
    ─────────────────────────────────────────────────────────────────────── */
 
-/* Section title pinstripe accent (stronger than generic h2) */
+/* Section wrapper */
+.admin-dashboard .admin-table-section {
+  animation: card-rise var(--t-slow) 120ms var(--ease-out) both;
+}
+
+/* Section title — rope-rule accent */
 .admin-dashboard .admin-table-section > h2 {
   padding-bottom: 1rem;
   margin-bottom: 1.5rem;
@@ -96,995 +228,655 @@
   position: relative;
 }
 
-/* Decorative rope-style underline after the title */
 .admin-dashboard .admin-table-section > h2::after {
   content: '';
   position: absolute;
   bottom: -1px;
   left: 0;
-  width: 80px;
+  width: 72px;
   height: 3px;
   border-radius: var(--r-pill);
   background: linear-gradient(90deg, var(--tx-amber), var(--tx-ember));
-  box-shadow: 0 0 8px rgba(212,146,42,.45);
+  box-shadow: 0 0 8px rgba(212,146,42,.4);
 }
 
-/* ── Table header ── */
+/* ── Dark branded header ── */
 .admin-dashboard .admin-table thead {
-  background: linear-gradient(
-    135deg,
-    var(--tx-saddle) 0%,
-    var(--tx-wood)   100%
-  );
+  background: linear-gradient(135deg, var(--tx-saddle) 0%, var(--tx-wood) 100%);
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  box-shadow: 0 2px 8px rgba(10,6,0,.18);
 }
 
 .admin-dashboard .admin-table th {
   color: var(--tx-sand);
-  font-size: 0.62rem;
+  font-size: 0.61rem;
   letter-spacing: 1.8px;
-  padding: 0.95rem var(--pm-col-pad);
+  padding: 0.95rem var(--ord-col-pad);
+  text-shadow: 0 1px 0 rgba(0,0,0,.4);
   border-bottom: none;
-  /* subtle emboss */
-  text-shadow: 0 1px 0 rgba(0,0,0,.35);
+  white-space: nowrap;
 }
 
-/* First column (image) — narrower */
+/* Order # column — slightly wider */
 .admin-dashboard .admin-table th:first-child,
 .admin-dashboard .admin-table td:first-child {
   padding-left: 1.5rem;
-  width: 72px;
+  min-width: 100px;
 }
 
-/* Last column (actions) — right-aligned header */
+/* Actions column — right-align header */
 .admin-dashboard .admin-table th:last-child {
-  text-align: right;
+  text-align: center;
   padding-right: 1.5rem;
+  min-width: 80px;
 }
 
-/* ── Table body rows ── */
+/* ── Body rows ── */
 .admin-dashboard .admin-table tbody tr {
   border-bottom: 1px solid rgba(196,153,106,.12);
+  min-height: var(--ord-row-h);
   transition:
-    background var(--t-fast) var(--ease-out),
-    transform  var(--t-fast) var(--ease-out);
+    background  var(--t-fast) var(--ease-out),
+    transform   var(--t-fast) var(--ease-out);
 }
 
-/* Lift the entire row on hover — creates depth */
+.admin-dashboard .admin-table tbody tr:last-child { border-bottom: none; }
+
+/* Zebra tint */
+.admin-dashboard .admin-table tbody tr:nth-child(even) {
+  background-color: rgba(240,231,213,.26);
+}
+
+/* Row hover — warm lift + left nudge */
 .admin-dashboard .admin-table tbody tr:hover {
   background: linear-gradient(
     90deg,
-    rgba(244,234,216,.75) 0%,
-    rgba(250,243,228,.4)  100%
+    rgba(244,234,216,.80) 0%,
+    rgba(250,243,228,.45) 100%
   );
-  transform: translateX(2px);
+  transform: translateX(3px);
 }
 
-/* Zebra — every other row gets an ultra-subtle tint */
-.admin-dashboard .admin-table tbody tr:nth-child(even) {
-  background-color: rgba(240,231,213,.28);
-}
-.admin-dashboard .admin-table tbody tr:nth-child(even):hover {
-  background: linear-gradient(
-    90deg,
-    rgba(244,234,216,.85) 0%,
-    rgba(250,243,228,.5)  100%
-  );
-}
-
-/* Dimmed row while stock toggle is in-flight */
+/* Dimmed in-flight row */
 .admin-dashboard .admin-table tbody tr[style*="opacity: 0.6"],
 .admin-dashboard .admin-table tbody tr[style*="opacity:0.6"] {
   pointer-events: none;
-  filter: grayscale(0.35);
+  filter: grayscale(0.3) blur(0.3px);
 }
 
-/* Cell padding */
+/* Cell base */
 .admin-dashboard .admin-table td {
-  padding: 0.9rem var(--pm-col-pad);
-  font-size: 0.875rem;
+  padding: 0.9rem var(--ord-col-pad);
   vertical-align: middle;
 }
 
-/* Actions cell — right-align */
+/* Actions cell */
 .admin-dashboard .admin-table td:last-child {
-  text-align: right;
+  text-align: center;
   padding-right: 1.5rem;
 }
 
-/* Product name — slightly larger weight */
-.admin-dashboard .admin-table td strong {
-  font-size: 0.9rem;
-  color: var(--tx-leather);
-  letter-spacing: 0.01em;
+/* Order # strong */
+.admin-dashboard .admin-table td:first-child strong {
+  font-family: var(--f-heading);
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--tx-wood);
+  letter-spacing: 0.03em;
 }
 
-
-/* ───────────────────────────────────────────────────────────────────────
-   §3  PRODUCT THUMBNAIL  — .product-thumb
-   ─────────────────────────────────────────────────────────────────────── */
-.admin-dashboard .product-thumb {
-  width:  var(--pm-thumb);
-  height: var(--pm-thumb);
-  object-fit: cover;
-  border-radius: var(--pm-thumb-radius);
-  border: 2.5px solid var(--bd-light);
-  display: block;
-  box-shadow: var(--sh-sm);
-  /* Warm vignette overlay using outline trick */
-  outline: 1px solid rgba(139,69,19,.10);
-  outline-offset: 2px;
-  transition:
-    transform    var(--t-mid) var(--ease-out),
-    box-shadow   var(--t-mid) var(--ease-out),
-    border-color var(--t-mid) var(--ease-out);
-}
-
-.admin-dashboard .admin-table tbody tr:hover .product-thumb {
-  transform: scale(1.15) rotate(-2deg);
-  box-shadow: var(--sh-md), 0 0 0 2px var(--tx-amber);
-  border-color: var(--tx-amber);
-}
-
-/* ── No-image placeholder (inline div in JSX) ── */
-/* The JSX renders a div with inline styles when there's no image.
-   We can't add a class there, but we can target it through the td */
-.admin-dashboard .admin-table td:first-child > div {
-  /* Override the inline width/height/border with something more polished */
-  width:  var(--pm-thumb)   !important;
-  height: var(--pm-thumb)   !important;
-  border-radius: var(--pm-thumb-radius) !important;
-  background: linear-gradient(
-    135deg,
-    var(--tx-smoke) 0%,
-    var(--tx-fog)   100%
-  ) !important;
-  border: 2px dashed var(--bd-mid) !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  font-size: 1.4rem !important;
-  box-shadow: inset 0 2px 6px rgba(10,6,0,.06);
-  transition: all var(--t-mid) var(--ease-out);
-}
-
-.admin-dashboard .admin-table tbody tr:hover td:first-child > div {
-  border-color: var(--tx-amber) !important;
-  background: linear-gradient(
-    135deg,
-    var(--tx-fog)   0%,
-    var(--tx-smoke) 100%
-  ) !important;
-}
-
-
-/* ───────────────────────────────────────────────────────────────────────
-   §4  CATEGORY BADGE  (inline span in JSX)
-   The JSX applies all styles inline — we can't add a class directly,
-   but we can target it via the cell and use :not to avoid hitting stock
-   badges. We override the inline styles with higher specificity.
-   ─────────────────────────────────────────────────────────────────────── */
-
-/* Target the category cell span specifically (3rd td) */
-.admin-dashboard .admin-table tbody td:nth-child(3) > span {
-  display: inline-flex !important;
-  align-items: center;
-  gap: 0.3rem;
-  padding: var(--pm-badge-pad) !important;
-  border-radius: var(--r-pill) !important;
-  font-family: var(--f-ui) !important;
-  font-size: 0.68rem !important;
-  font-weight: 700 !important;
-  text-transform: capitalize !important;
-  letter-spacing: 0.5px;
-  background: linear-gradient(
-    135deg,
-    rgba(139,69,19,.10) 0%,
-    rgba(139,69,19,.06) 100%
-  ) !important;
-  color: var(--tx-copper) !important;
-  border: 1.5px solid var(--bd-mid) !important;
-  box-shadow: var(--sh-xs);
-  transition:
-    background    var(--t-fast) var(--ease-out),
-    border-color  var(--t-fast) var(--ease-out),
-    transform     var(--t-fast) var(--ease-out);
-}
-
-.admin-dashboard .admin-table tbody tr:hover td:nth-child(3) > span {
-  background: linear-gradient(
-    135deg,
-    rgba(212,146,42,.14) 0%,
-    rgba(212,146,42,.08) 100%
-  ) !important;
-  border-color: var(--bd-amber) !important;
-  transform: scale(1.03);
-}
-
-/* ── Prep time muted dash ── */
-.admin-dashboard .admin-table td:nth-child(5) > span {
+/* Items count cell */
+.admin-dashboard .admin-table td:nth-child(3) {
   color: var(--tx-tan);
-  font-style: italic;
   font-size: 0.85rem;
-}
-
-
-/* ───────────────────────────────────────────────────────────────────────
-   §5  STOCK BADGES  — .role-badge.in-stock / .role-badge.out-stock
-   These are already defined in AdminDashboard.css.
-   Here we add products-specific sizing and a pulse on out-of-stock.
-   ─────────────────────────────────────────────────────────────────────── */
-.admin-dashboard .admin-table .role-badge {
-  font-size: 0.64rem;
-  padding: 0.3rem 0.8rem;
-  letter-spacing: 0.9px;
-}
-
-/* Subtle pulse on out-of-stock — draws admin attention */
-.admin-dashboard .admin-table .role-badge.out-stock {
-  animation: stock-alert 2.5s ease-in-out infinite;
-}
-
-@keyframes stock-alert {
-  0%, 100% { box-shadow: 0 2px 8px rgba(163,24,24,.30); }
-  50%       { box-shadow: 0 2px 14px rgba(163,24,24,.55), 0 0 0 3px rgba(163,24,24,.12); }
-}
-
-
-/* ───────────────────────────────────────────────────────────────────────
-   §6  ACTION BUTTONS  (inside the table)
-   The JSX wraps them in a flex div with inline gap.
-   We enhance without touching the markup.
-   ─────────────────────────────────────────────────────────────────────── */
-
-/* Wrapper flex div inside the actions cell */
-.admin-dashboard .admin-table td:last-child > div {
-  display: flex !important;
-  gap: 0.4rem !important;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  align-items: center;
-}
-
-/* "Mark Out" (btn-delete) inside table — compact variant */
-.admin-dashboard .admin-table .btn-delete {
-  font-size: 0.72rem !important;
-  padding: 0.42rem 0.9rem !important;
   white-space: nowrap;
 }
 
-/* "Mark In" (btn-view) inside table — compact variant */
-.admin-dashboard .admin-table .btn-view {
-  font-size: 0.72rem !important;
-  padding: 0.42rem 0.9rem !important;
-  white-space: nowrap;
-}
-
-/* "Edit" (btn-secondary) inside table */
-.admin-dashboard .admin-table .btn-secondary {
-  font-size: 0.72rem !important;
-  padding: 0.42rem 0.9rem !important;
-  white-space: nowrap;
-}
-
-/* Disabled state during in-flight toggle */
-.admin-dashboard .admin-table button:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-  transform: none !important;
-  filter: grayscale(0.4);
-}
-
-/* Focus ring — accessibility */
-.admin-dashboard .admin-table button:focus-visible {
-  outline: 2px solid var(--tx-amber);
-  outline-offset: 2px;
-  border-radius: var(--r-pill);
-}
-
-
-/* ───────────────────────────────────────────────────────────────────────
-   §7  STATS ROW  — products-specific card overrides
-   ─────────────────────────────────────────────────────────────────────── */
-
-/* On the products page, show only 4 cards max in a row before wrapping */
-.admin-dashboard .stats-grid {
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-}
-
-/* Larger icon on products page stat cards */
-.admin-dashboard .stats-grid .stat-icon {
-  font-size: 2.2rem;
-}
-
-/* "Total Items" card — amber accent (default) already handled */
-
-/* "Categories" card — purple accent for variety */
-.admin-dashboard .stats-grid .stat-card:last-child {
-  border-top-color: var(--st-completed);
-}
-.admin-dashboard .stats-grid .stat-card:last-child .stat-number {
-  color: var(--st-completed);
-}
-
-
-/* ───────────────────────────────────────────────────────────────────────
-   §8  CATEGORY TABS  — .admin-tabs (products-specific)
-   The generic .admin-tabs is styled in AdminDashboard.css.
-   Here we make the products category tabs visually heavier.
-   ─────────────────────────────────────────────────────────────────────── */
-.admin-dashboard .admin-tabs {
-  /* Slide the tabs in from the left, staggered */
-  animation: tabs-appear var(--t-slow) var(--ease-out) both;
-}
-
-@keyframes tabs-appear {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: none; }
-}
-
-/* "All" tab — always the first button; give it extra presence */
-.admin-dashboard .admin-tabs button:first-child {
-  font-weight: 700;
-  border-style: solid;
-}
-
-/* Active tab — stronger glow on products page */
-.admin-dashboard .admin-tabs button.active {
-  box-shadow:
-    0 4px 16px rgba(63,31,8,.40),
-    0 1px 4px rgba(63,31,8,.22),
-    inset 0 1px 0 rgba(255,255,255,.10);
-}
-
-
-/* ───────────────────────────────────────────────────────────────────────
-   §9  FILTER / SEARCH BAR  — .filter-bar (products-specific)
-   ─────────────────────────────────────────────────────────────────────── */
-
-/* Give the search input a left icon area (magnifier via placeholder) */
-.admin-dashboard .filter-bar input[type="text"] {
-  padding-left: 1rem;
-  /* Use a CSS background SVG magnifier */
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23c4996a' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: 0.8rem center;
-  background-size: 15px 15px;
-  padding-left: 2.4rem;
-}
-
-.admin-dashboard .filter-bar input[type="text"]:focus {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23d4922a' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
-}
-
-/* Result count text (inline span in JSX) */
-.admin-dashboard .filter-bar > span {
-  font-family: var(--f-ui);
-  font-size: 0.79rem;
-  font-weight: 700;
-  color: var(--tx-tan);
-  letter-spacing: 0.2px;
-  white-space: nowrap;
-  /* Override the JSX inline color with the correct token */
-  color: var(--tx-copper) !important;
-}
-
-
-/* ───────────────────────────────────────────────────────────────────────
-   §10  PRODUCT CARD VIEW  (progressive enhancement)
-   If a future version adds a card grid view, these classes will activate.
-   Classes: .pm-cards-grid  .pm-card  .pm-card__img  .pm-card__body
-            .pm-card__name  .pm-card__cat  .pm-card__price  .pm-card__footer
-   ─────────────────────────────────────────────────────────────────────── */
-.pm-cards-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 1.25rem;
-  padding-top: 0.25rem;
-}
-
-.pm-card {
-  background: #fff;
-  border-radius: var(--pm-card-radius);
-  border: 1.5px solid var(--bd-faint);
-  border-top: 4px solid var(--tx-amber);
-  box-shadow: var(--sh-md);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  transition:
-    transform    var(--t-mid) var(--ease-out),
-    box-shadow   var(--t-mid) var(--ease-out),
-    border-color var(--t-mid) var(--ease-out);
-  animation: card-rise var(--t-slow) var(--ease-out) both;
-}
-
-.pm-card:hover {
-  transform: translateY(-6px);
-  box-shadow: var(--sh-lg), var(--sh-amber);
-  border-top-color: var(--tx-ember);
-}
-
-.pm-card:hover .pm-card__img img {
-  transform: scale(1.06);
-}
-
-/* Image container */
-.pm-card__img {
-  position: relative;
-  height: 160px;
-  overflow: hidden;
-  background: var(--tx-smoke);
-}
-
-.pm-card__img img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform var(--t-slow) var(--ease-out);
-}
-
-/* No-image fallback inside card */
-.pm-card__img--empty {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  font-size: 3rem;
-  background: linear-gradient(135deg, var(--tx-smoke), var(--tx-fog));
-  color: var(--tx-tan);
-}
-
-/* Stock indicator ribbon on card image */
-.pm-card__stock-ribbon {
-  position: absolute;
-  top: 10px;
-  right: -1px;
-  padding: 0.22rem 0.7rem 0.22rem 0.6rem;
-  font-family: var(--f-ui);
-  font-size: 0.6rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.9px;
-  color: #fff;
-  border-radius: var(--r-sm) 0 0 var(--r-sm);
-  box-shadow: -2px 2px 8px rgba(10,6,0,.2);
-}
-.pm-card__stock-ribbon.in-stock  { background: linear-gradient(135deg, #082b18, var(--st-ready)); }
-.pm-card__stock-ribbon.out-stock {
-  background: linear-gradient(135deg, #3a0505, var(--st-cancelled));
-  animation: stock-alert 2.5s ease-in-out infinite;
-}
-
-/* Card body */
-.pm-card__body {
-  padding: 1.1rem 1.25rem 0.85rem;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 0.45rem;
-}
-
-.pm-card__name {
-  font-family: var(--f-heading);
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--tx-leather);
-  line-height: 1.3;
-}
-
-.pm-card__cat {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.22rem 0.65rem;
-  border-radius: var(--r-pill);
-  background: rgba(139,69,19,.09);
-  border: 1.5px solid var(--bd-mid);
-  color: var(--tx-copper);
-  font-size: 0.65rem;
-  font-weight: 700;
-  text-transform: capitalize;
-  letter-spacing: 0.5px;
-  width: fit-content;
-}
-
-.pm-card__price {
-  font-family: var(--f-heading);
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: var(--tx-wood);
-  letter-spacing: -0.02em;
-}
-
-.pm-card__prep {
-  font-size: 0.75rem;
-  color: var(--tx-tan);
-  font-style: italic;
-}
-
-/* Card footer — action buttons */
-.pm-card__footer {
-  display: flex;
-  gap: 0.4rem;
-  padding: 0.85rem 1.25rem 1rem;
-  border-top: 1px solid var(--bd-faint);
-  background: linear-gradient(135deg, #fff 0%, var(--tx-smoke) 100%);
-}
-
-.pm-card__footer .btn-view,
-.pm-card__footer .btn-delete,
-.pm-card__footer .btn-secondary {
-  flex: 1;
-  justify-content: center;
-  font-size: 0.74rem !important;
-  padding: 0.45rem 0.7rem !important;
-}
-
-
-/* ───────────────────────────────────────────────────────────────────────
-   §11  ADD / EDIT PRODUCT FORM
-   Classes: .pm-form  .pm-form__grid  .pm-form__field  .pm-form__label
-            .pm-form__input  .pm-form__textarea  .pm-form__hint
-            .pm-form__error  .pm-form__image-preview
-   ─────────────────────────────────────────────────────────────────────── */
-.pm-form {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-
-.pm-form__grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.2rem;
-  margin-bottom: 1.2rem;
-}
-
-.pm-form__field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.38rem;
-}
-
-/* Full-width field */
-.pm-form__field--full { grid-column: span 2; }
-
-.pm-form__label {
-  font-family: var(--f-ui);
-  font-size: 0.65rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1.3px;
-  color: var(--tx-copper);
-}
-
-/* Required asterisk */
-.pm-form__label .required {
-  color: var(--st-cancelled);
-  margin-left: 2px;
-}
-
-/* Optional label */
-.pm-form__label .optional {
-  font-weight: 400;
-  text-transform: none;
-  letter-spacing: 0;
-  font-style: italic;
-  color: var(--tx-tan);
-  margin-left: 4px;
-  font-size: 0.62rem;
-}
-
-/* Text inputs */
-.pm-form__input,
-.pm-form__select {
-  font-family: var(--f-ui);
-  font-size: 0.9rem;
-  padding: 0.65rem 1rem;
-  border: 1.5px solid var(--bd-mid);
-  border-radius: var(--r-sm);
-  background: var(--tx-parchment);
-  color: var(--tx-saddle);
-  outline: none;
-  width: 100%;
-  transition:
-    border-color var(--t-fast) var(--ease-out),
-    background   var(--t-fast) var(--ease-out),
-    box-shadow   var(--t-fast) var(--ease-out);
-}
-
-.pm-form__input::placeholder { color: var(--tx-tan); font-style: italic; }
-
-.pm-form__input:focus,
-.pm-form__select:focus {
-  border-color: var(--tx-amber);
-  background: #fff;
-  box-shadow: 0 0 0 3px rgba(212,146,42,.18);
-}
-
-/* Valid state */
-.pm-form__input:valid:not(:placeholder-shown) {
-  border-color: rgba(24,117,62,.5);
-}
-.pm-form__input:valid:not(:placeholder-shown):focus {
-  box-shadow: 0 0 0 3px rgba(24,117,62,.15);
-}
-
-/* Invalid / error state */
-.pm-form__input.is-error,
-.pm-form__input:invalid:not(:placeholder-shown):not(:focus) {
-  border-color: rgba(163,24,24,.5);
-  background: #fff8f8;
-}
-
-/* Textarea */
-.pm-form__textarea {
-  font-family: var(--f-ui);
-  font-size: 0.9rem;
-  padding: 0.7rem 1rem;
-  border: 1.5px solid var(--bd-mid);
-  border-radius: var(--r-sm);
-  background: var(--tx-parchment);
-  color: var(--tx-saddle);
-  outline: none;
-  width: 100%;
-  min-height: 90px;
-  resize: vertical;
-  transition:
-    border-color var(--t-fast) var(--ease-out),
-    background   var(--t-fast) var(--ease-out),
-    box-shadow   var(--t-fast) var(--ease-out);
-}
-.pm-form__textarea:focus {
-  border-color: var(--tx-amber);
-  background: #fff;
-  box-shadow: 0 0 0 3px rgba(212,146,42,.18);
-}
-
-/* Helper hint text */
-.pm-form__hint {
-  font-size: 0.72rem;
-  color: var(--tx-tan);
-  font-style: italic;
-  margin-top: 0.1rem;
-}
-
-/* Inline error text */
-.pm-form__error {
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--st-cancelled);
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  margin-top: 0.1rem;
-}
-
-.pm-form__error::before {
-  content: '✕';
-  font-size: 0.6rem;
-  background: var(--st-cancelled);
-  color: #fff;
-  width: 13px;
-  height: 13px;
-  border-radius: 50%;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-/* Image upload preview area */
-.pm-form__image-preview {
-  width: 100%;
-  border-radius: var(--r-md);
-  border: 2px solid var(--bd-light);
-  overflow: hidden;
-  position: relative;
-}
-
-.pm-form__image-preview img {
-  width: 100%;
-  max-height: 200px;
-  object-fit: cover;
-  display: block;
-}
-
-/* Image overlay actions on hover */
-.pm-form__image-preview::after {
-  content: '🔄 Change image';
-  position: absolute;
-  inset: 0;
-  background: rgba(10,6,0,.45);
-  color: #fff;
-  font-family: var(--f-ui);
-  font-size: 0.8rem;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity var(--t-fast) var(--ease-out);
-  cursor: pointer;
-}
-.pm-form__image-preview:hover::after { opacity: 1; }
-
-/* Stock toggle checkbox row */
-.pm-form__toggle-row {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem 1rem;
-  background: var(--tx-smoke);
-  border-radius: var(--r-sm);
-  border: 1.5px solid var(--bd-faint);
-  cursor: pointer;
-  transition: border-color var(--t-fast) var(--ease-out);
-}
-.pm-form__toggle-row:hover { border-color: var(--bd-amber); }
-
-.pm-form__toggle-row input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  accent-color: var(--tx-amber);
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.pm-form__toggle-label {
-  font-family: var(--f-ui);
-  font-size: 0.88rem;
-  font-weight: 600;
-  color: var(--tx-wood);
-  cursor: pointer;
-}
-
-
-/* ───────────────────────────────────────────────────────────────────────
-   §12  SKELETON LOADERS  — .pm-skel  .pm-skel-row
-   ─────────────────────────────────────────────────────────────────────── */
-.pm-skel {
-  background: linear-gradient(
-    90deg,
-    rgba(196,153,106,.12) 25%,
-    rgba(196,153,106,.28) 50%,
-    rgba(196,153,106,.12) 75%
-  );
-  background-size: 200% 100%;
-  border-radius: var(--r-xs);
-  animation: shimmer 1.8s linear infinite;
-}
-
-/* Full table-row skeleton */
-.pm-skel-row {
-  display: grid;
-  grid-template-columns: 60px 1fr 1fr 90px 80px 90px 120px;
-  gap: 0 var(--pm-col-pad);
-  align-items: center;
-  padding: 0.9rem var(--pm-col-pad);
-  border-bottom: 1px solid rgba(196,153,106,.12);
-}
-
-.pm-skel-row > span {
-  display: block;
-  border-radius: var(--r-xs);
-}
-
-.pm-skel-row .pm-skel-thumb  { width: 50px; height: 50px; border-radius: var(--r-sm); }
-.pm-skel-row .pm-skel-text   { height: 14px; }
-.pm-skel-row .pm-skel-badge  { height: 22px; width: 80px; border-radius: var(--r-pill); }
-.pm-skel-row .pm-skel-price  { height: 16px; width: 70px; }
-.pm-skel-row .pm-skel-btn    { height: 30px; border-radius: var(--r-pill); }
-
-/* shimmer keyframe is defined in AdminDashboard.css — shared */
-
-
-/* ───────────────────────────────────────────────────────────────────────
-   §13  TABLE STICKY HEADER
-   ─────────────────────────────────────────────────────────────────────── */
-/* Make the header sticky within its scrolling wrapper */
-.admin-dashboard .admin-table thead tr {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  /* Drop shadow to indicate content scrolling beneath */
-  box-shadow: 0 2px 8px rgba(10,6,0,.14);
-}
-
-
-/* ───────────────────────────────────────────────────────────────────────
-   §14  PRICE COLUMN  — .pm-price
-   Applied via inline strong on td — we target the cell
-   ─────────────────────────────────────────────────────────────────────── */
-/* Price cell (4th td) */
+/* Total amount cell */
 .admin-dashboard .admin-table td:nth-child(4) strong {
   font-family: var(--f-heading);
   font-size: 0.95rem;
   font-weight: 700;
   color: var(--tx-copper);
-  letter-spacing: -0.01em;
+}
+
+/* Date cell */
+.admin-dashboard .admin-table td:nth-child(6) {
+  white-space: nowrap;
+  font-size: 0.83rem;
+  color: var(--tx-tan);
 }
 
 
 /* ───────────────────────────────────────────────────────────────────────
-   §15  EMPTY STATE  (products-specific copy)
+   §5  CUSTOMER CELL  (2nd td — name + sub-email)
+   JSX renders: <div style={{ fontWeight:600 }}>Name</div>
+                <div style={{ fontSize:0.78rem, color:var(--brand-tan) }}>email</div>
+   ─────────────────────────────────────────────────────────────────────── */
+
+/* Customer name div */
+.admin-dashboard .admin-table td:nth-child(2) > div:first-child {
+  font-weight: 700 !important;
+  color: var(--tx-leather);
+  font-size: 0.9rem;
+  line-height: 1.3;
+  /* Truncate very long names */
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Customer email sub-line */
+.admin-dashboard .admin-table td:nth-child(2) > div:last-child:not(:first-child) {
+  font-size: 0.76rem !important;
+  color: var(--tx-tan) !important;
+  line-height: 1.3;
+  margin-top: 0.18rem;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Hover — reveal full text via title attribute (no JS needed) */
+.admin-dashboard .admin-table tbody tr:hover td:nth-child(2) > div {
+  white-space: normal;
+  overflow: visible;
+}
+
+
+/* ───────────────────────────────────────────────────────────────────────
+   §6  STATUS SELECT  (.status-select.[status])
+   Already defined in AdminDashboard.css — orders-page overrides only.
+   ─────────────────────────────────────────────────────────────────────── */
+
+/* Slightly wider selects inside the table for readability */
+.admin-dashboard .admin-table .status-select {
+  min-width: 115px;
+  font-size: 0.77rem;
+  padding-top: 0.45rem;
+  padding-bottom: 0.45rem;
+}
+
+/* Disabled while update is in-flight */
+.admin-dashboard .admin-table .status-select:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(0.4);
+  transform: none;
+}
+
+/* Focus ring */
+.admin-dashboard .admin-table .status-select:focus-visible {
+  outline: 2px solid var(--tx-amber);
+  outline-offset: 2px;
+}
+
+
+/* ───────────────────────────────────────────────────────────────────────
+   §7  VIEW BUTTON  (.btn-view inside table)
+   ─────────────────────────────────────────────────────────────────────── */
+.admin-dashboard .admin-table .btn-view {
+  font-size: 0.74rem;
+  padding: 0.44rem 1.05rem;
+  letter-spacing: 0.3px;
+  /* Add a tiny eye icon before text via pseudo */
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.admin-dashboard .admin-table .btn-view::before {
+  content: '👁';
+  font-size: 0.8rem;
+  line-height: 1;
+}
+
+.admin-dashboard .admin-table .btn-view:focus-visible {
+  outline: 2px solid var(--tx-amber);
+  outline-offset: 2px;
+  border-radius: var(--r-pill);
+}
+
+
+/* ───────────────────────────────────────────────────────────────────────
+   §8  ORDER DETAIL MODAL  (.modal-backdrop → .modal-card)
+   ─────────────────────────────────────────────────────────────────────── */
+
+/* Backdrop — already in AdminDashboard.css, reinforce depth */
+.admin-dashboard .modal-backdrop {
+  /* cursor closes modal on click outside */
+  cursor: default;
+}
+
+/* Card — slightly wider for order detail content */
+.admin-dashboard .modal-card {
+  max-width: 660px;
+}
+
+/* Modal header — already styled globally */
+.admin-dashboard .modal-header h3 {
+  /* Order # in the title */
+  font-family: var(--f-heading);
+  font-size: 1.22rem;
+  font-weight: 700;
+  color: var(--tx-leather);
+  letter-spacing: 0.02em;
+}
+
+/* Modal body padding reset */
+.admin-dashboard .modal-body {
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+
+/* ───────────────────────────────────────────────────────────────────────
+   §9  MODAL STATUS UPDATE BAR
+   JSX: <div style={{ display:'flex', alignItems:'center', gap:'0.75rem',
+              marginBottom:'1.5rem', padding:'0.75rem 1rem',
+              background:'var(--brand-smoke)', borderRadius:'var(--radius-md)' }}>
+          <span style={{ fontWeight:700, fontSize:'0.82rem',
+                color:'var(--brand-copper)', textTransform:'uppercase',
+                letterSpacing:'0.6px' }}>Status:</span>
+          <select className="status-select {status}" ...>
+   ─────────────────────────────────────────────────────────────────────── */
+
+/* The wrapper div — first direct child of modal-body */
+.admin-dashboard .modal-body > div:first-child {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.75rem !important;
+  margin-bottom: 1.5rem !important;
+  padding: 0.85rem 1.1rem !important;
+  background: linear-gradient(135deg, var(--tx-smoke) 0%, #ede4d1 100%) !important;
+  border-radius: var(--r-md) !important;
+  border: 1.5px solid var(--bd-faint);
+  box-shadow: var(--sh-xs);
+}
+
+/* "Status:" label span inside the bar */
+.admin-dashboard .modal-body > div:first-child > span {
+  font-family: var(--f-ui) !important;
+  font-weight: 700 !important;
+  font-size: 0.75rem !important;
+  color: var(--tx-copper) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.8px !important;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Status select inside the modal bar */
+.admin-dashboard .modal-body > div:first-child .status-select {
+  min-width: 128px;
+}
+
+
+/* ───────────────────────────────────────────────────────────────────────
+   §10  MODAL SECTION LABELS
+   JSX uses inline-styled divs for "Customer" and "Order Items" labels.
+   Pattern: <div style={{ fontWeight:700, fontSize:'0.72rem',
+                  textTransform:'uppercase', letterSpacing:'1px',
+                  color:'var(--brand-copper)', marginBottom:'0.5rem' }}>
+   We target them as the first div inside each section block.
+   ─────────────────────────────────────────────────────────────────────── */
+
+/* Section block wrappers (2nd and 3rd divs in modal-body) */
+.admin-dashboard .modal-body > div:nth-child(2),
+.admin-dashboard .modal-body > div:nth-child(3) {
+  margin-bottom: 1.5rem !important;
+  padding: 1.25rem;
+  background: var(--tx-parchment);
+  border-radius: var(--r-md);
+  border: 1px solid var(--bd-faint);
+}
+
+/* Section label — first child div of each section block */
+.admin-dashboard .modal-body > div:nth-child(2) > div:first-child,
+.admin-dashboard .modal-body > div:nth-child(3) > div:first-child {
+  font-family: var(--f-ui) !important;
+  font-weight: 700 !important;
+  font-size: 0.62rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1.5px !important;
+  color: var(--tx-copper) !important;
+  margin-bottom: 0.65rem !important;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  /* Decorative left rule */
+  padding-left: 0.7rem;
+  border-left: 3px solid var(--tx-amber);
+}
+
+/* Customer name (bold div after label) */
+.admin-dashboard .modal-body > div:nth-child(2) > div:nth-child(2) {
+  font-weight: 700 !important;
+  color: var(--tx-leather) !important;
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+/* Customer email / phone lines */
+.admin-dashboard .modal-body > div:nth-child(2) > div:nth-child(n+3) {
+  font-size: 0.84rem !important;
+  color: var(--tx-tan) !important;
+  line-height: 1.6;
+  margin-top: 0.12rem;
+}
+
+
+/* ───────────────────────────────────────────────────────────────────────
+   §11  ORDER ITEMS LIST & TOTALS ROW
+   Classes: .order-items-list  .order-item  .order-item-name
+            .order-item-qty    .order-item-price
+   ─────────────────────────────────────────────────────────────────────── */
+.admin-dashboard .order-items-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  border: 1px solid var(--bd-faint);
+  background: #fff;
+}
+
+.admin-dashboard .order-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--bd-faint);
+  transition: background var(--t-fast) var(--ease-out);
+}
+.admin-dashboard .order-item:last-child { border-bottom: none; }
+.admin-dashboard .order-item:hover {
+  background: rgba(244,234,216,.5);
+}
+
+.admin-dashboard .order-item-name {
+  flex: 1;
+  font-weight: 600;
+  color: var(--tx-leather);
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
+.admin-dashboard .order-item-qty {
+  font-size: 0.76rem;
+  font-weight: 700;
+  color: var(--tx-tan);
+  background: var(--tx-smoke);
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--bd-faint);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.admin-dashboard .order-item-price {
+  font-family: var(--f-heading);
+  font-weight: 700;
+  font-size: 0.98rem;
+  color: var(--tx-copper);
+  white-space: nowrap;
+  flex-shrink: 0;
+  letter-spacing: -0.01em;
+}
+
+/* Totals row — inline-styled div below the list */
+/* JSX: <div style={{ display:'flex', justifyContent:'flex-end',
+              marginTop:'0.75rem', borderTop:'2px solid var(--brand-smoke)',
+              paddingTop:'0.75rem' }}> */
+.admin-dashboard .modal-body > div:nth-child(3) > div:last-child {
+  display: flex !important;
+  justify-content: flex-end !important;
+  margin-top: 0.85rem !important;
+  border-top: 2px solid var(--bd-faint) !important;
+  padding-top: 0.85rem !important;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Total label-value span */
+.admin-dashboard .modal-body > div:nth-child(3) > div:last-child > span {
+  font-family: var(--f-heading) !important;
+  font-weight: 700 !important;
+  font-size: 1.15rem !important;
+  color: var(--tx-wood) !important;
+  letter-spacing: -0.02em;
+}
+
+/* "Total:" text prefix inside the span */
+.admin-dashboard .modal-body > div:nth-child(3) > div:last-child > span::before {
+  content: '';
+  /* The text already says "Total: {amount}" — no prefix needed */
+}
+
+
+/* ───────────────────────────────────────────────────────────────────────
+   §12  TIMESTAMP LINE
+   JSX: <div style={{ fontSize:'0.78rem', color:'var(--brand-tan)' }}>
+          Placed: {date}
+   ─────────────────────────────────────────────────────────────────────── */
+
+/* 4th div in modal-body (timestamp) */
+.admin-dashboard .modal-body > div:nth-child(4) {
+  font-family: var(--f-ui) !important;
+  font-size: 0.76rem !important;
+  color: var(--tx-tan) !important;
+  font-style: italic;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0;
+}
+
+/* Clock icon prefix */
+.admin-dashboard .modal-body > div:nth-child(4)::before {
+  content: '🕐';
+  font-style: normal;
+  font-size: 0.85rem;
+}
+
+
+/* ───────────────────────────────────────────────────────────────────────
+   §13  EMPTY STATE  (.empty-state / .empty-state-icon)
    ─────────────────────────────────────────────────────────────────────── */
 .admin-dashboard .empty-state {
   padding: 5rem 2rem;
+  animation: fade-in var(--t-slow) var(--ease-out) both;
 }
 
 .admin-dashboard .empty-state-icon {
   font-size: 3.5rem;
-  margin-bottom: 0.5rem;
   display: block;
   text-align: center;
-  animation: float 3s ease-in-out infinite;
+  animation: float-idle 4s ease-in-out infinite;
 }
 
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50%       { transform: translateY(-8px); }
+@keyframes float-idle {
+  0%, 100% { transform: translateY(0)    rotate(-3deg); }
+  50%       { transform: translateY(-9px) rotate(3deg);  }
 }
 
 .admin-dashboard .empty-state p {
   font-size: 1.05rem;
-  max-width: 340px;
+  max-width: 320px;
   margin: 0 auto;
-}
-
-/* Hint link below the empty state message */
-.pm-empty-hint {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  margin-top: 1.25rem;
-  font-family: var(--f-ui);
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--tx-copper);
-  text-decoration: none;
-  border-bottom: 1.5px dashed var(--tx-amber);
-  padding-bottom: 1px;
-  transition: color var(--t-fast), border-color var(--t-fast);
-}
-.pm-empty-hint:hover {
-  color: var(--tx-amber);
-  border-color: var(--tx-ember);
+  text-align: center;
 }
 
 
 /* ───────────────────────────────────────────────────────────────────────
-   §16  ADMIN-LOADING (products variant)
+   §14  LOADING STATE  (.admin-loading)
    ─────────────────────────────────────────────────────────────────────── */
 .admin-dashboard .admin-loading {
   position: relative;
+  overflow: hidden;
 }
 
-/* Fire glow behind the emoji */
+/* Subtle ember glow behind loading text */
 .admin-dashboard .admin-loading::before {
   content: '';
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(212,146,42,.18) 0%, transparent 70%);
-  animation: fire-glow 1.8s ease-in-out infinite;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 60% 40% at 50% 60%,
+    rgba(212,146,42,.12) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
+  animation: ember-breathe 1.8s ease-in-out infinite;
 }
 
-@keyframes fire-glow {
-  0%, 100% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.6; }
-  50%       { transform: translate(-50%, -50%) scale(1.4); opacity: 1;   }
+@keyframes ember-breathe {
+  0%, 100% { opacity: .5; transform: scale(0.9); }
+  50%       { opacity: 1;  transform: scale(1.1); }
 }
 
 
 /* ───────────────────────────────────────────────────────────────────────
-   §17  QA FIXES
-   Issues found during audit and their CSS-only resolutions.
+   §15  SKELETON ROWS  (.ord-skel-row)
+   Ready for use if a loading skeleton is added to the JSX later.
+   ─────────────────────────────────────────────────────────────────────── */
+.ord-skel-row {
+  display: grid;
+  /* Order# | Customer | Items | Total | Status | Date | Action */
+  grid-template-columns: 100px 1fr 80px 90px 120px 100px 70px;
+  gap: 0 var(--ord-col-pad);
+  align-items: center;
+  padding: 0.9rem var(--ord-col-pad);
+  border-bottom: 1px solid rgba(196,153,106,.10);
+}
+
+.ord-skel-row > span {
+  display: block;
+  border-radius: var(--r-xs);
+  background: linear-gradient(
+    90deg,
+    rgba(196,153,106,.10) 25%,
+    rgba(196,153,106,.26) 50%,
+    rgba(196,153,106,.10) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s linear infinite;
+}
+
+.ord-skel-row .skel-order  { height: 15px; width: 75%; }
+.ord-skel-row .skel-name   { height: 14px; width: 70%; margin-bottom: 4px; }
+.ord-skel-row .skel-email  { height: 11px; width: 55%; }
+.ord-skel-row .skel-items  { height: 13px; width: 60%; }
+.ord-skel-row .skel-total  { height: 15px; width: 65%; }
+.ord-skel-row .skel-status { height: 26px; border-radius: var(--r-pill); }
+.ord-skel-row .skel-date   { height: 13px; width: 80%; }
+.ord-skel-row .skel-btn    { height: 30px; border-radius: var(--r-pill); }
+
+/* shimmer keyframe shared with AdminDashboard.css */
+
+
+/* ───────────────────────────────────────────────────────────────────────
+   §16  QA FIXES
+   Issues found during systematic audit — CSS-only resolutions.
    ─────────────────────────────────────────────────────────────────────── */
 
-/* QA-1: Table horizontal scroll clipping on narrow containers */
+/* QA-1: Table wrapper clips on narrow viewports */
 .admin-dashboard .admin-table-wrapper {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
 }
 
-/* QA-2: Buttons stacking vertically on hover due to transform + flex */
-.admin-dashboard .admin-table td:last-child > div {
-  transform: none !important; /* prevent child transforms from causing reflow */
+/* QA-2: Status select mustn't exceed its cell */
+.admin-dashboard .admin-table td:nth-child(5) {
+  white-space: nowrap;
 }
 
-/* QA-3: Long product names overflowing their cell */
+/* QA-3: Filter bar input overflow on small screens */
+.admin-dashboard .filter-bar input[type="text"] {
+  min-width: 0;
+  width: 100%;
+  flex: 1;
+}
+
+/* QA-4: Modal close button — sufficient hit area */
+.admin-dashboard .modal-close {
+  min-width: 34px;
+  min-height: 34px;
+}
+
+/* QA-5: Long order numbers shouldn't expand the column */
+.admin-dashboard .admin-table td:first-child {
+  white-space: nowrap;
+  max-width: 150px;
+}
+
+/* QA-6: Modal actions bar — always visible at bottom, not clipped */
+.admin-dashboard .modal-actions {
+  position: sticky;
+  bottom: 0;
+  background: #fff;
+  padding-bottom: 1.8rem;
+  margin-bottom: -1.8rem;  /* negate modal-body bottom padding */
+  z-index: 5;
+}
+
+/* QA-7: Total price row in modal should never wrap */
+.admin-dashboard .order-item-price { white-space: nowrap; }
+
+/* QA-8: Focus rings on all interactive elements */
+.admin-dashboard .modal-close:focus-visible,
+.admin-dashboard .btn-secondary:focus-visible,
+.admin-dashboard .btn-view:focus-visible {
+  outline: 2px solid var(--tx-amber);
+  outline-offset: 2px;
+}
+
+/* QA-9: Table row transform doesn't cause layout shift */
+.admin-dashboard .admin-table tbody { overflow: hidden; }
+
+/* QA-10: Notice + error stacking (no double top-margin) */
+.admin-dashboard .admin-notice,
+.admin-dashboard .error-message {
+  margin-bottom: 1rem;
+}
+
+/* QA-11: Very long email addresses in the table shouldn't break layout */
 .admin-dashboard .admin-table td:nth-child(2) {
   max-width: 220px;
-  word-break: break-word;
-}
-.admin-dashboard .admin-table td:nth-child(2) strong {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  line-clamp: 2;
-  box-orient: vertical;
-}
-
-/* QA-4: Category column — no wrapping */
-.admin-dashboard .admin-table th:nth-child(3),
-.admin-dashboard .admin-table td:nth-child(3) {
-  white-space: nowrap;
-}
-
-/* QA-5: Ensure stock badge never truncates */
-.admin-dashboard .admin-table td:nth-child(6) {
-  white-space: nowrap;
-}
-
-/* QA-6: Footer actions should never clip on very narrow screens */
-.admin-dashboard .admin-table td:last-child {
-  min-width: 120px;
-}
-
-/* QA-7: Focus-visible on the tab filter buttons */
-.admin-dashboard .admin-tabs button:focus-visible {
-  outline: 2px solid var(--tx-amber);
-  outline-offset: 3px;
-}
-
-/* QA-8: Filter bar input shouldn't exceed container on mobile */
-.admin-dashboard .filter-bar input {
-  min-width: 0;
-}
-
-/* QA-9: Stats grid minimum doesn't break on 320px screens */
-.admin-dashboard .stats-grid {
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-}
-
-/* QA-10: Notice / error messages shouldn't have double margin */
-.admin-dashboard .admin-notice + .error-message,
-.admin-dashboard .error-message + .admin-notice {
-  margin-top: -0.5rem;
 }
 
 
 /* ───────────────────────────────────────────────────────────────────────
-   §18  RESPONSIVE — 1200px
-   ─────────────────────────────────────────────────────────────────────── */
-@media (max-width: 1200px) {
-  /* Reduce thumbnail to keep table from crowding */
-  :root { --pm-thumb: 46px; }
-
-  .admin-dashboard .admin-table td:nth-child(2) { max-width: 180px; }
-}
-
-
-/* ───────────────────────────────────────────────────────────────────────
-   §19  RESPONSIVE — 1024px
+   §17  RESPONSIVE — 1024px
    ─────────────────────────────────────────────────────────────────────── */
 @media (max-width: 1024px) {
-  :root { --pm-thumb: 42px; --pm-col-pad: 0.9rem; }
-
-  /* Hide prep-time column — recoverable via horizontal scroll */
-  .admin-dashboard .admin-table th:nth-child(5),
-  .admin-dashboard .admin-table td:nth-child(5) {
+  /* Hide items count column to save space */
+  .admin-dashboard .admin-table th:nth-child(3),
+  .admin-dashboard .admin-table td:nth-child(3) {
     display: none;
   }
 
-  .pm-form__grid { grid-template-columns: 1fr; }
-  .pm-form__field--full { grid-column: span 1; }
+  /* Reduce col padding */
+  :root { --ord-col-pad: 0.9rem; }
 
-  .pm-cards-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+  /* Customer cell — tighter truncation */
+  .admin-dashboard .admin-table td:nth-child(2) > div:first-child {
+    max-width: 160px;
+  }
 }
 
 
 /* ───────────────────────────────────────────────────────────────────────
-   §20  RESPONSIVE — 768px
+   §18  RESPONSIVE — 768px  (stacked card layout)
    ─────────────────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  :root { --pm-thumb: 38px; --pm-col-pad: 0.75rem; }
-
-  /* On mobile, collapse the table to a card-like list view */
+  /* ── Collapse table to card list ── */
   .admin-dashboard .admin-table,
   .admin-dashboard .admin-table tbody,
   .admin-dashboard .admin-table tr,
@@ -1093,168 +885,170 @@
     width: 100%;
   }
 
-  /* Hide the thead (labels shown via data-label) */
+  /* Hide standard header */
   .admin-dashboard .admin-table thead { display: none; }
 
-  /* Each row becomes a card */
+  /* Each row → card */
   .admin-dashboard .admin-table tbody tr {
     background: #fff;
     border-radius: var(--r-md);
-    margin-bottom: 0.9rem;
+    margin-bottom: 0.85rem;
     border: 1.5px solid var(--bd-faint);
     box-shadow: var(--sh-sm);
-    padding: 0;
     overflow: hidden;
-    transform: none !important; /* disable row hover lift on mobile */
+    padding: 1rem;
+    transform: none !important;
   }
 
   .admin-dashboard .admin-table tbody tr:nth-child(even) {
-    background: #fff; /* reset zebra on mobile */
+    background: #fff;
   }
 
-  /* Image cell — full-width hero */
-  .admin-dashboard .admin-table td:first-child {
-    padding: 0;
-    width: 100%;
-  }
-  .admin-dashboard .admin-table td:first-child .product-thumb {
-    width: 100% !important;
-    height: 160px;
-    border-radius: 0;
-    object-fit: cover;
-    border: none;
-    outline: none;
-  }
-  /* No-image fallback full-width */
-  .admin-dashboard .admin-table td:first-child > div {
-    width: 100% !important;
-    height: 120px !important;
-    border-radius: 0 !important;
-    border-left: none !important;
-    border-right: none !important;
-    border-top: none !important;
-  }
-
-  /* Content cells */
+  /* Cell padding inside card */
   .admin-dashboard .admin-table td {
-    padding: 0.55rem 1rem;
-    border-bottom: 1px solid var(--bd-faint);
+    padding: 0.45rem 0;
+    border: none;
     max-width: 100%;
   }
 
-  /* Last cell — remove bottom border */
+  /* Remove first/last cell overrides */
+  .admin-dashboard .admin-table td:first-child,
   .admin-dashboard .admin-table td:last-child {
-    border-bottom: none;
-    padding-right: 1rem;
+    padding-left: 0;
+    padding-right: 0;
     text-align: left;
   }
 
-  /* Action buttons — full-width row on mobile */
-  .admin-dashboard .admin-table td:last-child > div {
-    justify-content: flex-start !important;
-    flex-wrap: nowrap;
-  }
-  .admin-dashboard .admin-table td:last-child .btn-delete,
-  .admin-dashboard .admin-table td:last-child .btn-view,
-  .admin-dashboard .admin-table td:last-child .btn-secondary {
-    flex: 1;
-    justify-content: center;
-    max-width: 50%;
+  /* Order # — card header */
+  .admin-dashboard .admin-table td:nth-child(1) {
+    font-size: 1rem;
+    border-bottom: 1px solid var(--bd-faint);
+    padding-bottom: 0.6rem;
+    margin-bottom: 0.35rem;
   }
 
-  /* Data labels via pseudo-element */
+  /* Customer — show both name + email naturally */
+  .admin-dashboard .admin-table td:nth-child(2) > div:first-child,
+  .admin-dashboard .admin-table td:nth-child(2) > div:last-child:not(:first-child) {
+    max-width: 100%;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+  }
+
+  /* Status select — full width */
+  .admin-dashboard .admin-table .status-select {
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* Actions — inline row */
+  .admin-dashboard .admin-table td:last-child {
+    padding-top: 0.6rem;
+    border-top: 1px solid var(--bd-faint);
+    margin-top: 0.35rem;
+  }
+  .admin-dashboard .admin-table td:last-child .btn-view {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Data labels via ::before */
   .admin-dashboard .admin-table td::before {
     content: attr(data-label);
     display: block;
-    font-size: 0.6rem;
+    font-size: 0.59rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1.2px;
     color: var(--tx-copper);
     margin-bottom: 0.2rem;
   }
-  /* Don't show label on image and actions cells */
   .admin-dashboard .admin-table td:first-child::before,
   .admin-dashboard .admin-table td:last-child::before { display: none; }
 
-  /* Product name cell */
-  .admin-dashboard .admin-table td:nth-child(2) {
-    max-width: 100%;
-    padding-top: 0.75rem;
-  }
-
-  /* Category — inline */
-  .admin-dashboard .admin-table td:nth-child(3) { white-space: normal; }
-
-  .pm-cards-grid { grid-template-columns: 1fr 1fr; }
-
+  /* Filter bar — stack vertically */
   .admin-dashboard .filter-bar {
     flex-direction: column;
     align-items: stretch;
+    gap: 0.6rem;
   }
-  .admin-dashboard .filter-bar input { width: 100%; }
-  .admin-dashboard .filter-bar > span { margin-left: 0 !important; text-align: right; }
+  .admin-dashboard .filter-bar input[type="text"] { width: 100%; }
+  .admin-dashboard .filter-bar > span {
+    text-align: right;
+    margin-left: 0 !important;
+  }
+
+  /* Tabs — single-line horizontal scroll */
+  .admin-dashboard .admin-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  /* Modal — full-screen on mobile */
+  .admin-dashboard .modal-backdrop { padding: 0; align-items: flex-end; }
+  .admin-dashboard .modal-card {
+    max-width: 100%;
+    border-radius: var(--r-lg) var(--r-lg) 0 0;
+    max-height: 88vh;
+  }
+
+  /* Modal body sections — remove inner padding */
+  .admin-dashboard .modal-body > div:nth-child(2),
+  .admin-dashboard .modal-body > div:nth-child(3) {
+    padding: 0.9rem !important;
+  }
 }
 
 
 /* ───────────────────────────────────────────────────────────────────────
-   §21  RESPONSIVE — 480px
+   §19  RESPONSIVE — 480px
    ─────────────────────────────────────────────────────────────────────── */
 @media (max-width: 480px) {
-  :root { --pm-thumb: 34px; }
-
-  .pm-cards-grid { grid-template-columns: 1fr; }
-
-  /* Reduce tab button size */
+  /* Tab buttons — smaller */
   .admin-dashboard .admin-tabs button {
-    font-size: 0.74rem;
-    padding: 0.42rem 0.75rem;
+    font-size: 0.73rem;
+    padding: 0.42rem 0.7rem;
   }
 
-  /* Stats cards — single column, horizontal layout */
-  .admin-dashboard .stats-grid {
-    grid-template-columns: 1fr;
+  /* Order # in card — smaller */
+  .admin-dashboard .admin-table td:nth-child(1) strong {
+    font-size: 0.9rem;
   }
-  .admin-dashboard .stat-card {
-    flex-direction: row;
-    align-items: center;
-    gap: 1rem;
-    padding: 1rem 1.2rem;
-  }
-  .admin-dashboard .stat-card .stat-icon { margin-bottom: 0; font-size: 1.6rem; }
-  .admin-dashboard .stat-card .stat-number { font-size: 1.45rem; }
 
-  /* Mobile card: image height reduced */
-  .admin-dashboard .admin-table td:first-child .product-thumb {
-    height: 120px;
+  /* Modal header — compact */
+  .admin-dashboard .modal-header {
+    padding: 1rem 1.1rem;
   }
+  .admin-dashboard .modal-header h3 {
+    font-size: 1rem;
+  }
+
+  /* Modal body — compact */
+  .admin-dashboard .modal-body {
+    padding: 1.1rem;
+  }
+
+  /* Status bar in modal — stack vertically */
+  .admin-dashboard .modal-body > div:first-child {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.5rem !important;
+  }
+  .admin-dashboard .modal-body > div:first-child .status-select {
+    width: 100%;
+  }
+
+  /* Order items — smaller text */
+  .admin-dashboard .order-item { padding: 0.6rem 0.75rem; gap: 0.5rem; }
+  .admin-dashboard .order-item-name  { font-size: 0.84rem; }
+  .admin-dashboard .order-item-price { font-size: 0.9rem;  }
 }
 
 
 /* ───────────────────────────────────────────────────────────────────────
-   §22  PRINT STYLES  (basic — hide chrome, show table)
-   ─────────────────────────────────────────────────────────────────────── */
-@media print {
-  .admin-dashboard .dashboard-header .btn-primary,
-  .admin-dashboard .dashboard-header .btn-secondary,
-  .admin-dashboard .admin-tabs,
-  .admin-dashboard .filter-bar,
-  .admin-dashboard .admin-table td:last-child { display: none !important; }
-
-  .admin-dashboard .admin-table thead {
-    background: #f0e7d5 !important;
-    print-color-adjust: exact;
-  }
-
-  .admin-dashboard .admin-table tbody tr { break-inside: avoid; }
-
-  .admin-dashboard .admin-table th,
-  .admin-dashboard .admin-table td { font-size: 0.75rem; padding: 0.5rem 0.75rem; }
-}
-
-
-/* ───────────────────────────────────────────────────────────────────────
-   §23  REDUCED MOTION
+   §20  REDUCED MOTION
    ─────────────────────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   .admin-dashboard *,
@@ -1264,4 +1058,324 @@
     animation-iteration-count: 1      !important;
     transition-duration:       0.01ms !important;
   }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   ORDERS  —  SEMANTIC COLUMN CLASSES + MODAL COMPONENTS
+   Added to support the refactored AdminOrders.jsx & AdminDashboard.jsx
+   All scoped under .admin-dashboard
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Result count span ── */
+.admin-dashboard .ord-result-count {
+  margin-left: auto;
+  font-family: var(--f-ui);
+  font-size: 0.79rem;
+  font-weight: 700;
+  color: var(--tx-copper);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+   COLUMN CLASSES
+   Explicit widths + no-wrap keep the table from collapsing cells
+   ─────────────────────────────────────────────────────────────────────── */
+
+/* Order # — fixed, never wraps */
+.admin-dashboard .admin-table td.ord-col-id {
+  white-space: nowrap;
+  min-width: 140px;
+  max-width: 180px;
+}
+.admin-dashboard .admin-table td.ord-col-id strong {
+  font-family: var(--f-heading);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--tx-wood);
+  letter-spacing: 0.02em;
+}
+
+/* Customer — name + email sub-line */
+.admin-dashboard .admin-table td.ord-col-customer {
+  min-width: 160px;
+}
+.admin-dashboard .ord-customer-name {
+  font-weight: 700;
+  color: var(--tx-leather);
+  font-size: 0.9rem;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+.admin-dashboard .ord-customer-email {
+  font-size: 0.76rem;
+  color: var(--tx-tan);
+  line-height: 1.3;
+  margin-top: 0.15rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
+/* Items count */
+.admin-dashboard .admin-table td.ord-col-items {
+  white-space: nowrap;
+  color: var(--tx-tan);
+  font-size: 0.875rem;
+}
+
+/* Total */
+.admin-dashboard .admin-table td.ord-col-total strong {
+  font-family: var(--f-heading);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--tx-copper);
+  white-space: nowrap;
+}
+
+/* Status — no-wrap, give the select room to breathe */
+.admin-dashboard .admin-table td.ord-col-status {
+  white-space: nowrap;
+  min-width: 140px;
+}
+
+/* Date */
+.admin-dashboard .admin-table td.ord-col-date {
+  white-space: nowrap;
+  font-size: 0.83rem;
+  color: var(--tx-tan);
+}
+
+/* Actions */
+.admin-dashboard .admin-table td.ord-col-actions {
+  white-space: nowrap;
+  text-align: center;
+  min-width: 80px;
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+   ORDER DETAIL MODAL  (.ord-modal)
+   Clean, semantic class-based styles — no nth-child hacks
+   ─────────────────────────────────────────────────────────────────────── */
+
+.admin-dashboard .ord-modal {
+  max-width: 660px;
+}
+
+/* Status bar */
+.admin-dashboard .ord-modal-status-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1.1rem;
+  background: linear-gradient(135deg, var(--tx-smoke) 0%, #ede4d1 100%);
+  border-radius: var(--r-md);
+  border: 1.5px solid var(--bd-faint);
+  box-shadow: var(--sh-xs);
+  margin-bottom: 1.5rem;
+}
+
+.admin-dashboard .ord-modal-status-label {
+  font-family: var(--f-ui);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+  color: var(--tx-copper);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.admin-dashboard .ord-modal-status-bar .status-select {
+  min-width: 130px;
+}
+
+/* Section block */
+.admin-dashboard .ord-modal-section {
+  padding: 1.25rem;
+  background: var(--tx-parchment);
+  border-radius: var(--r-md);
+  border: 1px solid var(--bd-faint);
+  margin-bottom: 1.25rem;
+}
+
+/* Section label with amber left-rule */
+.admin-dashboard .ord-modal-section-label {
+  font-family: var(--f-ui);
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--tx-copper);
+  margin-bottom: 0.75rem;
+  padding-left: 0.7rem;
+  border-left: 3px solid var(--tx-amber);
+  line-height: 1;
+}
+
+/* Customer name */
+.admin-dashboard .ord-modal-customer-name {
+  font-weight: 700;
+  color: var(--tx-leather);
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+/* Email / phone sub-lines */
+.admin-dashboard .ord-modal-meta {
+  font-size: 0.84rem;
+  color: var(--tx-tan);
+  line-height: 1.6;
+  margin-top: 0.1rem;
+}
+
+/* Empty items fallback */
+.admin-dashboard .ord-modal-empty {
+  font-family: var(--f-heading);
+  font-style: italic;
+  font-size: 0.9rem;
+  color: var(--tx-tan);
+  padding: 0.75rem 0;
+  text-align: center;
+}
+
+/* Items list */
+.admin-dashboard .order-items-list {
+  list-style: none;
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  border: 1px solid var(--bd-faint);
+  background: #fff;
+  margin: 0 0 0.85rem;
+  padding: 0;
+}
+
+.admin-dashboard .order-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--bd-faint);
+  transition: background var(--t-fast) var(--ease-out);
+}
+.admin-dashboard .order-item:last-child { border-bottom: none; }
+.admin-dashboard .order-item:hover { background: rgba(244,234,216,.5); }
+
+.admin-dashboard .order-item-name {
+  flex: 1;
+  font-weight: 600;
+  color: var(--tx-leather);
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
+.admin-dashboard .order-item-qty {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--tx-tan);
+  background: var(--tx-smoke);
+  padding: 0.15rem 0.55rem;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--bd-faint);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.admin-dashboard .order-item-price {
+  font-family: var(--f-heading);
+  font-weight: 700;
+  font-size: 0.98rem;
+  color: var(--tx-copper);
+  white-space: nowrap;
+  flex-shrink: 0;
+  letter-spacing: -0.01em;
+}
+
+/* Total row */
+.admin-dashboard .ord-modal-total-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 0.85rem;
+  border-top: 2px solid var(--bd-faint);
+}
+
+.admin-dashboard .ord-modal-total-label {
+  font-family: var(--f-ui);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--tx-tan);
+}
+
+.admin-dashboard .ord-modal-total-value {
+  font-family: var(--f-heading);
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--tx-wood);
+  letter-spacing: -0.02em;
+}
+
+/* Timestamp */
+.admin-dashboard .ord-modal-timestamp {
+  font-family: var(--f-ui);
+  font-size: 0.76rem;
+  color: var(--tx-tan);
+  font-style: italic;
+  margin-bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.admin-dashboard .ord-modal-timestamp::before {
+  content: '🕐';
+  font-style: normal;
+  font-size: 0.85rem;
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+   RESPONSIVE OVERRIDES for semantic column classes
+   ─────────────────────────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  /* Hide items count to save space */
+  .admin-dashboard .admin-table th:has(+ th + th + th + th + th),
+  .admin-dashboard .admin-table td.ord-col-items { display: none; }
+}
+
+@media (max-width: 768px) {
+  /* Stack table to cards — columns become label:value pairs */
+  .admin-dashboard .admin-table td.ord-col-id,
+  .admin-dashboard .admin-table td.ord-col-customer,
+  .admin-dashboard .admin-table td.ord-col-items,
+  .admin-dashboard .admin-table td.ord-col-total,
+  .admin-dashboard .admin-table td.ord-col-status,
+  .admin-dashboard .admin-table td.ord-col-date,
+  .admin-dashboard .admin-table td.ord-col-actions {
+    min-width: 0;
+    max-width: 100%;
+    white-space: normal;
+  }
+
+  /* Customer name — allow wrap on mobile */
+  .admin-dashboard .ord-customer-name,
+  .admin-dashboard .ord-customer-email { max-width: 100%; white-space: normal; }
+
+  /* Modal — full bottom sheet */
+  .admin-dashboard .ord-modal { max-width: 100%; }
+
+  /* Status bar — stack on small screens */
+  .admin-dashboard .ord-modal-status-bar { flex-direction: column; align-items: flex-start; gap: 0.55rem; }
+  .admin-dashboard .ord-modal-status-bar .status-select { width: 100%; }
+}
+
+@media (max-width: 480px) {
+  .admin-dashboard .ord-modal-total-value { font-size: 1.05rem; }
+  .admin-dashboard .order-item { padding: 0.65rem 0.8rem; }
+  .admin-dashboard .order-item-name { font-size: 0.84rem; }
 }
