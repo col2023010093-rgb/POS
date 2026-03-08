@@ -94,6 +94,15 @@ const AdminDashboard = () => {
     )
   }
 
+{/* ── Inline SVG icon components — clean, stroke-based, no emoji ── */}
+const IconBox       = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+const IconRevenue   = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+const IconCalendar  = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+const IconTodayRev  = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/><path d="M19 8l2 2-2 2"/></svg>
+const IconMenu      = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M3 2h18v4H3zM3 10h18v4H3zM3 18h18v4H3z" opacity="0"/><rect x="3" y="3" width="18" height="4" rx="1"/><rect x="3" y="10" width="12" height="4" rx="1"/><rect x="3" y="17" width="15" height="4" rx="1"/></svg>
+const IconUsers     = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+const IconClock     = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+  
   return (
     <div className="admin-dashboard">
       <div className="admin-container">
@@ -114,51 +123,42 @@ const AdminDashboard = () => {
 
         {/* ── Stats Grid ── */}
         <div className="stats-grid">
-          <div className="stat-card">
-            <span className="stat-icon">📦</span>
-            <h3>Total Orders</h3>
-            <p className="stat-number">{stats.totalOrders || orders.length || 0}</p>
-          </div>
-          <div className="stat-card">
-            <span className="stat-icon">💰</span>
-            <h3>Total Revenue</h3>
-            <p className="stat-number">{formatPHP(stats.totalRevenue || 0)}</p>
-          </div>
-          <div className="stat-card success">
-            <span className="stat-icon">📅</span>
-            <h3>Today's Orders</h3>
-            <p className="stat-number">{todayOrders.length}</p>
-          </div>
-          <div className="stat-card success">
-            <span className="stat-icon">🤑</span>
-            <h3>Today's Revenue</h3>
-            <p className="stat-number">{formatPHP(todayRevenue)}</p>
-          </div>
-          <div className="stat-card">
-            <span className="stat-icon">🍖</span>
-            <h3>Menu Items</h3>
-            <p className="stat-number">{stats.totalProducts || 0}</p>
-          </div>
-          <div className="stat-card">
-            <span className="stat-icon">👥</span>
-            <h3>Customers</h3>
-            <p className="stat-number">{stats.totalCustomers || stats.totalUsers || 0}</p>
-          </div>
-          <div className="stat-card alert">
-            <span className="stat-icon">⏳</span>
-            <h3>Pending Orders</h3>
-            <p className="stat-number">{stats.pendingOrders || 0}</p>
-          </div>
-        </div>
-
-        {/* ── Quick Actions ── */}
-        <div className="quick-actions">
-          <button className="btn-primary"   onClick={() => navigate('/admin/orders')}>📋 Manage Orders</button>
-          <button className="btn-primary"   onClick={() => navigate('/admin/reservations')}>📅 Reservations</button>
-          <button className="btn-secondary" onClick={() => navigate('/admin/products')}>🍖 Menu Items</button>
-          <button className="btn-secondary" onClick={() => navigate('/admin/users')}>👥 Users</button>
-          <button className="btn-secondary" onClick={() => navigate('/admin/reports')}>📊 Reports</button>
-        </div>
+  <div className="stat-card">
+    <span className="stat-icon"><IconBox /></span>
+    <h3>Total Orders</h3>
+    <p className="stat-number">{stats.totalOrders || orders.length || 0}</p>
+  </div>
+  <div className="stat-card">
+    <span className="stat-icon"><IconRevenue /></span>
+    <h3>Total Revenue</h3>
+    <p className="stat-number">{formatPHP(stats.totalRevenue || 0)}</p>
+  </div>
+  <div className="stat-card success">
+    <span className="stat-icon"><IconCalendar /></span>
+    <h3>Today's Orders</h3>
+    <p className="stat-number">{todayOrders.length}</p>
+  </div>
+  <div className="stat-card success">
+    <span className="stat-icon"><IconTodayRev /></span>
+    <h3>Today's Revenue</h3>
+    <p className="stat-number">{formatPHP(todayRevenue)}</p>
+  </div>
+  <div className="stat-card">
+    <span className="stat-icon"><IconMenu /></span>
+    <h3>Menu Items</h3>
+    <p className="stat-number">{stats.totalProducts || 0}</p>
+  </div>
+  <div className="stat-card">
+    <span className="stat-icon"><IconUsers /></span>
+    <h3>Customers</h3>
+    <p className="stat-number">{stats.totalCustomers || stats.totalUsers || 0}</p>
+  </div>
+  <div className="stat-card alert">
+    <span className="stat-icon"><IconClock /></span>
+    <h3>Pending Orders</h3>
+    <p className="stat-number">{stats.pendingOrders || 0}</p>
+  </div>
+</div>
 
         {/* ── Recent Orders ── identical layout to /admin/orders ── */}
         <div className="admin-table-section">
