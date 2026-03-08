@@ -161,13 +161,13 @@ const AdminOrders = () => {
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>Order #</th>
-                    <th>Customer</th>
-                    <th>Items</th>
-                    <th>Total</th>
-                    <th>Status</th>
-                    <th>Date</th>
-                    <th>Actions</th>
+                    <th className="ord-col-id">Order #</th>
+                    <th className="ord-col-customer">Customer</th>
+                    <th className="ord-col-items">Items</th>
+                    <th className="ord-col-total">Total</th>
+                    <th className="ord-col-status">Status</th>
+                    <th className="ord-col-date">Date</th>
+                    <th className="ord-col-actions">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
