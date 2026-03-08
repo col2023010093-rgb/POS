@@ -52,8 +52,8 @@
   /* ── COLUMN WIDTHS ─────────────────────────────────────────────────
      Total: 160+180+72+105+150+110+90 = 867px
      Table has min-width:867px so layout never compresses below this.  */
-  --col-id:       200px;
-  --col-customer:  80px;
+  --col-id:       230px;
+  --col-customer:  70px;
   --col-items:     72px;
   --col-total:    105px;
   --col-status:   155px;
