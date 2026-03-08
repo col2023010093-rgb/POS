@@ -1,184 +1,709 @@
 /* ═══════════════════════════════════════════════════════════════════════
-   TEXAS JOE'S  ✦  ADMIN MENU PAGE
-   AdminMenu.css  —  v3 (aligned to AdminDashboard.css token system)
-   ───────────────────────────────────────────────────────────────────────
-   Import order in AdminMenu.jsx:
-     import './AdminDashboard.css'    ← defines --tx-*, --f-ui, --r-*, etc.
-     import './AdminProducts.css'
-     import './AdminMenu.css'         ← this file wins all table layout
-
-   Root cause of misalignment (fixed here):
-   ─────────────────────────────────────────
-   1. No table-layout: fixed → browser auto-sized columns by content
-   2. AdminProducts.css uses --pm-col-pad (1.15rem) for th + td padding;
-      AdminMenu.css used 1.1rem → headers and cells drifted
-   3. AdminProducts.css :first-child and :last-child positional selectors
-      applied padding-left:1.5rem and width:72px to the image column
-      regardless of its class, doubling padding on that column
-   4. AdminProducts.css td:nth-child(3)>span applied transforms+padding
-      to the category badge, pushing it out of column alignment
-   5. AdminProducts.css td:last-child>div added a second flex container
-      around the action buttons
-   All five are explicitly neutralised below.
+   TEXAS JOE'S  ✦  ADMIN MENU PAGE  —  AdminMenu.css  v4
+   SELF-CONTAINED: does NOT require AdminProducts.css
+   Only requires AdminDashboard.css for --tx-* token definitions.
    ═══════════════════════════════════════════════════════════════════════ */
 
+/* ─────────────────────────────────────────────────────────────────────
+   §0  GOOGLE FONTS
+   ───────────────────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Rye&family=Playfair+Display:wght@600;700;900&family=Barlow+Condensed:wght@400;600;700;800&family=Lora:ital,wght@0,400;0,600;1,400&display=swap');
 
 /* ─────────────────────────────────────────────────────────────────────
-   §0  TOKEN BRIDGE  +  PAGE TOKENS
+   §1  DESIGN TOKENS  (self-contained — works even if AdminDashboard.css
+       is absent; AdminDashboard.css values override via the var() chain)
    ───────────────────────────────────────────────────────────────────── */
 :root {
-  --brand-dark:    var(--tx-leather);
-  --brand-saddle:  var(--tx-saddle);
-  --brand-copper:  var(--tx-copper);
-  --brand-tan:     var(--tx-tan);
-  --brand-smoke:   var(--tx-smoke);
-  --brand-amber:   var(--tx-amber);
-  --radius-md:     var(--r-md);
+  /* Palette */
+  --mnu-wood:      #2C1A0E;
+  --mnu-leather:   #6B3E26;
+  --mnu-saddle:    #8B5E3C;
+  --mnu-copper:    #C4622D;
+  --mnu-amber:     #D4922A;
+  --mnu-gold:      #D4A373;
+  --mnu-sand:      #F5E6C8;
+  --mnu-parchment: #FBF3E2;
+  --mnu-smoke:     #EDE0C8;
+  --mnu-fog:       #F7EFD8;
+  --mnu-ink:       #1E110A;
+  --mnu-ember:     #B84A1E;
 
-  /* THE ONE TRUE PADDING — used by both th and td */
-  --mnu-col-pad: 1.1rem;
+  /* Status colours */
+  --mnu-green:     #2D6A4F;
+  --mnu-green-bg:  rgba(45,106,79,.10);
+  --mnu-red:       #9B1D1D;
+  --mnu-red-bg:    rgba(155,29,29,.10);
+  --mnu-ochre:     #7D5A0D;
+  --mnu-ochre-bg:  rgba(125,90,13,.10);
 
-  /* Explicit column widths (applied on <th>, honoured by table-layout:fixed) */
-  --mnu-w-img:    100px;
-  --mnu-w-cat:    145px;
-  --mnu-w-price:  110px;
-  --mnu-w-prep:   105px;
-  --mnu-w-stock:  120px;
-  --mnu-w-action: 215px;
-  /* name col = auto (fills remaining)
-     total fixed = 100+145+110+105+120+215 = 795px
-     min-width set to 860px so name col gets ≥65px */
+  /* Typography */
+  --mnu-f-display: 'Rye', serif;
+  --mnu-f-heading: 'Playfair Display', Georgia, serif;
+  --mnu-f-ui:      'Barlow Condensed', 'Arial Narrow', sans-serif;
+  --mnu-f-body:    'Lora', Georgia, serif;
+
+  /* Spacing */
+  --mnu-sp-xs:  0.5rem;
+  --mnu-sp-sm:  0.75rem;
+  --mnu-sp-md:  1rem;
+  --mnu-sp-lg:  1.5rem;
+  --mnu-sp-xl:  2rem;
+  --mnu-sp-2xl: 2.5rem;
+
+  /* Radius */
+  --mnu-r-sm:   6px;
+  --mnu-r-md:   10px;
+  --mnu-r-lg:   16px;
+  --mnu-r-pill: 999px;
+
+  /* Shadows */
+  --mnu-sh-xs:  0 1px 3px rgba(10,4,0,.10);
+  --mnu-sh-sm:  0 2px 8px rgba(10,4,0,.14);
+  --mnu-sh-md:  0 4px 18px rgba(10,4,0,.16);
+  --mnu-sh-lg:  0 8px 32px rgba(10,4,0,.20);
+
+  /* Column widths */
+  --mnu-w-img:    90px;
+  --mnu-w-cat:    140px;
+  --mnu-w-price:  116px;
+  --mnu-w-prep:   110px;
+  --mnu-w-stock:  128px;
+  --mnu-w-action: 200px;
+
+  /* Cell padding */
+  --mnu-cell-px: 1rem;
+  --mnu-cell-py: 0.85rem;
+
+  /* Transitions */
+  --mnu-t-fast: 130ms ease;
+  --mnu-t-mid:  240ms ease;
 }
-
 
 /* ─────────────────────────────────────────────────────────────────────
-   §1  TABLE LAYOUT  — fixed columns, scroll wrapper
+   §2  PAGE SHELL
    ───────────────────────────────────────────────────────────────────── */
-.admin-dashboard .admin-table {
-  table-layout: fixed;
-  width: 100%;
-  min-width: 860px;
-  border-collapse: collapse;
+.mnu-page {
+  min-height: 100vh;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% -10%, rgba(212,146,42,.08) 0%, transparent 70%),
+    linear-gradient(175deg, #f5e9d0 0%, #f0dfc0 50%, #ead4a8 100%);
+  font-family: var(--mnu-f-body);
+  padding: var(--mnu-sp-xl) var(--mnu-sp-lg);
 }
 
-.admin-dashboard .admin-table-wrapper {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  border-radius: 0 0 var(--r-md) var(--r-md);
+.mnu-container {
+  max-width: 1440px;
+  margin: 0 auto;
 }
-
 
 /* ─────────────────────────────────────────────────────────────────────
-   §2  COLUMN WIDTHS  (on <th> — table-layout:fixed propagates to cells)
+   §3  PAGE HEADER
    ───────────────────────────────────────────────────────────────────── */
-.admin-dashboard .admin-table th.mnu-col-img    { width: var(--mnu-w-img);    }
-.admin-dashboard .admin-table th.mnu-col-cat    { width: var(--mnu-w-cat);    }
-.admin-dashboard .admin-table th.mnu-col-price  { width: var(--mnu-w-price);  }
-.admin-dashboard .admin-table th.mnu-col-prep   { width: var(--mnu-w-prep);   }
-.admin-dashboard .admin-table th.mnu-col-stock  { width: var(--mnu-w-stock);  }
-.admin-dashboard .admin-table th.mnu-col-action { width: var(--mnu-w-action); }
-/* mnu-col-name has no width — it takes all remaining space */
-
-
-/* ─────────────────────────────────────────────────────────────────────
-   §3  HEADER ROW  — dark wood-grain, sticky
-   ───────────────────────────────────────────────────────────────────── */
-.admin-dashboard .admin-table thead {
-  background: linear-gradient(135deg, var(--tx-saddle) 0%, var(--tx-wood) 100%);
-  position: sticky;
-  top: 0;
-  z-index: 3;
-  box-shadow: 0 2px 8px rgba(10,6,0,.20);
+.mnu-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--mnu-sp-lg);
+  margin-bottom: var(--mnu-sp-xl);
+  padding-bottom: var(--mnu-sp-xl);
+  border-bottom: 2px solid rgba(107,62,38,.15);
+  position: relative;
 }
 
-/* Single authoritative th rule using --mnu-col-pad */
-.admin-dashboard .admin-table th {
-  padding: 0.95rem var(--mnu-col-pad);
-  text-align: left;
-  font-family: var(--f-ui);
-  font-size: 0.61rem;
+/* Decorative brand bar */
+.mnu-header::after {
+  content: '';
+  position: absolute;
+  bottom: -2px; left: 0;
+  width: 88px; height: 3px;
+  background: linear-gradient(90deg, var(--mnu-copper), var(--mnu-amber));
+  border-radius: var(--mnu-r-pill);
+  box-shadow: 0 0 10px rgba(196,98,45,.45);
+}
+
+.mnu-header-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: var(--mnu-sp-xs);
+  font-family: var(--mnu-f-ui);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--mnu-copper);
+  margin-bottom: 0.4rem;
+}
+
+.mnu-header-eyebrow-icon {
+  font-size: 1rem;
+}
+
+.mnu-header h1 {
+  font-family: var(--mnu-f-display);
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  font-weight: 400; /* Rye is display-weight by default */
+  color: var(--mnu-wood);
+  letter-spacing: 0.03em;
+  line-height: 1.1;
+  margin: 0 0 0.35rem;
+  text-shadow: 1px 2px 0 rgba(255,255,255,.55), 0 1px 4px rgba(10,4,0,.08);
+}
+
+.mnu-header-subtitle {
+  font-family: var(--mnu-f-ui);
+  font-size: 0.92rem;
+  color: var(--mnu-saddle);
+  font-weight: 400;
+  letter-spacing: 0.2px;
+  margin: 0;
+}
+
+.mnu-header-actions {
+  display: flex;
+  gap: var(--mnu-sp-sm);
+  align-items: center;
+  flex-shrink: 0;
+  padding-top: 0.25rem;
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   §4  BUTTONS  (self-contained — no inheritance from AdminProducts.css)
+   ───────────────────────────────────────────────────────────────────── */
+
+/* Base */
+.mnu-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--mnu-f-ui);
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  padding: 0.55rem 1.15rem;
+  border-radius: var(--mnu-r-pill);
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background    var(--mnu-t-fast),
+    box-shadow    var(--mnu-t-fast),
+    border-color  var(--mnu-t-fast),
+    transform     var(--mnu-t-fast),
+    color         var(--mnu-t-fast);
+  user-select: none;
+}
+.mnu-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(.3);
+  transform: none !important;
+}
+.mnu-btn:focus-visible {
+  outline: 2px solid var(--mnu-amber);
+  outline-offset: 3px;
+}
+
+/* Primary — burnt orange fill */
+.mnu-btn-primary {
+  background: linear-gradient(135deg, var(--mnu-copper) 0%, var(--mnu-ember) 100%);
+  color: #fff;
+  border-color: var(--mnu-ember);
+  box-shadow: 0 2px 10px rgba(196,98,45,.35), inset 0 1px 0 rgba(255,255,255,.18);
+  text-shadow: 0 1px 2px rgba(0,0,0,.28);
+}
+.mnu-btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #d0693a 0%, #c64f1a 100%);
+  box-shadow: 0 4px 16px rgba(196,98,45,.50), inset 0 1px 0 rgba(255,255,255,.20);
+  transform: translateY(-1px);
+}
+
+/* Secondary — parchment outline */
+.mnu-btn-secondary {
+  background: rgba(251,243,226,.70);
+  color: var(--mnu-leather);
+  border-color: rgba(107,62,38,.30);
+  box-shadow: var(--mnu-sh-xs);
+}
+.mnu-btn-secondary:hover:not(:disabled) {
+  background: var(--mnu-parchment);
+  border-color: var(--mnu-leather);
+  box-shadow: var(--mnu-sh-sm);
+  transform: translateY(-1px);
+}
+
+/* Danger — muted red */
+.mnu-btn-danger {
+  background: linear-gradient(135deg, rgba(155,29,29,.10) 0%, rgba(155,29,29,.06) 100%);
+  color: var(--mnu-red);
+  border-color: rgba(155,29,29,.30);
+  box-shadow: var(--mnu-sh-xs);
+}
+.mnu-btn-danger:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(155,29,29,.18) 0%, rgba(155,29,29,.10) 100%);
+  border-color: var(--mnu-red);
+  box-shadow: 0 2px 10px rgba(155,29,29,.22);
+  transform: translateY(-1px);
+}
+
+/* Success — forest green */
+.mnu-btn-success {
+  background: linear-gradient(135deg, rgba(45,106,79,.12) 0%, rgba(45,106,79,.06) 100%);
+  color: var(--mnu-green);
+  border-color: rgba(45,106,79,.35);
+  box-shadow: var(--mnu-sh-xs);
+}
+.mnu-btn-success:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(45,106,79,.20) 0%, rgba(45,106,79,.12) 100%);
+  border-color: var(--mnu-green);
+  box-shadow: 0 2px 10px rgba(45,106,79,.22);
+  transform: translateY(-1px);
+}
+
+/* Small size modifier */
+.mnu-btn-sm {
+  font-size: 0.69rem;
+  padding: 0.38rem 0.85rem;
+  letter-spacing: 0.6px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   §5  NOTICE / ERROR BANNERS
+   ───────────────────────────────────────────────────────────────────── */
+.mnu-notice {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1.1rem;
+  background: linear-gradient(90deg, rgba(212,146,42,.12), rgba(212,146,42,.06));
+  border: 1.5px solid rgba(212,146,42,.35);
+  border-radius: var(--mnu-r-md);
+  font-family: var(--mnu-f-ui);
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--mnu-ochre);
+  margin-bottom: var(--mnu-sp-lg);
+  animation: mnu-slide-down 0.25s ease;
+}
+
+.mnu-error {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.75rem 1.1rem;
+  background: linear-gradient(90deg, rgba(155,29,29,.10), rgba(155,29,29,.05));
+  border: 1.5px solid rgba(155,29,29,.28);
+  border-radius: var(--mnu-r-md);
+  font-family: var(--mnu-f-ui);
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--mnu-red);
+  margin-bottom: var(--mnu-sp-lg);
+}
+
+@keyframes mnu-slide-down {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   §6  STAT CARDS
+   ───────────────────────────────────────────────────────────────────── */
+.mnu-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--mnu-sp-md);
+  margin-bottom: var(--mnu-sp-xl);
+}
+
+.mnu-stat-card {
+  position: relative;
+  background:
+    linear-gradient(145deg, rgba(255,255,255,.62) 0%, rgba(255,255,255,.30) 100%);
+  border: 1.5px solid rgba(212,163,115,.30);
+  border-radius: var(--mnu-r-lg);
+  padding: 1.25rem var(--mnu-sp-lg);
+  box-shadow: var(--mnu-sh-sm), inset 0 1px 0 rgba(255,255,255,.65);
+  overflow: hidden;
+  transition: transform var(--mnu-t-mid), box-shadow var(--mnu-t-mid);
+  backdrop-filter: blur(4px);
+}
+.mnu-stat-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(130deg, rgba(255,255,255,.12) 0%, transparent 60%);
+  pointer-events: none;
+}
+.mnu-stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--mnu-sh-md), inset 0 1px 0 rgba(255,255,255,.65);
+}
+
+/* Accent bar */
+.mnu-stat-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--mnu-amber), var(--mnu-copper));
+  border-radius: var(--mnu-r-lg) var(--mnu-r-lg) 0 0;
+  opacity: 0.55;
+}
+
+.mnu-stat-card.mnu-stat-success::after { background: linear-gradient(90deg, #2D6A4F, #52B788); opacity: .7; }
+.mnu-stat-card.mnu-stat-alert::after   { background: linear-gradient(90deg, #9B1D1D, #D64040); opacity: .65; }
+
+.mnu-stat-icon {
+  font-size: 1.6rem;
+  display: block;
+  margin-bottom: 0.5rem;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,.15));
+}
+
+.mnu-stat-label {
+  font-family: var(--mnu-f-ui);
+  font-size: 0.67rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1.8px;
-  color: var(--tx-sand);
+  color: var(--mnu-saddle);
+  margin-bottom: 0.2rem;
+}
+
+.mnu-stat-value {
+  font-family: var(--mnu-f-heading);
+  font-size: 2rem;
+  font-weight: 900;
+  color: var(--mnu-wood);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.mnu-stat-card.mnu-stat-success .mnu-stat-value { color: var(--mnu-green); }
+.mnu-stat-card.mnu-stat-alert   .mnu-stat-value { color: var(--mnu-red);   }
+
+/* ─────────────────────────────────────────────────────────────────────
+   §7  CATEGORY TAB BAR
+   ───────────────────────────────────────────────────────────────────── */
+.mnu-tabs-bar {
+  display: flex;
+  gap: 0.4rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 3px;
+  margin-bottom: var(--mnu-sp-lg);
+}
+.mnu-tabs-bar::-webkit-scrollbar { display: none; }
+
+.mnu-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-family: var(--mnu-f-ui);
+  font-size: 0.79rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: capitalize;
+  padding: 0.55rem 1.05rem;
+  border-radius: var(--mnu-r-pill);
+  border: 1.5px solid rgba(107,62,38,.20);
+  background: rgba(251,243,226,.55);
+  color: var(--mnu-saddle);
+  cursor: pointer;
   white-space: nowrap;
-  text-shadow: 0 1px 0 rgba(0,0,0,.40);
-  border-bottom: none;
+  flex-shrink: 0;
+  transition: background var(--mnu-t-fast), border-color var(--mnu-t-fast),
+              color var(--mnu-t-fast), box-shadow var(--mnu-t-fast);
+}
+.mnu-tab-btn:hover {
+  background: rgba(251,243,226,.90);
+  border-color: rgba(107,62,38,.40);
+  color: var(--mnu-leather);
+}
+.mnu-tab-btn.active {
+  background: linear-gradient(135deg, var(--mnu-copper) 0%, var(--mnu-ember) 100%);
+  color: #fff;
+  border-color: var(--mnu-ember);
+  box-shadow: 0 2px 10px rgba(196,98,45,.38), inset 0 1px 0 rgba(255,255,255,.18);
+  text-shadow: 0 1px 2px rgba(0,0,0,.22);
+}
+.mnu-tab-btn:focus-visible {
+  outline: 2px solid var(--mnu-amber);
+  outline-offset: 3px;
+}
+
+/* Count badge on tabs */
+.mnu-tab-count {
+  font-size: 0.69rem;
+  font-weight: 800;
+  background: rgba(0,0,0,.12);
+  border-radius: var(--mnu-r-pill);
+  padding: 0.05rem 0.45rem;
+  line-height: 1.4;
+}
+.mnu-tab-btn.active .mnu-tab-count {
+  background: rgba(255,255,255,.22);
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   §8  FILTER / SEARCH BAR
+   ───────────────────────────────────────────────────────────────────── */
+.mnu-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--mnu-sp-sm);
+  margin-bottom: var(--mnu-sp-lg);
+  padding: 0.85rem 1.1rem;
+  background: rgba(251,243,226,.65);
+  border: 1.5px solid rgba(212,163,115,.25);
+  border-radius: var(--mnu-r-lg);
+  box-shadow: var(--mnu-sh-xs);
+  backdrop-filter: blur(3px);
+}
+
+.mnu-search-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.mnu-search-icon {
+  position: absolute;
+  left: 0.85rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--mnu-gold);
+  font-size: 0.85rem;
+  pointer-events: none;
+  transition: color var(--mnu-t-fast);
+}
+
+.mnu-search-input {
+  width: 100%;
+  padding: 0.58rem 0.9rem 0.58rem 2.45rem;
+  font-family: var(--mnu-f-ui);
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--mnu-ink);
+  background: rgba(255,255,255,.72);
+  border: 1.5px solid rgba(107,62,38,.22);
+  border-radius: var(--mnu-r-pill);
+  outline: none;
+  box-shadow: var(--mnu-sh-xs);
+  transition: border-color var(--mnu-t-fast), box-shadow var(--mnu-t-fast),
+              background var(--mnu-t-fast);
+}
+.mnu-search-input::placeholder { color: var(--mnu-gold); font-style: italic; }
+.mnu-search-input:focus {
+  border-color: var(--mnu-amber);
+  background: rgba(255,255,255,.92);
+  box-shadow: 0 0 0 3px rgba(212,146,42,.15), var(--mnu-sh-xs);
+}
+.mnu-search-input:focus ~ .mnu-search-icon,
+.mnu-search-wrap:focus-within .mnu-search-icon {
+  color: var(--mnu-amber);
+}
+
+.mnu-result-count {
+  font-family: var(--mnu-f-ui);
+  font-size: 0.79rem;
+  font-weight: 800;
+  color: var(--mnu-copper);
+  white-space: nowrap;
+  flex-shrink: 0;
+  letter-spacing: 0.3px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   §9  TABLE SECTION CARD
+   ───────────────────────────────────────────────────────────────────── */
+.mnu-table-section {
+  background:
+    linear-gradient(160deg, rgba(255,255,255,.72) 0%, rgba(255,255,255,.40) 100%);
+  border: 1.5px solid rgba(212,163,115,.28);
+  border-radius: var(--mnu-r-lg);
+  box-shadow: var(--mnu-sh-md);
+  overflow: hidden;
+  backdrop-filter: blur(4px);
+}
+
+.mnu-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.1rem var(--mnu-sp-lg);
+  background: linear-gradient(135deg, rgba(255,255,255,.55) 0%, rgba(250,243,228,.38) 100%);
+  border-bottom: 1.5px solid rgba(212,163,115,.18);
+}
+
+.mnu-section-title {
+  font-family: var(--mnu-f-heading);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--mnu-wood);
+  letter-spacing: 0.01em;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.mnu-section-title::before {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 18px;
+  border-radius: var(--mnu-r-pill);
+  background: linear-gradient(180deg, var(--mnu-amber), var(--mnu-copper));
+  flex-shrink: 0;
+}
+
+/* ─────────────────────────────────────────────────────────────────────
+   §10  TABLE — layout, alignment, all column classes
+   ───────────────────────────────────────────────────────────────────── */
+.mnu-table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.mnu-table {
+  table-layout: fixed;
+  width: 100%;
+  min-width: 820px;
+  border-collapse: collapse;
+}
+
+/* ── Column widths (set on th, honoured via fixed layout) ── */
+.mnu-table th.mnu-col-img    { width: var(--mnu-w-img);    }
+.mnu-table th.mnu-col-cat    { width: var(--mnu-w-cat);    }
+.mnu-table th.mnu-col-price  { width: var(--mnu-w-price);  }
+.mnu-table th.mnu-col-prep   { width: var(--mnu-w-prep);   }
+.mnu-table th.mnu-col-stock  { width: var(--mnu-w-stock);  }
+.mnu-table th.mnu-col-action { width: var(--mnu-w-action); }
+/* mnu-col-name is auto — fills remaining */
+
+/* ── Header row ── */
+.mnu-table thead {
+  background: linear-gradient(135deg, #3D2210 0%, #5C3418 50%, #3D2210 100%);
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  box-shadow: 0 2px 10px rgba(10,4,0,.22);
+}
+
+.mnu-table th {
+  padding: 0.95rem var(--mnu-cell-px);
+  font-family: var(--mnu-f-ui);
+  font-size: 0.6rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 2.2px;
+  color: var(--mnu-sand);
+  text-align: left;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0,0,0,.45);
   border-right: 1px solid rgba(255,255,255,.07);
   vertical-align: middle;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.admin-dashboard .admin-table th:last-child {
-  border-right: none;
+.mnu-table th:last-child { border-right: none; }
+.mnu-table th.mnu-col-img    { text-align: center; }
+.mnu-table th.mnu-col-action { text-align: right; }
+
+/* Gold accent dot on each header */
+.mnu-table th::after {
+  content: none; /* reserved if needed */
 }
 
-/* ACTIONS header — right-align to match button cluster */
-.admin-dashboard .admin-table th.mnu-col-img {
-  text-align: center;
-}
-.admin-dashboard .admin-table td.mnu-col-img {
-  text-align: center;
-}
-.admin-dashboard .admin-table th.mnu-col-action {
-  text-align: right;
-}
-
-/* ── NEUTRALISE AdminProducts.css :first-child / :last-child ──
-   Those rules set padding-left:1.5rem + width:72px on :first-child
-   and text-align:right + padding-right:1.5rem on :last-child.
-   We reset them all to the uniform token here.                    */
-.admin-dashboard .admin-table th:first-child,
-.admin-dashboard .admin-table td:first-child {
-  padding-left: var(--mnu-col-pad);
-  width: auto; /* width is owned by .mnu-col-img on <th> */
-}
-
-.admin-dashboard .admin-table th:last-child,
-.admin-dashboard .admin-table td:last-child {
-  padding-right: var(--mnu-col-pad);
-  text-align: left; /* overridden to right only on .mnu-col-action */
-}
-
-
-/* ─────────────────────────────────────────────────────────────────────
-   §4  BODY CELLS  — uniform padding, no drift
-   ───────────────────────────────────────────────────────────────────── */
-.admin-dashboard .admin-table td {
-  padding: 0.9rem var(--mnu-col-pad);
+/* ── Body cells ── */
+.mnu-table td {
+  padding: var(--mnu-cell-py) var(--mnu-cell-px);
   vertical-align: middle;
+  font-family: var(--mnu-f-ui);
   font-size: 0.875rem;
-  color: var(--tx-saddle);
+  color: var(--mnu-leather);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+/* ── Zebra + hover ── */
+.mnu-table tbody tr {
+  border-bottom: 1px solid rgba(212,163,115,.14);
+  transition: background var(--mnu-t-fast), transform var(--mnu-t-fast);
+}
+.mnu-table tbody tr:last-child { border-bottom: none; }
+
+.mnu-table tbody tr:nth-child(even) {
+  background: rgba(240,231,210,.28);
+}
+.mnu-table tbody tr:hover {
+  background: linear-gradient(90deg, rgba(250,238,215,.85) 0%, rgba(255,248,232,.45) 100%);
+  transform: translateX(2px);
+}
+
+/* Updating/dimmed row */
+.mnu-table tbody tr.mnu-row-updating {
+  opacity: 0.55;
+  pointer-events: none;
+  filter: grayscale(0.4) blur(0.3px);
+}
 
 /* ─────────────────────────────────────────────────────────────────────
-   §5  COLUMN-SPECIFIC CELL RULES
+   §11  COLUMN-SPECIFIC CELL RULES
    ───────────────────────────────────────────────────────────────────── */
 
-/* IMAGE — thumbnail + header centred */
-.admin-dashboard .admin-table td.mnu-col-img {
-  vertical-align: middle;
+/* IMAGE */
+.mnu-table td.mnu-col-img {
   text-align: center;
-}
-.admin-dashboard .admin-table .product-thumb,
-.admin-dashboard .mnu-img-placeholder {
-  margin: 0 auto;
+  overflow: visible;
 }
 
-/* NAME — flex column, allow text wrap */
-.admin-dashboard .admin-table td.mnu-col-name {
+.mnu-thumb {
+  width: 50px;
+  height: 50px;
+  border-radius: var(--mnu-r-sm);
+  object-fit: cover;
+  border: 2px solid rgba(212,163,115,.35);
+  display: block;
+  margin: 0 auto;
+  box-shadow: var(--mnu-sh-xs);
+  transition: transform var(--mnu-t-mid), box-shadow var(--mnu-t-mid), border-color var(--mnu-t-mid);
+}
+.mnu-table tbody tr:hover .mnu-thumb {
+  transform: scale(1.14) rotate(-1.5deg);
+  box-shadow: var(--mnu-sh-md), 0 0 0 2px var(--mnu-amber);
+  border-color: var(--mnu-amber);
+}
+
+.mnu-img-placeholder {
+  width: 50px;
+  height: 50px;
+  border-radius: var(--mnu-r-sm);
+  background: linear-gradient(135deg, rgba(212,163,115,.18) 0%, rgba(212,163,115,.08) 100%);
+  border: 2px dashed rgba(212,163,115,.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.35rem;
+  margin: 0 auto;
+  transition: border-color var(--mnu-t-fast);
+}
+.mnu-table tbody tr:hover .mnu-img-placeholder {
+  border-color: var(--mnu-amber);
+}
+
+/* NAME */
+.mnu-table td.mnu-col-name {
   white-space: normal;
   overflow: visible;
 }
-.admin-dashboard .admin-table td.mnu-col-name strong {
-  font-size: 0.92rem;
+.mnu-item-name {
+  font-family: var(--mnu-f-heading);
+  font-size: 0.9rem;
   font-weight: 700;
-  color: var(--tx-leather);
-  letter-spacing: 0.01em;
+  color: var(--mnu-wood);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -187,411 +712,261 @@
   line-clamp: 2;
 }
 
-/* PRICE — serif number styling */
-.admin-dashboard .admin-table td.mnu-col-price strong {
-  font-family: var(--f-heading);
+/* CATEGORY */
+.mnu-cat-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.7rem;
+  border-radius: var(--mnu-r-pill);
+  font-family: var(--mnu-f-ui);
+  font-size: 0.71rem;
+  font-weight: 700;
+  text-transform: capitalize;
+  letter-spacing: 0.4px;
+  background: linear-gradient(135deg, rgba(139,69,19,.10) 0%, rgba(139,69,19,.05) 100%);
+  color: var(--mnu-copper);
+  border: 1.5px solid rgba(139,69,19,.22);
+  white-space: nowrap;
+  box-shadow: var(--mnu-sh-xs);
+  vertical-align: middle;
+  transition: background var(--mnu-t-fast), border-color var(--mnu-t-fast);
+}
+.mnu-table tbody tr:hover .mnu-cat-badge {
+  background: linear-gradient(135deg, rgba(212,146,42,.14) 0%, rgba(212,146,42,.08) 100%);
+  border-color: rgba(212,146,42,.40);
+}
+
+/* PRICE */
+.mnu-price {
+  font-family: var(--mnu-f-heading);
   font-size: 0.95rem;
   font-weight: 700;
-  color: var(--tx-copper);
+  color: var(--mnu-copper);
   letter-spacing: -0.01em;
 }
 
-/* ACTIONS — right-aligned, buttons never clip */
-.admin-dashboard .admin-table td.mnu-col-action {
+/* PREP TIME */
+.mnu-prep-value { font-size: 0.85rem; color: var(--mnu-saddle); font-weight: 600; }
+.mnu-prep-empty { font-size: 0.85rem; color: var(--mnu-gold);   font-style: italic; }
+
+/* STOCK BADGE */
+.mnu-stock-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.28rem 0.75rem;
+  border-radius: var(--mnu-r-pill);
+  font-family: var(--mnu-f-ui);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.mnu-stock-badge.in-stock {
+  background: var(--mnu-green-bg);
+  color: var(--mnu-green);
+  border: 1.5px solid rgba(45,106,79,.30);
+}
+.mnu-stock-badge.out-stock {
+  background: var(--mnu-red-bg);
+  color: var(--mnu-red);
+  border: 1.5px solid rgba(155,29,29,.28);
+  animation: mnu-stock-pulse 2.6s ease-in-out infinite;
+}
+@keyframes mnu-stock-pulse {
+  0%, 100% { box-shadow: 0 2px 6px rgba(155,29,29,.22); }
+  50%       { box-shadow: 0 2px 12px rgba(155,29,29,.48), 0 0 0 3px rgba(155,29,29,.09); }
+}
+
+.mnu-stock-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+/* ACTIONS */
+.mnu-table td.mnu-col-action {
   text-align: right;
   overflow: visible;
   white-space: nowrap;
 }
-
-
-/* ─────────────────────────────────────────────────────────────────────
-   §6  TABLE ROWS  — zebra, hover lift, in-flight dim
-   ───────────────────────────────────────────────────────────────────── */
-.admin-dashboard .admin-table tbody tr {
-  border-bottom: 1px solid rgba(196,153,106,.12);
-  transition:
-    background var(--t-fast) var(--ease-out),
-    transform  var(--t-fast) var(--ease-out);
-}
-.admin-dashboard .admin-table tbody tr:last-child { border-bottom: none; }
-
-.admin-dashboard .admin-table tbody tr:nth-child(even) {
-  background-color: rgba(240,231,213,.26);
-}
-.admin-dashboard .admin-table tbody tr:hover {
-  background: linear-gradient(90deg, rgba(244,234,216,.82) 0%, rgba(250,243,228,.45) 100%);
-  transform: translateX(3px);
-}
-.admin-dashboard .admin-table tbody tr:nth-child(even):hover {
-  background: linear-gradient(90deg, rgba(244,234,216,.90) 0%, rgba(250,243,228,.55) 100%);
-}
-.admin-dashboard .admin-table tbody tr[style*="opacity: 0.6"],
-.admin-dashboard .admin-table tbody tr[style*="opacity:0.6"] {
-  pointer-events: none;
-  filter: grayscale(0.35) blur(0.3px);
-}
-
-
-/* ─────────────────────────────────────────────────────────────────────
-   §7  PRODUCT THUMBNAIL  (.product-thumb  /  .mnu-img-placeholder)
-   ───────────────────────────────────────────────────────────────────── */
-.admin-dashboard .admin-table .product-thumb {
-  width: 52px;
-  height: 52px;
-  border-radius: var(--r-sm);
-  object-fit: cover;
-  border: 2px solid var(--bd-light);
-  display: block;
-  box-shadow: var(--sh-xs);
-  transition:
-    transform    var(--t-mid) var(--ease-out),
-    box-shadow   var(--t-mid) var(--ease-out),
-    border-color var(--t-mid) var(--ease-out);
-}
-.admin-dashboard .admin-table tbody tr:hover .product-thumb {
-  transform: scale(1.12) rotate(-1.5deg);
-  box-shadow: var(--sh-md), 0 0 0 2px var(--tx-amber);
-  border-color: var(--tx-amber);
-}
-
-.admin-dashboard .mnu-img-placeholder {
-  width: 52px;
-  height: 52px;
-  border-radius: var(--r-sm);
-  background: linear-gradient(135deg, var(--tx-smoke) 0%, var(--tx-fog) 100%);
-  border: 2px dashed var(--bd-mid);
+.mnu-action-btns {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.4rem;
-  box-shadow: inset 0 2px 4px rgba(10,6,0,.05);
-  transition: border-color var(--t-fast) var(--ease-out);
-}
-.admin-dashboard .admin-table tbody tr:hover .mnu-img-placeholder {
-  border-color: var(--tx-amber);
-}
-
-
-/* ─────────────────────────────────────────────────────────────────────
-   §8  CATEGORY BADGE  (.mnu-cat-badge)
-   No extra margin/padding outside the badge — column padding provides
-   all breathing room.  The AdminProducts.css nth-child(3) rule that
-   applied transforms is explicitly cancelled.
-   ───────────────────────────────────────────────────────────────────── */
-.admin-dashboard .mnu-cat-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.28rem 0.75rem;
-  border-radius: var(--r-pill);
-  font-family: var(--f-ui);
-  font-size: 0.72rem;
-  font-weight: 700;
-  text-transform: capitalize;
-  letter-spacing: 0.3px;
-  background: linear-gradient(135deg, rgba(139,69,19,.09) 0%, rgba(139,69,19,.05) 100%);
-  color: var(--tx-copper);
-  border: 1.5px solid var(--bd-mid);
-  white-space: nowrap;
-  box-shadow: var(--sh-xs);
-  vertical-align: middle;
-  transition:
-    background   var(--t-fast) var(--ease-out),
-    border-color var(--t-fast) var(--ease-out);
-}
-.admin-dashboard .admin-table tbody tr:hover .mnu-cat-badge {
-  background: linear-gradient(135deg, rgba(212,146,42,.14) 0%, rgba(212,146,42,.08) 100%);
-  border-color: var(--bd-amber);
-}
-
-/* NEUTRALISE AdminProducts.css td:nth-child(3) > span transform/padding */
-.admin-dashboard .admin-table td.mnu-col-cat > span {
-  transform: none !important;
-  margin: 0 !important;
-  padding: 0.28rem 0.75rem !important;
-}
-
-
-/* ─────────────────────────────────────────────────────────────────────
-   §9  PREP TIME  (.mnu-prep-value  /  .mnu-prep-empty)
-   ───────────────────────────────────────────────────────────────────── */
-.admin-dashboard .mnu-prep-value {
-  font-size: 0.87rem;
-  color: var(--tx-wood);
-  font-weight: 500;
-}
-.admin-dashboard .mnu-prep-empty {
-  font-size: 0.87rem;
-  color: var(--tx-tan);
-  font-style: italic;
-}
-/* Neutralise AdminProducts.css td:nth-child(5) > span colour override */
-.admin-dashboard .admin-table td.mnu-col-prep > span {
-  color: inherit;
-  font-style: inherit;
-}
-
-
-/* ─────────────────────────────────────────────────────────────────────
-   §10  STOCK BADGE  (.role-badge)
-   ───────────────────────────────────────────────────────────────────── */
-.admin-dashboard .admin-table .role-badge {
-  font-size: 0.65rem;
-  padding: 0.32rem 0.85rem;
-  letter-spacing: 0.8px;
-  font-weight: 800;
-  vertical-align: middle;
-  display: inline-flex;
-  align-items: center;
-}
-.admin-dashboard .admin-table .role-badge.out-stock {
-  animation: mnu-stock-alert 2.8s ease-in-out infinite;
-}
-@keyframes mnu-stock-alert {
-  0%, 100% { box-shadow: 0 2px 8px rgba(163,24,24,.28); }
-  50%       { box-shadow: 0 2px 14px rgba(163,24,24,.55), 0 0 0 3px rgba(163,24,24,.10); }
-}
-
-
-/* ─────────────────────────────────────────────────────────────────────
-   §11  ACTION BUTTONS  (.mnu-action-btns  /  .mnu-edit-btn)
-   ───────────────────────────────────────────────────────────────────── */
-.admin-dashboard .mnu-action-btns {
-  display: flex;
-  gap: 0.45rem;
+  gap: 0.4rem;
   align-items: center;
   justify-content: flex-end;
   flex-wrap: nowrap;
 }
 
-.admin-dashboard .mnu-action-btns .btn-delete,
-.admin-dashboard .mnu-action-btns .btn-view {
-  font-size: 0.73rem;
-  padding: 0.42rem 0.95rem;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.admin-dashboard .mnu-edit-btn {
-  font-size: 0.73rem;
-  padding: 0.42rem 0.95rem;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.admin-dashboard .mnu-action-btns button:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-  filter: grayscale(0.4);
-  transform: none !important;
-}
-.admin-dashboard .mnu-action-btns button:focus-visible,
-.admin-dashboard .mnu-edit-btn:focus-visible {
-  outline: 2px solid var(--tx-amber);
-  outline-offset: 2px;
-  border-radius: var(--r-pill);
-}
-
-/* NEUTRALISE AdminProducts.css td:last-child > div flex layer */
-.admin-dashboard .admin-table td.mnu-col-action > div {
-  display: flex !important;
-  gap: 0.45rem !important;
-  justify-content: flex-end !important;
-  transform: none !important;
-}
-
-
 /* ─────────────────────────────────────────────────────────────────────
-   §12  HEADER ACTIONS ROW  (.mnu-header-actions)
+   §12  LOADING STATE
    ───────────────────────────────────────────────────────────────────── */
-.admin-dashboard .mnu-header-actions {
+.mnu-loading {
   display: flex;
-  gap: 0.6rem;
+  flex-direction: column;
   align-items: center;
-  flex-shrink: 0;
-}
-
-
-/* ─────────────────────────────────────────────────────────────────────
-   §13  STATS ROW  (.mnu-stats)
-   ───────────────────────────────────────────────────────────────────── */
-.admin-dashboard .mnu-stats {
-  grid-template-columns: repeat(4, 1fr);
-  margin-bottom: 1.75rem;
-}
-
-
-/* ─────────────────────────────────────────────────────────────────────
-   §14  SEARCH + RESULT COUNT
-   ───────────────────────────────────────────────────────────────────── */
-.admin-dashboard .mnu-search-input {
-  flex: 1;
-  min-width: 0;
-  padding-left: 2.5rem;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23c4996a' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: 0.85rem center;
-  background-size: 15px 15px;
-}
-.admin-dashboard .mnu-search-input:focus {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23d4922a' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
-}
-
-.admin-dashboard .mnu-result-count {
-  margin-left: auto;
-  font-family: var(--f-ui);
-  font-size: 0.79rem;
+  justify-content: center;
+  gap: 1rem;
+  padding: 5rem 2rem;
+  font-family: var(--mnu-f-ui);
+  font-size: 1.05rem;
   font-weight: 700;
-  color: var(--tx-copper);
-  white-space: nowrap;
-  flex-shrink: 0;
+  color: var(--mnu-saddle);
+  letter-spacing: 0.5px;
 }
 
+.mnu-loading-spinner {
+  width: 42px;
+  height: 42px;
+  border: 3px solid rgba(196,98,45,.15);
+  border-top-color: var(--mnu-copper);
+  border-radius: 50%;
+  animation: mnu-spin 0.8s linear infinite;
+}
+@keyframes mnu-spin {
+  to { transform: rotate(360deg); }
+}
 
 /* ─────────────────────────────────────────────────────────────────────
-   §15  CATEGORY TAB BAR
+   §13  EMPTY STATE
    ───────────────────────────────────────────────────────────────────── */
-.admin-dashboard .admin-tabs {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  flex-wrap: nowrap;
-  padding-bottom: 2px;
-  scrollbar-width: none;
+.mnu-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 4rem 2rem;
 }
-.admin-dashboard .admin-tabs::-webkit-scrollbar { display: none; }
-.admin-dashboard .admin-tabs button:focus-visible {
-  outline: 2px solid var(--tx-amber);
-  outline-offset: 3px;
+.mnu-empty-icon {
+  font-size: 3rem;
+  opacity: 0.55;
+  filter: grayscale(.3);
 }
-
+.mnu-empty-text {
+  font-family: var(--mnu-f-ui);
+  font-size: 0.92rem;
+  color: var(--mnu-gold);
+  font-weight: 600;
+  letter-spacing: 0.4px;
+}
 
 /* ─────────────────────────────────────────────────────────────────────
-   §16  SECTION TITLE DECORATION
-   ───────────────────────────────────────────────────────────────────── */
-.admin-dashboard .admin-table-section > h2 {
-  padding-bottom: 1rem;
-  margin-bottom: 1.5rem;
-  border-bottom: 1px solid var(--bd-faint);
-  position: relative;
-}
-.admin-dashboard .admin-table-section > h2::after {
-  content: '';
-  position: absolute;
-  bottom: -1px; left: 0;
-  width: 72px; height: 3px;
-  border-radius: var(--r-pill);
-  background: linear-gradient(90deg, var(--tx-amber), var(--tx-ember));
-  box-shadow: 0 0 8px rgba(212,146,42,.40);
-}
-
-
-/* ─────────────────────────────────────────────────────────────────────
-   §17  RESPONSIVE — 1200px
+   §14  RESPONSIVE — 1200px
    ───────────────────────────────────────────────────────────────────── */
 @media (max-width: 1200px) {
   :root {
-    --mnu-w-cat:    130px;
-    --mnu-w-price:  100px;
+    --mnu-w-cat:    128px;
+    --mnu-w-price:  104px;
     --mnu-w-prep:   100px;
     --mnu-w-stock:  120px;
-    --mnu-w-action: 190px;
+    --mnu-w-action: 185px;
   }
 }
 
-
 /* ─────────────────────────────────────────────────────────────────────
-   §18  RESPONSIVE — 1024px  (hide prep-time)
+   §15  RESPONSIVE — 1024px  (hide prep-time column)
    ───────────────────────────────────────────────────────────────────── */
 @media (max-width: 1024px) {
-  .admin-dashboard .admin-table th.mnu-col-prep,
-  .admin-dashboard .admin-table td.mnu-col-prep { display: none; }
-  :root { --mnu-w-action: 180px; }
+  .mnu-table th.mnu-col-prep,
+  .mnu-table td.mnu-col-prep { display: none; }
+  :root { --mnu-w-action: 175px; }
 }
 
-
 /* ─────────────────────────────────────────────────────────────────────
-   §19  RESPONSIVE — 900px
+   §16  RESPONSIVE — 900px
    ───────────────────────────────────────────────────────────────────── */
 @media (max-width: 900px) {
-  .admin-dashboard .mnu-stats { grid-template-columns: repeat(2, 1fr); }
+  .mnu-stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .mnu-page { padding: var(--mnu-sp-lg) var(--mnu-sp-md); }
 }
 
-
 /* ─────────────────────────────────────────────────────────────────────
-   §20  RESPONSIVE — 768px  (stacked card layout)
+   §17  RESPONSIVE — 768px  (stacked card layout)
    ───────────────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  /* Revert fixed layout for block display */
-  .admin-dashboard .admin-table { table-layout: auto; }
+  .mnu-table { table-layout: auto; }
+  .mnu-table,
+  .mnu-table tbody,
+  .mnu-table tr,
+  .mnu-table td { display: block; width: 100%; box-sizing: border-box; }
+  .mnu-table thead { display: none; }
 
-  .admin-dashboard .admin-table,
-  .admin-dashboard .admin-table tbody,
-  .admin-dashboard .admin-table tr,
-  .admin-dashboard .admin-table td { display: block; width: 100%; }
-  .admin-dashboard .admin-table thead { display: none; }
-
-  .admin-dashboard .admin-table tbody tr {
+  .mnu-table tbody tr {
     background: #fff;
-    border-radius: var(--r-md);
-    margin-bottom: 0.9rem;
-    border: 1.5px solid var(--bd-faint);
-    box-shadow: var(--sh-sm);
+    border-radius: var(--mnu-r-md);
+    margin-bottom: 0.85rem;
+    border: 1.5px solid rgba(212,163,115,.25);
+    box-shadow: var(--mnu-sh-sm);
     overflow: hidden;
     transform: none !important;
     padding: 0;
   }
-  .admin-dashboard .admin-table tbody tr:nth-child(even) { background: #fff; }
+  .mnu-table tbody tr:nth-child(even) { background: #fff; }
 
-  .admin-dashboard .admin-table td.mnu-col-img {
+  /* Full-width image hero */
+  .mnu-table td.mnu-col-img {
     padding: 0; width: 100%; overflow: hidden; white-space: normal;
   }
-  .admin-dashboard .admin-table td.mnu-col-img .product-thumb {
-    width: 100%; height: 160px; border-radius: 0; border: none; object-fit: cover;
+  .mnu-table td.mnu-col-img .mnu-thumb {
+    width: 100%; height: 150px; border-radius: 0; border: none; margin: 0; object-fit: cover;
   }
-  .admin-dashboard .admin-table td.mnu-col-img .mnu-img-placeholder {
-    width: 100%; height: 120px; border-radius: 0; border: none; font-size: 2.5rem;
+  .mnu-table td.mnu-col-img .mnu-img-placeholder {
+    width: 100%; height: 110px; border-radius: 0; border: none; margin: 0; font-size: 2.5rem;
   }
 
-  .admin-dashboard .admin-table td {
+  /* Each cell gets label prefix from data-label */
+  .mnu-table td {
     padding: 0.55rem 1rem;
-    border-bottom: 1px solid var(--bd-faint);
+    border-bottom: 1px solid rgba(212,163,115,.12);
     max-width: 100%; white-space: normal; overflow: visible;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
   }
-  .admin-dashboard .admin-table td:last-child { border-bottom: none; }
+  .mnu-table td::before {
+    content: attr(data-label);
+    font-family: var(--mnu-f-ui);
+    font-size: 0.67rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.4px;
+    color: var(--mnu-gold);
+    min-width: 72px;
+    flex-shrink: 0;
+  }
+  .mnu-table td.mnu-col-img::before { display: none; }
+  .mnu-table td:last-child { border-bottom: none; }
 
-  .admin-dashboard .admin-table td.mnu-col-action {
-    text-align: left; padding-right: 1rem;
-  }
-  .admin-dashboard .mnu-action-btns { justify-content: flex-start; }
-  .admin-dashboard .admin-table td.mnu-col-name { overflow: visible; white-space: normal; }
+  .mnu-table td.mnu-col-action { flex-direction: column; align-items: flex-start; }
+  .mnu-action-btns { justify-content: flex-start; flex-wrap: wrap; }
 
-  .admin-dashboard .filter-bar {
-    flex-direction: column; align-items: stretch; gap: 0.6rem;
-  }
-  .admin-dashboard .mnu-search-input { width: 100%; }
-  .admin-dashboard .mnu-result-count { text-align: right; margin-left: 0; }
-  .admin-dashboard .mnu-header-actions { flex-direction: column; gap: 0.4rem; }
+  .mnu-header { flex-direction: column; align-items: stretch; }
+  .mnu-header-actions { justify-content: flex-start; }
+  .mnu-filter-bar { flex-direction: column; align-items: stretch; gap: 0.6rem; }
+  .mnu-result-count { text-align: right; }
 }
 
-
 /* ─────────────────────────────────────────────────────────────────────
-   §21  RESPONSIVE — 480px
+   §18  RESPONSIVE — 480px
    ───────────────────────────────────────────────────────────────────── */
 @media (max-width: 480px) {
-  .admin-dashboard .mnu-stats { grid-template-columns: 1fr; }
-  .admin-dashboard .admin-tabs button { font-size: 0.73rem; padding: 0.42rem 0.7rem; flex-shrink: 0; }
-  .admin-dashboard .mnu-action-btns .btn-delete,
-  .admin-dashboard .mnu-action-btns .btn-view,
-  .admin-dashboard .mnu-edit-btn { font-size: 0.69rem; padding: 0.38rem 0.75rem; }
+  .mnu-stats-grid { grid-template-columns: 1fr 1fr; }
+  .mnu-tab-btn { font-size: 0.73rem; padding: 0.42rem 0.75rem; }
+  .mnu-btn.mnu-btn-sm { font-size: 0.67rem; padding: 0.34rem 0.72rem; }
 }
 
-
 /* ─────────────────────────────────────────────────────────────────────
-   §22  REDUCED MOTION
+   §19  REDUCED MOTION
    ───────────────────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
-  .admin-dashboard *,
-  .admin-dashboard *::before,
-  .admin-dashboard *::after {
+  .mnu-page *,
+  .mnu-page *::before,
+  .mnu-page *::after {
     animation-duration:        0.01ms !important;
     animation-iteration-count: 1      !important;
     transition-duration:       0.01ms !important;
