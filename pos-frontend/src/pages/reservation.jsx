@@ -243,6 +243,7 @@ const Reservation = () => {
   const [loadingSlots,    setLoadingSlots]    = useState(false)
   const [availabilityErr, setAvailabilityErr] = useState(false)
   const [tick,            setTick]            = useState(0)
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false)
 
   // BUG FIX #2 & #14: Ref-based submission guard — blocks re-entry even
   // before React re-renders with submitting=true
@@ -477,6 +478,47 @@ const Reservation = () => {
     setBookedSlots([])
   }
 
+
+  // ── Login prompt modal ───────────────────────────────────────────────────────
+  if (showLoginPrompt) {
+    return (
+      <div className="reservation-page">
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          minHeight: '70vh', padding: '2rem',
+        }}>
+          <div style={{
+            background: '#fff', borderRadius: '16px', padding: '3rem 2.5rem',
+            boxShadow: '0 8px 40px rgba(0,0,0,0.15)', maxWidth: '440px', width: '100%',
+            textAlign: 'center',
+          }}>
+            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔒</div>
+            <h2 style={{ color: '#3d2914', fontSize: '1.5rem', marginBottom: '0.75rem' }}>
+              Sign In Required
+            </h2>
+            <p style={{ color: '#666', marginBottom: '2rem', lineHeight: 1.6 }}>
+              You need to be signed in to make a reservation. Please sign in or create an account to continue.
+            </p>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+              <button
+                className="btn-primary"
+                onClick={() => navigate('/login', { state: { from: '/reservations' } })}
+              >
+                Sign In
+              </button>
+              <button
+                className="btn-ghost-dark"
+                onClick={() => navigate('/')}
+              >
+                Go Home
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   // ── Success screen ───────────────────────────────────────────────────────────
   if (success) {
     return (
@@ -701,7 +743,10 @@ const Reservation = () => {
                 <button
                   type="button"
                   className="btn-primary rv-form__next"
-                  onClick={next}
+                  onClick={() => {
+                    if (!user) { setShowLoginPrompt(true); return }
+                    next()
+                  }}
                   disabled={formData.guests === '10+'}
                 >
                   Continue to Your Details →
