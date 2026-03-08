@@ -210,16 +210,20 @@ router.post('/verify', async (req, res) => {
 
     const emailLower = email.toLowerCase().trim();
 
-    // ✅ Check verification code (TTL will handle expiration)
     const verification = await Verification.findOne({
       email: emailLower,
       code: code
     });
 
     if (!verification) {
-      return res.status(401).json({ 
-        error: 'Invalid or expired verification code.' 
-      });
+      // Check if ANY verification record exists for this email.
+      // If yes → code doesn't match → wrong code.
+      // If no  → TTL deleted it → code expired.
+      const anyRecord = await Verification.findOne({ email: emailLower });
+      if (!anyRecord) {
+        return res.status(400).json({ error: 'Code has expired. Please request a new one.' });
+      }
+      return res.status(401).json({ error: 'Incorrect verification code.' });
     }
 
     // ✅ Mark user as verified
