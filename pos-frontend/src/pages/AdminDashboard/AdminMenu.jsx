@@ -2,8 +2,8 @@ import React, { useEffect, useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../utils/api'
-// AdminProducts.css removed — AdminMenu.css is now fully self-contained
 import './AdminDashboard.css'
+import './AdminProducts.css'
 import './AdminMenu.css'
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:4000'
@@ -19,7 +19,6 @@ const AdminMenu = () => {
   const [search,        setSearch]    = useState('')
   const [updating,      setUpdating]  = useState(null)
 
-  /* ────────────────── GUARDS & DATA FETCH ────────────────── */
   useEffect(() => {
     if (!user?.role || user?.role !== 'admin') { navigate('/'); return }
     fetchProducts()
@@ -38,19 +37,15 @@ const AdminMenu = () => {
     }
   }
 
-  const showNotice = msg => {
-    setNotice(msg)
-    setTimeout(() => setNotice(''), 3000)
-  }
+  const showNotice = msg => { setNotice(msg); setTimeout(() => setNotice(''), 3000) }
 
-  /* ────────────────── STOCK TOGGLE ────────────────── */
   const handleToggleStock = async (product) => {
     setUpdating(product._id)
     try {
       await api.updateProduct(product._id, { inStock: !product.inStock })
-      setProducts(prev =>
-        prev.map(p => p._id === product._id ? { ...p, inStock: !p.inStock } : p)
-      )
+      setProducts(prev => prev.map(p =>
+        p._id === product._id ? { ...p, inStock: !p.inStock } : p
+      ))
       showNotice(`✅ ${product.name} marked as ${!product.inStock ? 'In Stock' : 'Out of Stock'}`)
     } catch (err) {
       setError(err.response?.data?.message || err.message || 'Failed to update product')
@@ -59,16 +54,17 @@ const AdminMenu = () => {
     }
   }
 
-  /* ────────────────── HELPERS ────────────────── */
   const formatPHP = v =>
     new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(Number(v || 0))
 
+  /* ── Image src helper ── */
   const imgSrc = p => {
     if (!p.image) return null
     if (p.image.startsWith('http')) return p.image
     return `${API_BASE}${p.image}`
   }
 
+  /* ── Prep time display — handles "5", "5 min", "5 mins" from backend ── */
   const formatPrepTime = val => {
     if (!val && val !== 0) return null
     const str = String(val).trim()
@@ -76,7 +72,7 @@ const AdminMenu = () => {
     return `${num} min`
   }
 
-  /* ────────────────── DERIVED STATE ────────────────── */
+  /* ── Categories & filtered list ── */
   const categories = useMemo(
     () => ['all', ...new Set(products.map(p => p.category).filter(Boolean))],
     [products]
@@ -94,10 +90,10 @@ const AdminMenu = () => {
     return list
   }, [products, selectedCat, search])
 
-  const inStockCount  = products.filter(p =>  p.inStock).length
+  const inStockCount  = products.filter(p => p.inStock).length
   const outStockCount = products.filter(p => !p.inStock).length
 
-  /* ────────────────── LOADING ────────────────── */
+  /* ────────────────────── LOADING ────────────────────── */
   if (loading) {
     return (
       <div className="admin-dashboard">
@@ -108,14 +104,12 @@ const AdminMenu = () => {
     )
   }
 
-  /* ────────────────── RENDER ────────────────── */
+  /* ────────────────────── RENDER ────────────────────── */
   return (
     <div className="admin-dashboard">
       <div className="admin-container">
 
-        {/* ══════════════════════════════════════════════
-            PAGE HEADER
-        ════════════════════════════════════════════════ */}
+        {/* ── Header ── */}
         <div className="dashboard-header">
           <div>
             <h1>Menu Management</h1>
@@ -131,39 +125,34 @@ const AdminMenu = () => {
           </div>
         </div>
 
-        {/* ── Notices ── */}
         {notice && <div className="admin-notice">{notice}</div>}
         {error  && <div className="error-message">⚠ {error}</div>}
 
-        {/* ══════════════════════════════════════════════
-            STAT CARDS  (ord-stat-card markup = AdminOrders)
-        ════════════════════════════════════════════════ */}
-        <div className="mnu-stats">
-          <div className="ord-stat-card stat-total">
-            <span className="ord-stat-label">Total Items</span>
-            <span className="ord-stat-value">{products.length}</span>
-            <span className="ord-stat-sub">on the menu</span>
+        {/* ── Stats row ── */}
+        <div className="stats-grid mnu-stats">
+          <div className="stat-card">
+            <span className="stat-icon">🍖</span>
+            <h3>Total Items</h3>
+            <p className="stat-number">{products.length}</p>
           </div>
-          <div className="ord-stat-card stat-instock">
-            <span className="ord-stat-label">In Stock</span>
-            <span className="ord-stat-value">{inStockCount}</span>
-            <span className="ord-stat-sub">available now</span>
+          <div className="stat-card success">
+            <span className="stat-icon">✅</span>
+            <h3>In Stock</h3>
+            <p className="stat-number">{inStockCount}</p>
           </div>
-          <div className="ord-stat-card stat-outstock">
-            <span className="ord-stat-label">Out of Stock</span>
-            <span className="ord-stat-value">{outStockCount}</span>
-            <span className="ord-stat-sub">unavailable</span>
+          <div className="stat-card alert">
+            <span className="stat-icon">🚫</span>
+            <h3>Out of Stock</h3>
+            <p className="stat-number">{outStockCount}</p>
           </div>
-          <div className="ord-stat-card stat-categories">
-            <span className="ord-stat-label">Categories</span>
-            <span className="ord-stat-value">{categories.length - 1}</span>
-            <span className="ord-stat-sub">on the menu</span>
+          <div className="stat-card">
+            <span className="stat-icon">🏷️</span>
+            <h3>Categories</h3>
+            <p className="stat-number">{categories.length - 1}</p>
           </div>
         </div>
 
-        {/* ══════════════════════════════════════════════
-            CATEGORY TABS
-        ════════════════════════════════════════════════ */}
+        {/* ── Category tabs ── */}
         <div className="admin-tabs">
           {categories.map(cat => (
             <button
@@ -180,9 +169,7 @@ const AdminMenu = () => {
           ))}
         </div>
 
-        {/* ══════════════════════════════════════════════
-            SEARCH / FILTER BAR
-        ════════════════════════════════════════════════ */}
+        {/* ── Search bar ── */}
         <div className="filter-bar">
           <input
             type="text"
@@ -199,9 +186,7 @@ const AdminMenu = () => {
           </span>
         </div>
 
-        {/* ══════════════════════════════════════════════
-            MENU ITEMS TABLE
-        ════════════════════════════════════════════════ */}
+        {/* ── Table ── */}
         <div className="admin-table-section">
           <h2>Menu Items</h2>
 
@@ -215,44 +200,44 @@ const AdminMenu = () => {
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th className="mnu-col-img"    scope="col">Img</th>
-                    <th className="mnu-col-name"   scope="col">Name</th>
-                    <th className="mnu-col-cat"    scope="col">Category</th>
-                    <th className="mnu-col-price"  scope="col">Price</th>
-                    <th className="mnu-col-prep"   scope="col">Prep Time</th>
-                    <th className="mnu-col-stock"  scope="col">Stock</th>
-                    <th className="mnu-col-action" scope="col">Actions</th>
+                    <th className="mnu-col-img">Img</th>
+                    <th className="mnu-col-name">Name</th>
+                    <th className="mnu-col-cat">Category</th>
+                    <th className="mnu-col-price">Price</th>
+                    <th className="mnu-col-prep">Prep Time</th>
+                    <th className="mnu-col-stock">Stock</th>
+                    <th className="mnu-col-action">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {visible.map(p => (
                     <tr key={p._id} style={{ opacity: updating === p._id ? 0.6 : 1 }}>
 
-                      {/* — Image — */}
+                      {/* Image */}
                       <td className="mnu-col-img">
                         {imgSrc(p) ? (
-                          <img src={imgSrc(p)} alt={p.name} className="product-thumb" loading="lazy" />
+                          <img src={imgSrc(p)} alt={p.name} className="product-thumb" />
                         ) : (
                           <div className="mnu-img-placeholder">🍖</div>
                         )}
                       </td>
 
-                      {/* — Name — */}
+                      {/* Name */}
                       <td className="mnu-col-name">
                         <strong>{p.name}</strong>
                       </td>
 
-                      {/* — Category — */}
+                      {/* Category */}
                       <td className="mnu-col-cat">
                         <span className="mnu-cat-badge">{p.category}</span>
                       </td>
 
-                      {/* — Price — */}
+                      {/* Price */}
                       <td className="mnu-col-price">
                         <strong>{formatPHP(p.price)}</strong>
                       </td>
 
-                      {/* — Prep Time — */}
+                      {/* Prep time */}
                       <td className="mnu-col-prep">
                         {formatPrepTime(p.prepTime)
                           ? <span className="mnu-prep-value">{formatPrepTime(p.prepTime)}</span>
@@ -260,14 +245,14 @@ const AdminMenu = () => {
                         }
                       </td>
 
-                      {/* — Stock Badge — */}
+                      {/* Stock badge */}
                       <td className="mnu-col-stock">
                         <span className={`role-badge ${p.inStock ? 'in-stock' : 'out-stock'}`}>
                           {p.inStock ? 'In Stock' : 'Out of Stock'}
                         </span>
                       </td>
 
-                      {/* — Actions — */}
+                      {/* Actions */}
                       <td className="mnu-col-action">
                         <div className="mnu-action-btns">
                           <button
@@ -278,10 +263,10 @@ const AdminMenu = () => {
                             {p.inStock ? 'Mark Out' : 'Mark In'}
                           </button>
                           <button
-                            className="mnu-edit-btn"
+                            className="btn-secondary mnu-edit-btn"
                             onClick={() => navigate(`/admin/products?edit=${p._id}`)}
                           >
-                            ✎ Edit
+                            Edit
                           </button>
                         </div>
                       </td>
