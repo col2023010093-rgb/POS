@@ -479,46 +479,6 @@ const Reservation = () => {
   }
 
 
-  // ── Login prompt modal ───────────────────────────────────────────────────────
-  if (showLoginPrompt) {
-    return (
-      <div className="reservation-page">
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          minHeight: '70vh', padding: '2rem',
-        }}>
-          <div style={{
-            background: '#fff', borderRadius: '16px', padding: '3rem 2.5rem',
-            boxShadow: '0 8px 40px rgba(0,0,0,0.15)', maxWidth: '440px', width: '100%',
-            textAlign: 'center',
-          }}>
-            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔒</div>
-            <h2 style={{ color: '#3d2914', fontSize: '1.5rem', marginBottom: '0.75rem' }}>
-              Sign In Required
-            </h2>
-            <p style={{ color: '#666', marginBottom: '2rem', lineHeight: 1.6 }}>
-              You need to be signed in to make a reservation. Please sign in or create an account to continue.
-            </p>
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-              <button
-                className="btn-primary"
-                onClick={() => navigate('/login', { state: { from: '/reservations' } })}
-              >
-                Sign In
-              </button>
-              <button
-                className="btn-ghost-dark"
-                onClick={() => navigate('/')}
-              >
-                Go Home
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   // ── Success screen ───────────────────────────────────────────────────────────
   if (success) {
     return (
@@ -1034,6 +994,39 @@ const Reservation = () => {
 
     </div>
   )
+      {/* ── Login prompt overlay ── */}
+      {showLoginPrompt && (
+        <div
+          className="rv-login-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Sign in required"
+          onClick={e => { if (e.target === e.currentTarget) setShowLoginPrompt(false) }}
+        >
+          <div className="rv-login-modal">
+            <span className="rv-login-modal__icon">🔒</span>
+            <h2 className="rv-login-modal__title">Sign In Required</h2>
+            <p className="rv-login-modal__body">
+              You need to be signed in to make a reservation.<br />
+              Please sign in or create an account to continue.
+            </p>
+            <div className="rv-login-modal__actions">
+              <button
+                className="btn-primary"
+                onClick={() => navigate('/login', { state: { from: '/reservations' } })}
+              >
+                Sign In
+              </button>
+              <button
+                className="btn-outline-dark"
+                onClick={() => navigate('/')}
+              >
+                Go Home
+              </button>
+            </div>
+          </div>
+    </div>
+  )
 }
-
+}
 export default Reservation

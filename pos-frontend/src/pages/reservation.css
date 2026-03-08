@@ -896,7 +896,6 @@
 
 /* ── SLOT STATUS STATES ──────────────────────────────────────────────────────── */
 
-/* Past / too soon */
 .rv-times__btn--past {
   opacity: .45;
   cursor: not-allowed;
@@ -907,7 +906,6 @@
 }
 .rv-times__btn--past:hover { border-color: var(--c-border); color: var(--c-muted); transform: none; }
 
-/* Fully booked */
 .rv-times__btn--full {
   opacity: .55;
   cursor: not-allowed;
@@ -918,7 +916,6 @@
 }
 .rv-times__btn--full:hover { border-color: #e8c0c0; color: #b06060; transform: none; }
 
-/* Tag label inside slot */
 .rv-times__tag {
   display: block;
   font-size: .58rem;
@@ -929,7 +926,6 @@
   opacity: .8;
 }
 
-/* Slot legend */
 .rv-slot-legend {
   display: flex;
   gap: 1.25rem;
@@ -958,7 +954,6 @@
 .rv-slot-legend__item--past::before      { background: var(--c-border); border: 1.5px solid var(--c-border); }
 .rv-slot-legend__item--full::before      { background: #f5e8e8;         border: 1.5px solid #e8c0c0; }
 
-/* Times header row */
 .rv-times-header {
   display: flex;
   align-items: center;
@@ -1011,7 +1006,6 @@
   padding: 1rem 0;
 }
 
-/* Small spinner variant */
 .rv-spinner--small {
   display: inline-block;
   width: 12px; height: 12px;
@@ -1021,21 +1015,18 @@
   animation: rvSpin .7s linear infinite;
 }
 
-/* 10+ guests button hint */
 .rv-guests__btn--special {
   border-color: var(--c-amber);
   color: var(--c-amber);
   font-size: .78rem;
 }
 
-/* Info-style error (not red — for the 10+ guests message) */
 .rv-field__error--info {
   color: var(--c-amber);
   font-weight: 500;
 }
 .rv-field__error--info a { color: var(--c-sienna); font-weight: 700; }
 
-/* API error on submit */
 .rv-field__error--submit {
   text-align: center;
   font-size: .9rem;
@@ -1046,11 +1037,128 @@
   margin-bottom: 1rem;
 }
 
-/* Soft warning (availability fetch failed) */
 .rv-field__error--warn {
   color: #8a6030;
   background: rgba(184,120,10,.08);
   border: 1px solid rgba(184,120,10,.2);
   border-radius: var(--radius);
   padding: .65rem .9rem;
+}
+
+/* ── PREFILL NOTICE ─────────────────────────────────────────────────────────── */
+
+.rv-prefill-notice {
+  font-family: var(--font-ui);
+  font-size: .85rem;
+  color: #3a7a3a;
+  background: #edf7ed;
+  border: 1px solid #b8d8b8;
+  border-radius: var(--radius);
+  padding: .65rem 1rem;
+  margin-bottom: 1.5rem;
+}
+
+/* ── SUCCESS REF ────────────────────────────────────────────────────────────── */
+
+.rv-success__ref {
+  font-family: var(--font-ui);
+  font-size: .9rem;
+  color: var(--c-muted);
+  margin-bottom: 1rem;
+}
+.rv-success__ref strong {
+  font-family: var(--font-display);
+  color: var(--c-amber);
+  font-size: 1.1rem;
+  letter-spacing: 1px;
+}
+
+/* ── LOGIN PROMPT OVERLAY ────────────────────────────────────────────────────── */
+
+.rv-login-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(14, 10, 6, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  animation: rvFadeIn .25s ease;
+}
+
+.rv-login-modal {
+  background: var(--c-white);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg);
+  padding: 3rem 2.5rem;
+  box-shadow: var(--shadow-xl);
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+  animation: rvSuccessPop .35s cubic-bezier(.34,1.56,.64,1) both;
+}
+
+.rv-login-modal__icon {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 1rem;
+  line-height: 1;
+}
+
+.rv-login-modal__title {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--c-leather);
+  margin-bottom: 0.75rem;
+}
+
+.rv-login-modal__body {
+  font-family: var(--font-ui);
+  font-size: 0.93rem;
+  color: var(--c-muted);
+  line-height: 1.65;
+  margin-bottom: 2rem;
+}
+
+.rv-login-modal__actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* "Go Home" secondary button — uses existing token colors, no white-on-white */
+.btn-outline-dark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  padding: .875rem 2rem;
+  background: transparent;
+  color: var(--c-sienna);
+  border: 1.5px solid var(--c-sienna);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-ui);
+  font-size: .88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .2s, color .2s, transform .2s;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.btn-outline-dark:hover {
+  background: var(--c-sienna);
+  color: var(--c-parchment);
+  transform: translateY(-2px);
+}
+
+@media (max-width: 480px) {
+  .rv-login-modal { padding: 2.5rem 1.5rem; }
+  .rv-login-modal__actions { flex-direction: column; }
+  .rv-login-modal__actions .btn-primary,
+  .rv-login-modal__actions .btn-outline-dark { width: 100%; justify-content: center; }
 }
