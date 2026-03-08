@@ -1,10 +1,11 @@
 /* ═══════════════════════════════════════════════════════════════════════
-   TEXAS JOE'S  ✦  ADMIN ORDERS  —  v4 REDESIGN
-   AdminOrders.css  —  Premium Wild West Steakhouse Control Panel
+   TEXAS JOE'S  ✦  ADMIN MENU PAGE  —  AdminMenu.css  v5
+   Design system aligned 1-to-1 with AdminOrders.css
+   Self-contained: only requires AdminDashboard.css for base resets.
    ═══════════════════════════════════════════════════════════════════════ */
 
 /* ─────────────────────────────────────────────────────────────────────
-   §0  DESIGN TOKENS
+   §0  DESIGN TOKENS  (mirrors AdminOrders.css exactly)
    ───────────────────────────────────────────────────────────────────── */
 :root {
   --oj-wood:       #3B2A1A;
@@ -19,11 +20,8 @@
   --oj-tan:        #C4996A;
   --oj-sand:       #F0D9A8;
 
-  --st-pending:    #D4A017;
-  --st-preparing:  #C4622D;
-  --st-ready:      #2980B9;
-  --st-completed:  #27AE60;
-  --st-cancelled:  #C0392B;
+  --st-instock:    #27AE60;
+  --st-outstock:   #C0392B;
 
   --sp-xs: 0.5rem;
   --sp-sm: 1rem;
@@ -49,17 +47,14 @@
   --t-fast: 150ms ease;
   --t-mid:  250ms ease;
 
-  /* ── COLUMN WIDTHS ─────────────────────────────────────────────────
-     Total: 160+180+72+105+85+65+50 = 867px
-     Table has min-width:867px so layout never compresses below this.  */
-  --col-id:       300px;
-  --col-customer:  80px;
-  --col-items:     42px;
-  --col-total:    65px;
-  --col-status:   85px;
-  --col-date:     65px;
-  --col-actions:  50px;
-  --col-pad:       1rem;
+  /* ── MENU COLUMN WIDTHS ── */
+  --mnu-col-img:    90px;
+  --mnu-col-cat:    145px;
+  --mnu-col-price:  115px;
+  --mnu-col-prep:   110px;
+  --mnu-col-stock:  128px;
+  --mnu-col-action: 175px;
+  --mnu-col-pad:    1rem;
 }
 
 
@@ -81,7 +76,7 @@
 
 
 /* ─────────────────────────────────────────────────────────────────────
-   §2  PAGE HEADER
+   §2  PAGE HEADER  (matches AdminOrders §2)
    ───────────────────────────────────────────────────────────────────── */
 .admin-dashboard .dashboard-header {
   display: flex;
@@ -135,11 +130,59 @@
   50%       { box-shadow: 0 0 0 5px rgba(76,175,80,.10); }
 }
 
+/* Header action buttons */
+.admin-dashboard .mnu-header-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-shrink: 0;
+}
+.admin-dashboard .mnu-header-actions .btn-secondary {
+  font-family: var(--f-body);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.5rem 1.1rem;
+  border-radius: var(--r-pill);
+  border: 1.5px solid var(--oj-amber);
+  background: rgba(255,255,255,.10);
+  color: var(--oj-sand);
+  cursor: pointer;
+  transition: all var(--t-fast);
+  white-space: nowrap;
+}
+.admin-dashboard .mnu-header-actions .btn-secondary:hover {
+  background: rgba(255,255,255,.18);
+  border-color: var(--oj-gold);
+}
+.admin-dashboard .mnu-header-actions .btn-primary {
+  font-family: var(--f-body);
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.5rem 1.2rem;
+  border-radius: var(--r-pill);
+  border: 1.5px solid var(--oj-gold);
+  background: linear-gradient(135deg, var(--oj-gold) 0%, var(--oj-amber) 100%);
+  color: var(--oj-wood);
+  cursor: pointer;
+  transition: all var(--t-fast);
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(232,197,112,.30);
+}
+.admin-dashboard .mnu-header-actions .btn-primary:hover {
+  background: linear-gradient(135deg, #f0d06a 0%, #e0b040 100%);
+  box-shadow: 0 3px 12px rgba(232,197,112,.45);
+  transform: translateY(-1px);
+}
+.admin-dashboard .mnu-header-actions button:focus-visible {
+  outline: 2px solid var(--oj-gold);
+  outline-offset: 2px;
+}
+
 
 /* ─────────────────────────────────────────────────────────────────────
-   §3  STATS CARDS
+   §3  STATS CARDS  (matches AdminOrders §3)
    ───────────────────────────────────────────────────────────────────── */
-.admin-dashboard .ord-stats-row {
+.admin-dashboard .mnu-stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: var(--sp-sm);
@@ -167,11 +210,11 @@
   top: 0; left: 0; right: 0;
   height: 3px;
 }
-.admin-dashboard .ord-stat-card.stat-total::before     { background: var(--oj-leather); }
-.admin-dashboard .ord-stat-card.stat-pending::before   { background: var(--st-pending); }
-.admin-dashboard .ord-stat-card.stat-completed::before { background: var(--st-completed); }
-.admin-dashboard .ord-stat-card.stat-cancelled::before { background: var(--st-cancelled); }
-.admin-dashboard .ord-stat-card.stat-revenue::before   { background: var(--oj-gold); }
+.admin-dashboard .ord-stat-card.stat-total::before      { background: var(--oj-leather); }
+.admin-dashboard .ord-stat-card.stat-instock::before    { background: var(--st-instock); }
+.admin-dashboard .ord-stat-card.stat-outstock::before   { background: var(--st-outstock); }
+.admin-dashboard .ord-stat-card.stat-categories::before { background: var(--oj-gold); }
+
 .admin-dashboard .ord-stat-label {
   font-family: var(--f-body);
   font-size: 0.65rem;
@@ -188,6 +231,8 @@
   line-height: 1;
   letter-spacing: -0.02em;
 }
+.admin-dashboard .ord-stat-card.stat-instock  .ord-stat-value { color: var(--st-instock);  }
+.admin-dashboard .ord-stat-card.stat-outstock .ord-stat-value { color: var(--st-outstock); }
 .admin-dashboard .ord-stat-sub {
   font-size: 0.7rem;
   color: var(--oj-tan);
@@ -195,7 +240,7 @@
 
 
 /* ─────────────────────────────────────────────────────────────────────
-   §4  STATUS FILTER TABS
+   §4  CATEGORY TABS  (matches AdminOrders §4)
    ───────────────────────────────────────────────────────────────────── */
 .admin-dashboard .admin-tabs {
   display: flex;
@@ -236,7 +281,7 @@
 
 
 /* ─────────────────────────────────────────────────────────────────────
-   §5  SEARCH / FILTER BAR
+   §5  SEARCH / FILTER BAR  (matches AdminOrders §5)
    ───────────────────────────────────────────────────────────────────── */
 .admin-dashboard .filter-bar {
   display: flex;
@@ -248,7 +293,7 @@
   padding: 0.6rem 0.75rem;
   box-shadow: var(--sh-card);
 }
-.admin-dashboard .filter-bar input[type="text"] {
+.admin-dashboard .filter-bar .mnu-search-input {
   flex: 1;
   min-width: 0;
   border: none;
@@ -263,8 +308,8 @@
   background-size: 15px;
   outline: none;
 }
-.admin-dashboard .filter-bar input[type="text"]::placeholder { color: var(--oj-tan); }
-.admin-dashboard .filter-bar input[type="text"]:focus {
+.admin-dashboard .filter-bar .mnu-search-input::placeholder { color: var(--oj-tan); }
+.admin-dashboard .filter-bar .mnu-search-input:focus {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='%23C4622D' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
 }
 .admin-dashboard .filter-bar .btn-secondary {
@@ -286,7 +331,7 @@
   color: var(--oj-sand);
   border-color: var(--oj-saddle);
 }
-.admin-dashboard .ord-result-count {
+.admin-dashboard .mnu-result-count {
   font-family: var(--f-body);
   font-size: 0.75rem;
   font-weight: 700;
@@ -299,7 +344,7 @@
 
 
 /* ─────────────────────────────────────────────────────────────────────
-   §6  TABLE SECTION WRAPPER
+   §6  TABLE SECTION WRAPPER  (matches AdminOrders §6)
    ───────────────────────────────────────────────────────────────────── */
 .admin-dashboard .admin-table-section {
   background: var(--oj-cream);
@@ -331,7 +376,7 @@
 
 
 /* ─────────────────────────────────────────────────────────────────────
-   §7  TABLE LAYOUT
+   §7  TABLE LAYOUT  (matches AdminOrders §7)
    ───────────────────────────────────────────────────────────────────── */
 .admin-dashboard .admin-table-wrapper {
   overflow-x: auto;
@@ -340,25 +385,25 @@
 .admin-dashboard .admin-table {
   table-layout: fixed;
   width: 100%;
-  min-width: 827px;  /* prevents compression that breaks fixed layout */
+  min-width: 860px;
   border-collapse: collapse;
 }
 
 
 /* ─────────────────────────────────────────────────────────────────────
-   §8  COLUMN WIDTHS — on <th> only; table-layout:fixed propagates down
+   §8  COLUMN WIDTHS  (on <th> only; table-layout:fixed propagates)
    ───────────────────────────────────────────────────────────────────── */
-.admin-dashboard .admin-table th.ord-col-id       { width: var(--col-id);       }
-.admin-dashboard .admin-table th.ord-col-customer { width: var(--col-customer); }
-.admin-dashboard .admin-table th.ord-col-items    { width: var(--col-items);    }
-.admin-dashboard .admin-table th.ord-col-total    { width: var(--col-total);    }
-.admin-dashboard .admin-table th.ord-col-status   { width: var(--col-status);   }
-.admin-dashboard .admin-table th.ord-col-date     { width: var(--col-date);     }
-.admin-dashboard .admin-table th.ord-col-actions  { width: var(--col-actions);  }
+.admin-dashboard .admin-table th.mnu-col-img    { width: var(--mnu-col-img);    }
+.admin-dashboard .admin-table th.mnu-col-name   { /* auto — fills remaining */  }
+.admin-dashboard .admin-table th.mnu-col-cat    { width: var(--mnu-col-cat);    }
+.admin-dashboard .admin-table th.mnu-col-price  { width: var(--mnu-col-price);  }
+.admin-dashboard .admin-table th.mnu-col-prep   { width: var(--mnu-col-prep);   }
+.admin-dashboard .admin-table th.mnu-col-stock  { width: var(--mnu-col-stock);  }
+.admin-dashboard .admin-table th.mnu-col-action { width: var(--mnu-col-action); }
 
 
 /* ─────────────────────────────────────────────────────────────────────
-   §9  HEADER ROW
+   §9  HEADER ROW  (matches AdminOrders §9)
    ───────────────────────────────────────────────────────────────────── */
 .admin-dashboard .admin-table thead {
   background: linear-gradient(180deg, var(--oj-wood) 0%, #2d1f0f 100%);
@@ -368,7 +413,7 @@
   box-shadow: 0 2px 6px rgba(0,0,0,.25);
 }
 .admin-dashboard .admin-table th {
-  padding: 0.9rem var(--col-pad);
+  padding: 0.9rem var(--mnu-col-pad);
   text-align: left;
   font-family: var(--f-body);
   font-size: 0.58rem;
@@ -382,16 +427,22 @@
   border-right: 1px solid rgba(255,255,255,.05);
 }
 .admin-dashboard .admin-table th:last-child  { border-right: none; }
-.admin-dashboard .admin-table th.ord-col-actions { text-align: center; }
-.admin-dashboard .admin-table th.ord-col-items,
-.admin-dashboard .admin-table th.ord-col-total { text-align: right; }
+.admin-dashboard .admin-table th.mnu-col-img    { text-align: center; }
+.admin-dashboard .admin-table th.mnu-col-price  { text-align: right; }
+.admin-dashboard .admin-table th.mnu-col-action { text-align: center; }
+
+/* Reset positional — column classes own all sizing */
+.admin-dashboard .admin-table th:first-child,
+.admin-dashboard .admin-table td:first-child { padding-left: var(--mnu-col-pad); }
+.admin-dashboard .admin-table th:last-child,
+.admin-dashboard .admin-table td:last-child  { padding-right: var(--mnu-col-pad); }
 
 
 /* ─────────────────────────────────────────────────────────────────────
-   §10  BODY CELLS
+   §10  BODY CELLS  (matches AdminOrders §10)
    ───────────────────────────────────────────────────────────────────── */
 .admin-dashboard .admin-table td {
-  padding: 0.85rem var(--col-pad);
+  padding: 0.85rem var(--mnu-col-pad);
   vertical-align: middle;
   font-family: var(--f-body);
   font-size: 0.855rem;
@@ -403,122 +454,160 @@
 }
 .admin-dashboard .admin-table td:last-child { border-right: none; }
 
-/* Reset first/last — width & align owned by column classes */
-.admin-dashboard .admin-table th:first-child,
-.admin-dashboard .admin-table td:first-child { padding-left: var(--col-pad); }
-.admin-dashboard .admin-table th:last-child,
-.admin-dashboard .admin-table td:last-child  { padding-right: var(--col-pad); }
-
 
 /* ─────────────────────────────────────────────────────────────────────
-   §11  COLUMN-SPECIFIC RULES
+   §11  COLUMN-SPECIFIC CELL RULES
    ───────────────────────────────────────────────────────────────────── */
 
-/* ORDER # */
-.admin-dashboard .admin-table td.ord-col-id {
-  overflow: hidden;
-  white-space: nowrap;
+/* IMAGE */
+.admin-dashboard .admin-table td.mnu-col-img {
+  text-align: center;
+  overflow: visible;
 }
-.admin-dashboard .admin-table td.ord-col-id strong {
-  display: block;            /* block = overflow:hidden works on it */
-  font-family: var(--f-mono);
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--oj-leather);
-  letter-spacing: 0.02em;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.admin-dashboard .admin-table .product-thumb {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--r-sm);
+  object-fit: cover;
+  border: 2px solid rgba(196,153,106,.30);
+  display: block;
+  margin: 0 auto;
+  box-shadow: var(--sh-card);
+  transition: transform var(--t-mid), box-shadow var(--t-mid), border-color var(--t-mid);
+}
+.admin-dashboard .admin-table tbody tr:hover .product-thumb {
+  transform: scale(1.12) rotate(-1.5deg);
+  box-shadow: var(--sh-raised), 0 0 0 2px var(--oj-gold);
+  border-color: var(--oj-gold);
+}
+.admin-dashboard .mnu-img-placeholder {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--r-sm);
+  background: linear-gradient(135deg, var(--oj-smoke) 0%, var(--oj-parchment) 100%);
+  border: 2px dashed rgba(196,153,106,.40);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  margin: 0 auto;
+  transition: border-color var(--t-fast);
+}
+.admin-dashboard .admin-table tbody tr:hover .mnu-img-placeholder {
+  border-color: var(--oj-gold);
 }
 
-/* CUSTOMER */
-.admin-dashboard .admin-table td.ord-col-customer {
-  overflow: hidden;
-  white-space: nowrap;
+/* NAME */
+.admin-dashboard .admin-table td.mnu-col-name {
+  white-space: normal;
+  overflow: visible;
 }
-.admin-dashboard .ord-customer-name {
-  display: block;
+.admin-dashboard .admin-table td.mnu-col-name strong {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-family: var(--f-display);
+  font-size: 0.9rem;
   font-weight: 700;
-  font-size: 0.855rem;
   color: var(--oj-wood);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  line-height: 1.3;
-}
-.admin-dashboard .ord-customer-email {
-  display: block;
-  font-size: 0.72rem;
-  color: var(--oj-tan);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  margin-top: 0.1rem;
+  line-height: 1.35;
+  letter-spacing: 0.01em;
 }
 
-/* ITEMS */
-.admin-dashboard .admin-table td.ord-col-items {
-  text-align: right;
-  color: var(--oj-tan);
-  font-size: 0.82rem;
+/* CATEGORY BADGE */
+.admin-dashboard .mnu-cat-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.7rem;
+  border-radius: var(--r-pill);
+  font-family: var(--f-body);
+  font-size: 0.71rem;
+  font-weight: 700;
+  text-transform: capitalize;
+  letter-spacing: 0.3px;
+  background: rgba(139,69,19,.09);
+  color: var(--oj-copper);
+  border: var(--bd-strong);
+  white-space: nowrap;
+  box-shadow: var(--sh-card);
+  transition: background var(--t-fast), border-color var(--t-fast);
+}
+.admin-dashboard .admin-table tbody tr:hover .mnu-cat-badge {
+  background: rgba(232,197,112,.18);
+  border-color: rgba(232,197,112,.50);
 }
 
-/* TOTAL */
-.admin-dashboard .admin-table td.ord-col-total { text-align: right; }
-.admin-dashboard .admin-table td.ord-col-total strong {
+/* PRICE */
+.admin-dashboard .admin-table td.mnu-col-price { text-align: right; }
+.admin-dashboard .admin-table td.mnu-col-price strong {
   font-family: var(--f-display);
   font-size: 0.92rem;
   font-weight: 700;
   color: var(--oj-copper);
+  letter-spacing: -0.01em;
 }
 
-/* STATUS */
-.admin-dashboard .admin-table td.ord-col-status {
-  overflow: visible;
-  white-space: nowrap;
-}
-.admin-dashboard .admin-table td.ord-col-status .status-select {
-  width: 100%;
-  max-width: 135px;
-  font-family: var(--f-body);
-  font-size: 0.74rem;
+/* PREP TIME */
+.admin-dashboard .mnu-prep-value {
+  font-size: 0.85rem;
+  color: var(--oj-saddle);
   font-weight: 600;
-  padding: 0.35rem 1.6rem 0.35rem 0.65rem;
-  border-radius: var(--r-pill);
-  border-width: 1.5px;
-  border-style: solid;
-  cursor: pointer;
-  transition: all var(--t-fast);
-  appearance: none;
-  -webkit-appearance: none;
-  background-repeat: no-repeat;
-  background-position: right 0.5rem center;
-  background-size: 10px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='3'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
 }
-.admin-dashboard .status-select.pending   { color:#b8860b; background-color:rgba(212,160,23,.13); border-color:rgba(212,160,23,.45); }
-.admin-dashboard .status-select.preparing { color:#9e3a12; background-color:rgba(196,98,45,.13);  border-color:rgba(196,98,45,.45);  }
-.admin-dashboard .status-select.ready     { color:#1a5c8a; background-color:rgba(41,128,185,.13); border-color:rgba(41,128,185,.45); }
-.admin-dashboard .status-select.completed { color:#1a6b3a; background-color:rgba(39,174,96,.13);  border-color:rgba(39,174,96,.45);  }
-.admin-dashboard .status-select.cancelled { color:#922b21; background-color:rgba(192,57,43,.13);  border-color:rgba(192,57,43,.45);  }
-.admin-dashboard .status-select:disabled  { opacity:0.45; cursor:not-allowed; }
-.admin-dashboard .status-select:focus-visible { outline: 2px solid var(--oj-gold); outline-offset: 1px; }
-
-/* DATE */
-.admin-dashboard .admin-table td.ord-col-date {
-  font-size: 0.8rem;
+.admin-dashboard .mnu-prep-empty {
+  font-size: 0.85rem;
   color: var(--oj-tan);
+  font-style: italic;
+}
+
+/* STOCK BADGE */
+.admin-dashboard .admin-table .role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  padding: 0.3rem 0.8rem;
+  border-radius: var(--r-pill);
+  font-family: var(--f-body);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.admin-dashboard .admin-table .role-badge.in-stock {
+  color: #1a6b3a;
+  background: rgba(39,174,96,.13);
+  border: 1.5px solid rgba(39,174,96,.35);
+}
+.admin-dashboard .admin-table .role-badge.out-stock {
+  color: #922b21;
+  background: rgba(192,57,43,.13);
+  border: 1.5px solid rgba(192,57,43,.35);
+  animation: mnu-stock-alert 2.8s ease-in-out infinite;
+}
+@keyframes mnu-stock-alert {
+  0%, 100% { box-shadow: 0 2px 8px rgba(192,57,43,.22); }
+  50%       { box-shadow: 0 2px 14px rgba(192,57,43,.48), 0 0 0 3px rgba(192,57,43,.09); }
 }
 
 /* ACTIONS */
-.admin-dashboard .admin-table td.ord-col-actions {
+.admin-dashboard .admin-table td.mnu-col-action {
   text-align: center;
   overflow: visible;
+  white-space: nowrap;
+}
+.admin-dashboard .mnu-action-btns {
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: nowrap;
 }
 
 
 /* ─────────────────────────────────────────────────────────────────────
-   §12  TABLE ROWS
+   §12  TABLE ROWS  (matches AdminOrders §12)
    ───────────────────────────────────────────────────────────────────── */
 .admin-dashboard .admin-table tbody tr {
   border-bottom: 1px solid rgba(196,153,106,.10);
@@ -541,9 +630,67 @@
 
 
 /* ─────────────────────────────────────────────────────────────────────
-   §13  VIEW BUTTON
+   §13  ACTION BUTTONS  (mirrors AdminOrders btn-view style)
    ───────────────────────────────────────────────────────────────────── */
-.admin-dashboard .btn-view {
+
+/* Mark Out (btn-delete) */
+.admin-dashboard .mnu-action-btns .btn-delete {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-family: var(--f-body);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 0.38rem 0.85rem;
+  border-radius: var(--r-pill);
+  border: 1.5px solid rgba(192,57,43,.40);
+  background: rgba(192,57,43,.10);
+  color: #922b21;
+  cursor: pointer;
+  transition: all var(--t-fast);
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-shadow: var(--sh-card);
+}
+.admin-dashboard .mnu-action-btns .btn-delete:hover {
+  background: rgba(192,57,43,.18);
+  border-color: rgba(192,57,43,.60);
+  box-shadow: 0 3px 10px rgba(192,57,43,.25);
+  transform: translateY(-1px);
+}
+
+/* Mark In (btn-view) */
+.admin-dashboard .mnu-action-btns .btn-view {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-family: var(--f-body);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 0.38rem 0.85rem;
+  border-radius: var(--r-pill);
+  border: 1.5px solid rgba(39,174,96,.40);
+  background: rgba(39,174,96,.10);
+  color: #1a6b3a;
+  cursor: pointer;
+  transition: all var(--t-fast);
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-shadow: var(--sh-card);
+}
+.admin-dashboard .mnu-action-btns .btn-view:hover {
+  background: rgba(39,174,96,.18);
+  border-color: rgba(39,174,96,.60);
+  box-shadow: 0 3px 10px rgba(39,174,96,.22);
+  transform: translateY(-1px);
+}
+
+/* Edit button — dark leather fill (matches AdminOrders btn-view fill style) */
+.admin-dashboard .mnu-edit-btn {
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
@@ -560,61 +707,35 @@
   cursor: pointer;
   transition: all var(--t-fast);
   white-space: nowrap;
+  flex-shrink: 0;
   box-shadow: 0 1px 4px rgba(59,42,26,.25);
 }
-.admin-dashboard .btn-view::before { content: '👁'; font-size: 0.72rem; line-height: 1; }
-.admin-dashboard .btn-view:hover {
+.admin-dashboard .mnu-edit-btn:hover {
   background: linear-gradient(135deg, var(--oj-copper) 0%, var(--oj-leather) 100%);
   border-color: var(--oj-copper);
   box-shadow: 0 3px 10px rgba(196,98,45,.35);
   transform: translateY(-1px);
 }
-.admin-dashboard .btn-view:active { transform: translateY(0); }
-.admin-dashboard .btn-view:focus-visible { outline: 2px solid var(--oj-gold); outline-offset: 2px; }
+.admin-dashboard .mnu-edit-btn:active { transform: translateY(0); }
+
+/* Disabled state */
+.admin-dashboard .mnu-action-btns button:disabled,
+.admin-dashboard .mnu-edit-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(0.4);
+  transform: none !important;
+}
+/* Focus rings */
+.admin-dashboard .mnu-action-btns button:focus-visible,
+.admin-dashboard .mnu-edit-btn:focus-visible {
+  outline: 2px solid var(--oj-gold);
+  outline-offset: 2px;
+}
 
 
 /* ─────────────────────────────────────────────────────────────────────
-   §14  HEADER REFRESH BUTTON + GENERAL SECONDARY BUTTONS
-   ───────────────────────────────────────────────────────────────────── */
-.admin-dashboard .dashboard-header > button.btn-secondary {
-  font-family: var(--f-body);
-  font-size: 0.8rem;
-  font-weight: 600;
-  padding: 0.5rem 1.1rem;
-  border-radius: var(--r-pill);
-  border: 1.5px solid var(--oj-amber);
-  background: rgba(255,255,255,.10);
-  color: var(--oj-sand);
-  cursor: pointer;
-  transition: all var(--t-fast);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-.admin-dashboard .dashboard-header > button.btn-secondary:hover {
-  background: rgba(255,255,255,.18);
-  border-color: var(--oj-gold);
-}
-.admin-dashboard .modal-actions .btn-secondary {
-  font-family: var(--f-body);
-  font-size: 0.82rem;
-  font-weight: 600;
-  padding: 0.5rem 1.25rem;
-  border-radius: var(--r-pill);
-  border: var(--bd-strong);
-  background: var(--oj-smoke);
-  color: var(--oj-leather);
-  cursor: pointer;
-  transition: all var(--t-fast);
-}
-.admin-dashboard .modal-actions .btn-secondary:hover {
-  background: var(--oj-parchment);
-  border-color: var(--oj-saddle);
-}
-.admin-dashboard .btn-secondary:focus-visible { outline: 2px solid var(--oj-gold); outline-offset: 2px; }
-
-
-/* ─────────────────────────────────────────────────────────────────────
-   §15  NOTICES & ERRORS
+   §14  NOTICES & ERRORS  (matches AdminOrders §15)
    ───────────────────────────────────────────────────────────────────── */
 .admin-dashboard .admin-notice {
   padding: 0.75rem 1rem;
@@ -642,7 +763,7 @@
 
 
 /* ─────────────────────────────────────────────────────────────────────
-   §16  EMPTY & LOADING STATES
+   §15  EMPTY & LOADING STATES  (matches AdminOrders §16)
    ───────────────────────────────────────────────────────────────────── */
 .admin-dashboard .empty-state {
   padding: 4rem 2rem;
@@ -674,270 +795,34 @@
 
 
 /* ─────────────────────────────────────────────────────────────────────
-   §17  ORDER DETAIL MODAL
+   §16  RESPONSIVE — 1200px
    ───────────────────────────────────────────────────────────────────── */
-.admin-dashboard .modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(30,18,8,.65);
-  backdrop-filter: blur(3px);
-  z-index: 100;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--sp-sm);
-  animation: fade-in 200ms ease both;
-}
-@keyframes fade-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-.admin-dashboard .modal-card.ord-modal {
-  background: var(--oj-cream);
-  border: var(--bd-strong);
-  border-radius: var(--r-lg);
-  box-shadow: 0 20px 60px rgba(30,18,8,.45), 0 4px 16px rgba(30,18,8,.20);
-  width: 100%;
-  max-width: 620px;
-  max-height: 88vh;
-  overflow-y: auto;
-  animation: modal-rise 250ms cubic-bezier(0.34, 1.4, 0.64, 1) both;
-  scrollbar-width: thin;
-  scrollbar-color: var(--oj-tan) transparent;
-}
-@keyframes modal-rise {
-  from { opacity: 0; transform: translateY(16px) scale(0.97); }
-  to   { opacity: 1; transform: none; }
-}
-.admin-dashboard .modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0.6rem var(--sp-md);
-  background: linear-gradient(135deg, var(--oj-wood) 0%, var(--oj-leather) 100%);
-  border-radius: var(--r-lg) var(--r-lg) 0 0;
-  position: sticky;
-  top: 0;
-  z-index: 2;
-}
-.admin-dashboard .modal-header h3 {
-  font-family: var(--f-display);
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: var(--oj-sand);
-  margin: 0;
-  letter-spacing: 0.03em;
-  text-shadow: 0 1px 2px rgba(0,0,0,.30);
-}
-.admin-dashboard .modal-close {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 30px;
-  min-height: 30px;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  border: 1.5px solid rgba(255,255,255,.20);
-  background: rgba(255,255,255,.08);
-  color: var(--oj-sand);
-  font-size: 1.1rem;
-  cursor: pointer;
-  transition: all var(--t-fast);
-  line-height: 1;
-}
-.admin-dashboard .modal-close:hover {
-  background: rgba(255,255,255,.18);
-  border-color: rgba(255,255,255,.40);
-}
-.admin-dashboard .modal-close:focus-visible { outline: 2px solid var(--oj-gold); outline-offset: 2px; }
-.admin-dashboard .modal-body {
-  padding: var(--sp-md);
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-sm);
-}
-
-/* Status bar */
-.admin-dashboard .ord-modal-status-bar {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.8rem 1rem;
-  background: var(--oj-parchment);
-  border: var(--bd-warm);
-  border-radius: var(--r-md);
-  box-shadow: var(--sh-inset);
-}
-.admin-dashboard .ord-modal-status-label {
-  font-family: var(--f-body);
-  font-size: 0.68rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1.2px;
-  color: var(--oj-tan);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-.admin-dashboard .ord-modal-status-bar .status-select { min-width: 140px; }
-
-/* Sections */
-.admin-dashboard .ord-modal-section {
-  padding: 1rem 1.1rem;
-  background: var(--oj-parchment);
-  border: var(--bd-warm);
-  border-radius: var(--r-md);
-}
-.admin-dashboard .ord-modal-section-label {
-  font-family: var(--f-body);
-  font-size: 0.6rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1.8px;
-  color: var(--oj-copper);
-  margin-bottom: 0.65rem;
-  padding-left: 0.6rem;
-  border-left: 3px solid var(--oj-gold);
-  line-height: 1;
-}
-.admin-dashboard .ord-modal-customer-name {
-  font-family: var(--f-display);
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--oj-wood);
-  line-height: 1.4;
-}
-.admin-dashboard .ord-modal-meta {
-  font-size: 0.82rem;
-  color: var(--oj-tan);
-  line-height: 1.6;
-  margin-top: 0.1rem;
-}
-.admin-dashboard .ord-modal-empty {
-  font-family: var(--f-display);
-  font-style: italic;
-  font-size: 0.88rem;
-  color: var(--oj-tan);
-  text-align: center;
-  padding: 0.75rem 0;
-}
-
-/* Order items list */
-.admin-dashboard .order-items-list {
-  list-style: none;
-  margin: 0 0 0.75rem;
-  padding: 0;
-  border: var(--bd-warm);
-  border-radius: var(--r-md);
-  overflow: hidden;
-  background: #fff;
-}
-.admin-dashboard .order-item {
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-  padding: 0.7rem 0.9rem;
-  border-bottom: 1px solid rgba(196,153,106,.10);
-  transition: background var(--t-fast);
-}
-.admin-dashboard .order-item:last-child { border-bottom: none; }
-.admin-dashboard .order-item:hover { background: rgba(245,230,200,.5); }
-.admin-dashboard .order-item-name {
-  flex: 1;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: var(--oj-leather);
-  line-height: 1.3;
-}
-.admin-dashboard .order-item-qty {
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: var(--oj-tan);
-  background: var(--oj-smoke);
-  padding: 0.12rem 0.5rem;
-  border-radius: var(--r-pill);
-  border: var(--bd-warm);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-.admin-dashboard .order-item-price {
-  font-family: var(--f-display);
-  font-size: 0.92rem;
-  font-weight: 700;
-  color: var(--oj-copper);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-/* Total row */
-.admin-dashboard .ord-modal-total-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-top: 0.75rem;
-  border-top: 2px solid rgba(196,153,106,.25);
-}
-.admin-dashboard .ord-modal-total-label {
-  font-family: var(--f-body);
-  font-size: 0.68rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 1.4px;
-  color: var(--oj-tan);
-}
-.admin-dashboard .ord-modal-total-value {
-  font-family: var(--f-display);
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--oj-wood);
-  letter-spacing: -0.02em;
-}
-
-/* Timestamp */
-.admin-dashboard .ord-modal-timestamp {
-  font-family: var(--f-body);
-  font-size: 0.74rem;
-  color: var(--oj-tan);
-  font-style: italic;
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-}
-.admin-dashboard .ord-modal-timestamp::before { content: '🕐'; font-style: normal; }
-
-/* Modal footer */
-.admin-dashboard .modal-actions {
-  position: sticky;
-  bottom: 0;
-  background: linear-gradient(0deg, var(--oj-cream) 80%, transparent 100%);
-  padding: 0.75rem var(--sp-md) var(--sp-sm);
-  margin: 0 calc(-1 * var(--sp-md)) calc(-1 * var(--sp-md));
-  z-index: 5;
+@media (max-width: 1200px) {
+  :root {
+    --mnu-col-cat:    130px;
+    --mnu-col-price:  105px;
+    --mnu-col-prep:   100px;
+    --mnu-col-stock:  120px;
+    --mnu-col-action: 160px;
+  }
+  .admin-dashboard .admin-table { min-width: 800px; }
 }
 
 
 /* ─────────────────────────────────────────────────────────────────────
-   §18–21  RESPONSIVE BREAKPOINTS
+   §17  RESPONSIVE — 1024px  (hide prep-time column)
    ───────────────────────────────────────────────────────────────────── */
-@media (max-width: 1200px) {
-  :root {
-    --col-id:       145px; --col-customer: 165px;
-    --col-items:     65px; --col-total:     98px;
-    --col-status:   140px; --col-date:     100px; --col-actions: 85px;
-  }
-  .admin-dashboard .admin-table { min-width: 798px; }
-}
-
 @media (max-width: 1024px) {
-  .admin-dashboard .admin-table th.ord-col-items,
-  .admin-dashboard .admin-table td.ord-col-items { display: none; }
-  :root {
-    --col-id:       138px; --col-customer: 160px;
-    --col-status:   135px; --col-date:      96px; --col-actions: 82px;
-  }
-  .admin-dashboard .admin-table { min-width: 613px; }
+  .admin-dashboard .admin-table th.mnu-col-prep,
+  .admin-dashboard .admin-table td.mnu-col-prep { display: none; }
+  :root { --mnu-col-action: 150px; }
+  .admin-dashboard .admin-table { min-width: 700px; }
 }
 
+
+/* ─────────────────────────────────────────────────────────────────────
+   §18  RESPONSIVE — 768px  (stacked card layout, matches AdminOrders §18)
+   ───────────────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
   .admin-dashboard .admin-container { padding: var(--sp-sm); gap: var(--sp-sm); }
   .admin-dashboard .admin-table { table-layout: auto; min-width: unset; }
@@ -946,6 +831,7 @@
   .admin-dashboard .admin-table tr,
   .admin-dashboard .admin-table td { display: block; width: 100%; }
   .admin-dashboard .admin-table thead { display: none; }
+
   .admin-dashboard .admin-table tbody tr {
     background: var(--oj-cream);
     border-radius: var(--r-md);
@@ -956,56 +842,68 @@
     transform: none !important;
   }
   .admin-dashboard .admin-table tbody tr:nth-child(even) { background: var(--oj-cream); }
+
+  .admin-dashboard .admin-table td.mnu-col-img {
+    padding: 0; width: 100%; overflow: hidden; white-space: normal;
+    margin-bottom: 0.6rem;
+  }
+  .admin-dashboard .admin-table td.mnu-col-img .product-thumb {
+    width: 100%; height: 150px;
+    border-radius: var(--r-sm) var(--r-sm) 0 0;
+    border: none; margin: 0; object-fit: cover;
+  }
+  .admin-dashboard .admin-table td.mnu-col-img .mnu-img-placeholder {
+    width: 100%; height: 110px;
+    border-radius: var(--r-sm) var(--r-sm) 0 0;
+    border: none; margin: 0; font-size: 2.5rem;
+  }
+
   .admin-dashboard .admin-table td {
     padding: 0.4rem 0;
     border: none; border-right: none;
-    max-width: 100%;
-    white-space: normal;
-    overflow: visible;
+    max-width: 100%; white-space: normal; overflow: visible;
   }
   .admin-dashboard .admin-table td:first-child,
   .admin-dashboard .admin-table td:last-child { padding-left: 0; padding-right: 0; }
-  .admin-dashboard .admin-table td.ord-col-id {
-    border-bottom: var(--bd-warm);
-    padding-bottom: 0.55rem;
-    margin-bottom: 0.3rem;
-    overflow: visible;
-    white-space: normal;
-  }
-  .admin-dashboard .admin-table td.ord-col-id strong { overflow: visible; white-space: normal; }
-  .admin-dashboard .admin-table td.ord-col-items,
-  .admin-dashboard .admin-table td.ord-col-total { text-align: left; }
-  .admin-dashboard .admin-table td.ord-col-customer,
-  .admin-dashboard .admin-table td.ord-col-status { overflow: visible; }
-  .admin-dashboard .ord-customer-name,
-  .admin-dashboard .ord-customer-email { white-space: normal; overflow: visible; }
-  .admin-dashboard .admin-table td.ord-col-status .status-select { width: 100%; max-width: none; }
-  .admin-dashboard .admin-table td.ord-col-actions {
+
+  .admin-dashboard .admin-table td.mnu-col-price { text-align: left; }
+  .admin-dashboard .admin-table td.mnu-col-action {
     padding-top: 0.55rem;
     border-top: var(--bd-warm);
     margin-top: 0.3rem;
     text-align: left;
     overflow: visible;
   }
-  .admin-dashboard .admin-table td.ord-col-actions .btn-view { width: 100%; justify-content: center; }
-  .admin-dashboard .ord-stats-row { grid-template-columns: repeat(2, 1fr); }
-  .admin-dashboard .modal-card.ord-modal { max-width: 100%; max-height: 90vh; border-radius: var(--r-lg) var(--r-lg) 0 0; }
-  .admin-dashboard .ord-modal-status-bar { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
-  .admin-dashboard .ord-modal-status-bar .status-select { width: 100%; }
+  .admin-dashboard .mnu-action-btns { justify-content: flex-start; flex-wrap: wrap; }
+  .admin-dashboard .mnu-stats { grid-template-columns: repeat(2, 1fr); }
+  .admin-dashboard .dashboard-header { flex-direction: column; align-items: stretch; }
+  .admin-dashboard .mnu-header-actions { flex-direction: row; flex-wrap: wrap; gap: 0.4rem; }
   .admin-dashboard .filter-bar { flex-wrap: wrap; }
 }
 
+
+/* ─────────────────────────────────────────────────────────────────────
+   §19  RESPONSIVE — 480px
+   ───────────────────────────────────────────────────────────────────── */
 @media (max-width: 480px) {
+  .admin-dashboard .mnu-stats { grid-template-columns: 1fr 1fr; }
   .admin-dashboard .admin-tabs button { font-size: 0.72rem; padding: 0.4rem 0.7rem; }
   .admin-dashboard .ord-stat-value { font-size: 1.3rem; }
-  .admin-dashboard .ord-modal-total-value { font-size: 1.1rem; }
-  .admin-dashboard .order-item { padding: 0.6rem 0.75rem; }
+  .admin-dashboard .mnu-action-btns .btn-delete,
+  .admin-dashboard .mnu-action-btns .btn-view,
+  .admin-dashboard .mnu-edit-btn { font-size: 0.67rem; padding: 0.34rem 0.72rem; }
 }
 
+
+/* ─────────────────────────────────────────────────────────────────────
+   §20  REDUCED MOTION
+   ───────────────────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
-  .admin-dashboard *, .admin-dashboard *::before, .admin-dashboard *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+  .admin-dashboard *,
+  .admin-dashboard *::before,
+  .admin-dashboard *::after {
+    animation-duration:        0.01ms !important;
+    animation-iteration-count: 1      !important;
+    transition-duration:       0.01ms !important;
   }
 }

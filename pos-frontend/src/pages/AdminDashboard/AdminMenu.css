@@ -1,972 +1,908 @@
 /* ═══════════════════════════════════════════════════════════════════════
-   TEXAS JOE'S  ✦  ADMIN MENU PAGE  —  AdminMenu.css  v4
-   SELF-CONTAINED: does NOT require AdminProducts.css
-   Only requires AdminDashboard.css for --tx-* token definitions.
+   TEXAS JOE'S  ✦  ADMIN MENU PAGE  —  AdminMenu.css  v5
+   Design system aligned 1-to-1 with AdminOrders.css
+   Self-contained: only requires AdminDashboard.css for base resets.
    ═══════════════════════════════════════════════════════════════════════ */
 
 /* ─────────────────────────────────────────────────────────────────────
-   §0  GOOGLE FONTS
-   ───────────────────────────────────────────────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=Rye&family=Playfair+Display:wght@600;700;900&family=Barlow+Condensed:wght@400;600;700;800&family=Lora:ital,wght@0,400;0,600;1,400&display=swap');
-
-/* ─────────────────────────────────────────────────────────────────────
-   §1  DESIGN TOKENS  (self-contained — works even if AdminDashboard.css
-       is absent; AdminDashboard.css values override via the var() chain)
+   §0  DESIGN TOKENS  (mirrors AdminOrders.css exactly)
    ───────────────────────────────────────────────────────────────────── */
 :root {
-  /* Palette */
-  --mnu-wood:      #2C1A0E;
-  --mnu-leather:   #6B3E26;
-  --mnu-saddle:    #8B5E3C;
-  --mnu-copper:    #C4622D;
-  --mnu-amber:     #D4922A;
-  --mnu-gold:      #D4A373;
-  --mnu-sand:      #F5E6C8;
-  --mnu-parchment: #FBF3E2;
-  --mnu-smoke:     #EDE0C8;
-  --mnu-fog:       #F7EFD8;
-  --mnu-ink:       #1E110A;
-  --mnu-ember:     #B84A1E;
+  --oj-wood:       #3B2A1A;
+  --oj-leather:    #6B3E26;
+  --oj-saddle:     #8B5A2B;
+  --oj-copper:     #C4622D;
+  --oj-amber:      #D4A373;
+  --oj-gold:       #E8C570;
+  --oj-parchment:  #F5E6C8;
+  --oj-cream:      #FBF4E4;
+  --oj-smoke:      #EDE0C4;
+  --oj-tan:        #C4996A;
+  --oj-sand:       #F0D9A8;
 
-  /* Status colours */
-  --mnu-green:     #2D6A4F;
-  --mnu-green-bg:  rgba(45,106,79,.10);
-  --mnu-red:       #9B1D1D;
-  --mnu-red-bg:    rgba(155,29,29,.10);
-  --mnu-ochre:     #7D5A0D;
-  --mnu-ochre-bg:  rgba(125,90,13,.10);
+  --st-instock:    #27AE60;
+  --st-outstock:   #C0392B;
 
-  /* Typography */
-  --mnu-f-display: 'Rye', serif;
-  --mnu-f-heading: 'Playfair Display', Georgia, serif;
-  --mnu-f-ui:      'Barlow Condensed', 'Arial Narrow', sans-serif;
-  --mnu-f-body:    'Lora', Georgia, serif;
+  --sp-xs: 0.5rem;
+  --sp-sm: 1rem;
+  --sp-md: 1.5rem;
+  --sp-lg: 2rem;
 
-  /* Spacing */
-  --mnu-sp-xs:  0.5rem;
-  --mnu-sp-sm:  0.75rem;
-  --mnu-sp-md:  1rem;
-  --mnu-sp-lg:  1.5rem;
-  --mnu-sp-xl:  2rem;
-  --mnu-sp-2xl: 2.5rem;
+  --f-display: 'Georgia', 'Times New Roman', serif;
+  --f-body:    'Trebuchet MS', 'Segoe UI', sans-serif;
+  --f-mono:    'Courier New', monospace;
 
-  /* Radius */
-  --mnu-r-sm:   6px;
-  --mnu-r-md:   10px;
-  --mnu-r-lg:   16px;
-  --mnu-r-pill: 999px;
+  --sh-card:   0 2px 12px rgba(59,42,26,.12), 0 1px 4px rgba(59,42,26,.08);
+  --sh-raised: 0 4px 24px rgba(59,42,26,.18), 0 2px 8px rgba(59,42,26,.10);
+  --sh-inset:  inset 0 1px 3px rgba(59,42,26,.15);
 
-  /* Shadows */
-  --mnu-sh-xs:  0 1px 3px rgba(10,4,0,.10);
-  --mnu-sh-sm:  0 2px 8px rgba(10,4,0,.14);
-  --mnu-sh-md:  0 4px 18px rgba(10,4,0,.16);
-  --mnu-sh-lg:  0 8px 32px rgba(10,4,0,.20);
+  --bd-warm:   1px solid rgba(196,153,106,.30);
+  --bd-strong: 1px solid rgba(107,62,38,.25);
 
-  /* Column widths */
-  --mnu-w-img:    90px;
-  --mnu-w-cat:    140px;
-  --mnu-w-price:  116px;
-  --mnu-w-prep:   110px;
-  --mnu-w-stock:  128px;
-  --mnu-w-action: 200px;
+  --r-sm:   4px;
+  --r-md:   8px;
+  --r-lg:   12px;
+  --r-pill: 999px;
 
-  /* Cell padding */
-  --mnu-cell-px: 1rem;
-  --mnu-cell-py: 0.85rem;
+  --t-fast: 150ms ease;
+  --t-mid:  250ms ease;
 
-  /* Transitions */
-  --mnu-t-fast: 130ms ease;
-  --mnu-t-mid:  240ms ease;
+  /* ── MENU COLUMN WIDTHS ── */
+  --mnu-col-img:    90px;
+  --mnu-col-cat:    145px;
+  --mnu-col-price:  115px;
+  --mnu-col-prep:   110px;
+  --mnu-col-stock:  128px;
+  --mnu-col-action: 175px;
+  --mnu-col-pad:    1rem;
 }
 
+
 /* ─────────────────────────────────────────────────────────────────────
-   §2  PAGE SHELL
+   §1  PAGE WRAPPER
    ───────────────────────────────────────────────────────────────────── */
-.mnu-page {
+.admin-dashboard {
+  background: var(--oj-parchment);
   min-height: 100vh;
-  background:
-    radial-gradient(ellipse 80% 60% at 50% -10%, rgba(212,146,42,.08) 0%, transparent 70%),
-    linear-gradient(175deg, #f5e9d0 0%, #f0dfc0 50%, #ead4a8 100%);
-  font-family: var(--mnu-f-body);
-  padding: var(--mnu-sp-xl) var(--mnu-sp-lg);
+}
+.admin-dashboard .admin-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: var(--sp-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-md);
 }
 
-.mnu-container {
-  max-width: 1440px;
-  margin: 0 auto;
-}
 
 /* ─────────────────────────────────────────────────────────────────────
-   §3  PAGE HEADER
+   §2  PAGE HEADER  (matches AdminOrders §2)
    ───────────────────────────────────────────────────────────────────── */
-.mnu-header {
+.admin-dashboard .dashboard-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--mnu-sp-lg);
-  margin-bottom: var(--mnu-sp-xl);
-  padding-bottom: var(--mnu-sp-xl);
-  border-bottom: 2px solid rgba(107,62,38,.15);
+  gap: var(--sp-sm);
+  padding: var(--sp-md) var(--sp-lg);
+  background: linear-gradient(135deg, var(--oj-wood) 0%, var(--oj-leather) 60%, var(--oj-saddle) 100%);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-raised);
   position: relative;
+  overflow: hidden;
 }
-
-/* Decorative brand bar */
-.mnu-header::after {
+.admin-dashboard .dashboard-header::after {
   content: '';
   position: absolute;
-  bottom: -2px; left: 0;
-  width: 88px; height: 3px;
-  background: linear-gradient(90deg, var(--mnu-copper), var(--mnu-amber));
-  border-radius: var(--mnu-r-pill);
-  box-shadow: 0 0 10px rgba(196,98,45,.45);
+  bottom: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--oj-gold), var(--oj-copper), var(--oj-amber), var(--oj-gold));
 }
-
-.mnu-header-eyebrow {
-  display: flex;
-  align-items: center;
-  gap: var(--mnu-sp-xs);
-  font-family: var(--mnu-f-ui);
-  font-size: 0.7rem;
+.admin-dashboard .dashboard-header h1 {
+  font-family: var(--f-display);
+  font-size: 1.65rem;
   font-weight: 700;
-  letter-spacing: 3px;
-  text-transform: uppercase;
-  color: var(--mnu-copper);
-  margin-bottom: 0.4rem;
+  color: var(--oj-sand);
+  letter-spacing: 0.04em;
+  text-shadow: 0 1px 3px rgba(0,0,0,.40);
+  margin: 0 0 0.25rem;
+  line-height: 1.2;
 }
-
-.mnu-header-eyebrow-icon {
-  font-size: 1rem;
-}
-
-.mnu-header h1 {
-  font-family: var(--mnu-f-display);
-  font-size: clamp(1.6rem, 3vw, 2.4rem);
-  font-weight: 400; /* Rye is display-weight by default */
-  color: var(--mnu-wood);
-  letter-spacing: 0.03em;
-  line-height: 1.1;
-  margin: 0 0 0.35rem;
-  text-shadow: 1px 2px 0 rgba(255,255,255,.55), 0 1px 4px rgba(10,4,0,.08);
-}
-
-.mnu-header-subtitle {
-  font-family: var(--mnu-f-ui);
-  font-size: 0.92rem;
-  color: var(--mnu-saddle);
-  font-weight: 400;
-  letter-spacing: 0.2px;
-  margin: 0;
-}
-
-.mnu-header-actions {
+.admin-dashboard .dashboard-subtitle {
   display: flex;
-  gap: var(--mnu-sp-sm);
-  align-items: center;
-  flex-shrink: 0;
-  padding-top: 0.25rem;
-}
-
-/* ─────────────────────────────────────────────────────────────────────
-   §4  BUTTONS  (self-contained — no inheritance from AdminProducts.css)
-   ───────────────────────────────────────────────────────────────────── */
-
-/* Base */
-.mnu-btn {
-  display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  font-family: var(--mnu-f-ui);
-  font-weight: 700;
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
-  font-size: 0.75rem;
-  padding: 0.55rem 1.15rem;
-  border-radius: var(--mnu-r-pill);
-  border: 1.5px solid transparent;
-  cursor: pointer;
-  white-space: nowrap;
-  transition:
-    background    var(--mnu-t-fast),
-    box-shadow    var(--mnu-t-fast),
-    border-color  var(--mnu-t-fast),
-    transform     var(--mnu-t-fast),
-    color         var(--mnu-t-fast);
-  user-select: none;
+  font-family: var(--f-body);
+  font-size: 0.8rem;
+  color: var(--oj-amber);
 }
-.mnu-btn:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-  filter: grayscale(.3);
-  transform: none !important;
-}
-.mnu-btn:focus-visible {
-  outline: 2px solid var(--mnu-amber);
-  outline-offset: 3px;
-}
-
-/* Primary — burnt orange fill */
-.mnu-btn-primary {
-  background: linear-gradient(135deg, var(--mnu-copper) 0%, var(--mnu-ember) 100%);
-  color: #fff;
-  border-color: var(--mnu-ember);
-  box-shadow: 0 2px 10px rgba(196,98,45,.35), inset 0 1px 0 rgba(255,255,255,.18);
-  text-shadow: 0 1px 2px rgba(0,0,0,.28);
-}
-.mnu-btn-primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, #d0693a 0%, #c64f1a 100%);
-  box-shadow: 0 4px 16px rgba(196,98,45,.50), inset 0 1px 0 rgba(255,255,255,.20);
-  transform: translateY(-1px);
-}
-
-/* Secondary — parchment outline */
-.mnu-btn-secondary {
-  background: rgba(251,243,226,.70);
-  color: var(--mnu-leather);
-  border-color: rgba(107,62,38,.30);
-  box-shadow: var(--mnu-sh-xs);
-}
-.mnu-btn-secondary:hover:not(:disabled) {
-  background: var(--mnu-parchment);
-  border-color: var(--mnu-leather);
-  box-shadow: var(--mnu-sh-sm);
-  transform: translateY(-1px);
-}
-
-/* Danger — muted red */
-.mnu-btn-danger {
-  background: linear-gradient(135deg, rgba(155,29,29,.10) 0%, rgba(155,29,29,.06) 100%);
-  color: var(--mnu-red);
-  border-color: rgba(155,29,29,.30);
-  box-shadow: var(--mnu-sh-xs);
-}
-.mnu-btn-danger:hover:not(:disabled) {
-  background: linear-gradient(135deg, rgba(155,29,29,.18) 0%, rgba(155,29,29,.10) 100%);
-  border-color: var(--mnu-red);
-  box-shadow: 0 2px 10px rgba(155,29,29,.22);
-  transform: translateY(-1px);
-}
-
-/* Success — forest green */
-.mnu-btn-success {
-  background: linear-gradient(135deg, rgba(45,106,79,.12) 0%, rgba(45,106,79,.06) 100%);
-  color: var(--mnu-green);
-  border-color: rgba(45,106,79,.35);
-  box-shadow: var(--mnu-sh-xs);
-}
-.mnu-btn-success:hover:not(:disabled) {
-  background: linear-gradient(135deg, rgba(45,106,79,.20) 0%, rgba(45,106,79,.12) 100%);
-  border-color: var(--mnu-green);
-  box-shadow: 0 2px 10px rgba(45,106,79,.22);
-  transform: translateY(-1px);
-}
-
-/* Small size modifier */
-.mnu-btn-sm {
-  font-size: 0.69rem;
-  padding: 0.38rem 0.85rem;
-  letter-spacing: 0.6px;
-}
-
-/* ─────────────────────────────────────────────────────────────────────
-   §5  NOTICE / ERROR BANNERS
-   ───────────────────────────────────────────────────────────────────── */
-.mnu-notice {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  padding: 0.75rem 1.1rem;
-  background: linear-gradient(90deg, rgba(212,146,42,.12), rgba(212,146,42,.06));
-  border: 1.5px solid rgba(212,146,42,.35);
-  border-radius: var(--mnu-r-md);
-  font-family: var(--mnu-f-ui);
-  font-size: 0.88rem;
-  font-weight: 600;
-  color: var(--mnu-ochre);
-  margin-bottom: var(--mnu-sp-lg);
-  animation: mnu-slide-down 0.25s ease;
-}
-
-.mnu-error {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  padding: 0.75rem 1.1rem;
-  background: linear-gradient(90deg, rgba(155,29,29,.10), rgba(155,29,29,.05));
-  border: 1.5px solid rgba(155,29,29,.28);
-  border-radius: var(--mnu-r-md);
-  font-family: var(--mnu-f-ui);
-  font-size: 0.88rem;
-  font-weight: 600;
-  color: var(--mnu-red);
-  margin-bottom: var(--mnu-sp-lg);
-}
-
-@keyframes mnu-slide-down {
-  from { opacity: 0; transform: translateY(-8px); }
-  to   { opacity: 1; transform: translateY(0);    }
-}
-
-/* ─────────────────────────────────────────────────────────────────────
-   §6  STAT CARDS
-   ───────────────────────────────────────────────────────────────────── */
-.mnu-stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--mnu-sp-md);
-  margin-bottom: var(--mnu-sp-xl);
-}
-
-.mnu-stat-card {
-  position: relative;
-  background:
-    linear-gradient(145deg, rgba(255,255,255,.62) 0%, rgba(255,255,255,.30) 100%);
-  border: 1.5px solid rgba(212,163,115,.30);
-  border-radius: var(--mnu-r-lg);
-  padding: 1.25rem var(--mnu-sp-lg);
-  box-shadow: var(--mnu-sh-sm), inset 0 1px 0 rgba(255,255,255,.65);
-  overflow: hidden;
-  transition: transform var(--mnu-t-mid), box-shadow var(--mnu-t-mid);
-  backdrop-filter: blur(4px);
-}
-.mnu-stat-card::before {
+.admin-dashboard .dashboard-subtitle::before {
   content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(130deg, rgba(255,255,255,.12) 0%, transparent 60%);
-  pointer-events: none;
+  display: inline-block;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: #4CAF50;
+  box-shadow: 0 0 0 2px rgba(76,175,80,.30);
+  animation: live-pulse 2s ease-in-out infinite;
+  flex-shrink: 0;
 }
-.mnu-stat-card:hover {
-  transform: translateY(-3px);
-  box-shadow: var(--mnu-sh-md), inset 0 1px 0 rgba(255,255,255,.65);
+@keyframes live-pulse {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(76,175,80,.25); }
+  50%       { box-shadow: 0 0 0 5px rgba(76,175,80,.10); }
 }
 
-/* Accent bar */
-.mnu-stat-card::after {
+/* Header action buttons */
+.admin-dashboard .mnu-header-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-shrink: 0;
+}
+.admin-dashboard .mnu-header-actions .btn-secondary {
+  font-family: var(--f-body);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.5rem 1.1rem;
+  border-radius: var(--r-pill);
+  border: 1.5px solid var(--oj-amber);
+  background: rgba(255,255,255,.10);
+  color: var(--oj-sand);
+  cursor: pointer;
+  transition: all var(--t-fast);
+  white-space: nowrap;
+}
+.admin-dashboard .mnu-header-actions .btn-secondary:hover {
+  background: rgba(255,255,255,.18);
+  border-color: var(--oj-gold);
+}
+.admin-dashboard .mnu-header-actions .btn-primary {
+  font-family: var(--f-body);
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.5rem 1.2rem;
+  border-radius: var(--r-pill);
+  border: 1.5px solid var(--oj-gold);
+  background: linear-gradient(135deg, var(--oj-gold) 0%, var(--oj-amber) 100%);
+  color: var(--oj-wood);
+  cursor: pointer;
+  transition: all var(--t-fast);
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(232,197,112,.30);
+}
+.admin-dashboard .mnu-header-actions .btn-primary:hover {
+  background: linear-gradient(135deg, #f0d06a 0%, #e0b040 100%);
+  box-shadow: 0 3px 12px rgba(232,197,112,.45);
+  transform: translateY(-1px);
+}
+.admin-dashboard .mnu-header-actions button:focus-visible {
+  outline: 2px solid var(--oj-gold);
+  outline-offset: 2px;
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §3  STATS CARDS  (matches AdminOrders §3)
+   ───────────────────────────────────────────────────────────────────── */
+.admin-dashboard .mnu-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--sp-sm);
+}
+.admin-dashboard .ord-stat-card {
+  background: var(--oj-cream);
+  border: var(--bd-warm);
+  border-radius: var(--r-md);
+  padding: var(--sp-sm) var(--sp-md);
+  box-shadow: var(--sh-card);
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  position: relative;
+  overflow: hidden;
+  transition: transform var(--t-fast), box-shadow var(--t-fast);
+}
+.admin-dashboard .ord-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--sh-raised);
+}
+.admin-dashboard .ord-stat-card::before {
   content: '';
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 3px;
-  background: linear-gradient(90deg, var(--mnu-amber), var(--mnu-copper));
-  border-radius: var(--mnu-r-lg) var(--mnu-r-lg) 0 0;
-  opacity: 0.55;
 }
+.admin-dashboard .ord-stat-card.stat-total::before      { background: var(--oj-leather); }
+.admin-dashboard .ord-stat-card.stat-instock::before    { background: var(--st-instock); }
+.admin-dashboard .ord-stat-card.stat-outstock::before   { background: var(--st-outstock); }
+.admin-dashboard .ord-stat-card.stat-categories::before { background: var(--oj-gold); }
 
-.mnu-stat-card.mnu-stat-success::after { background: linear-gradient(90deg, #2D6A4F, #52B788); opacity: .7; }
-.mnu-stat-card.mnu-stat-alert::after   { background: linear-gradient(90deg, #9B1D1D, #D64040); opacity: .65; }
-
-.mnu-stat-icon {
-  font-size: 1.6rem;
-  display: block;
-  margin-bottom: 0.5rem;
-  filter: drop-shadow(0 1px 2px rgba(0,0,0,.15));
-}
-
-.mnu-stat-label {
-  font-family: var(--mnu-f-ui);
-  font-size: 0.67rem;
+.admin-dashboard .ord-stat-label {
+  font-family: var(--f-body);
+  font-size: 0.65rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 1.8px;
-  color: var(--mnu-saddle);
-  margin-bottom: 0.2rem;
+  letter-spacing: 1.4px;
+  color: var(--oj-tan);
 }
-
-.mnu-stat-value {
-  font-family: var(--mnu-f-heading);
-  font-size: 2rem;
-  font-weight: 900;
-  color: var(--mnu-wood);
+.admin-dashboard .ord-stat-value {
+  font-family: var(--f-display);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--oj-wood);
   line-height: 1;
   letter-spacing: -0.02em;
 }
+.admin-dashboard .ord-stat-card.stat-instock  .ord-stat-value { color: var(--st-instock);  }
+.admin-dashboard .ord-stat-card.stat-outstock .ord-stat-value { color: var(--st-outstock); }
+.admin-dashboard .ord-stat-sub {
+  font-size: 0.7rem;
+  color: var(--oj-tan);
+}
 
-.mnu-stat-card.mnu-stat-success .mnu-stat-value { color: var(--mnu-green); }
-.mnu-stat-card.mnu-stat-alert   .mnu-stat-value { color: var(--mnu-red);   }
 
 /* ─────────────────────────────────────────────────────────────────────
-   §7  CATEGORY TAB BAR
+   §4  CATEGORY TABS  (matches AdminOrders §4)
    ───────────────────────────────────────────────────────────────────── */
-.mnu-tabs-bar {
+.admin-dashboard .admin-tabs {
   display: flex;
-  gap: 0.4rem;
+  gap: 0.35rem;
+  flex-wrap: nowrap;
   overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
+  padding: 0.25rem 0.15rem;
   scrollbar-width: none;
-  padding-bottom: 3px;
-  margin-bottom: var(--mnu-sp-lg);
 }
-.mnu-tabs-bar::-webkit-scrollbar { display: none; }
-
-.mnu-tab-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  font-family: var(--mnu-f-ui);
-  font-size: 0.79rem;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  text-transform: capitalize;
-  padding: 0.55rem 1.05rem;
-  border-radius: var(--mnu-r-pill);
-  border: 1.5px solid rgba(107,62,38,.20);
-  background: rgba(251,243,226,.55);
-  color: var(--mnu-saddle);
-  cursor: pointer;
+.admin-dashboard .admin-tabs::-webkit-scrollbar { display: none; }
+.admin-dashboard .admin-tabs button {
+  font-family: var(--f-body);
+  font-size: 0.78rem;
+  font-weight: 600;
   white-space: nowrap;
-  flex-shrink: 0;
-  transition: background var(--mnu-t-fast), border-color var(--mnu-t-fast),
-              color var(--mnu-t-fast), box-shadow var(--mnu-t-fast);
+  padding: 0.45rem 1rem;
+  border-radius: var(--r-pill);
+  border: var(--bd-strong);
+  background: var(--oj-cream);
+  color: var(--oj-saddle);
+  cursor: pointer;
+  transition: all var(--t-fast);
 }
-.mnu-tab-btn:hover {
-  background: rgba(251,243,226,.90);
-  border-color: rgba(107,62,38,.40);
-  color: var(--mnu-leather);
+.admin-dashboard .admin-tabs button:hover {
+  background: var(--oj-smoke);
+  color: var(--oj-leather);
 }
-.mnu-tab-btn.active {
-  background: linear-gradient(135deg, var(--mnu-copper) 0%, var(--mnu-ember) 100%);
-  color: #fff;
-  border-color: var(--mnu-ember);
-  box-shadow: 0 2px 10px rgba(196,98,45,.38), inset 0 1px 0 rgba(255,255,255,.18);
-  text-shadow: 0 1px 2px rgba(0,0,0,.22);
+.admin-dashboard .admin-tabs button.active {
+  background: var(--oj-leather);
+  border-color: var(--oj-leather);
+  color: var(--oj-sand);
+  box-shadow: 0 2px 8px rgba(107,62,38,.35);
 }
-.mnu-tab-btn:focus-visible {
-  outline: 2px solid var(--mnu-amber);
-  outline-offset: 3px;
+.admin-dashboard .admin-tabs button:focus-visible {
+  outline: 2px solid var(--oj-gold);
+  outline-offset: 2px;
 }
 
-/* Count badge on tabs */
-.mnu-tab-count {
-  font-size: 0.69rem;
-  font-weight: 800;
-  background: rgba(0,0,0,.12);
-  border-radius: var(--mnu-r-pill);
-  padding: 0.05rem 0.45rem;
-  line-height: 1.4;
-}
-.mnu-tab-btn.active .mnu-tab-count {
-  background: rgba(255,255,255,.22);
-}
 
 /* ─────────────────────────────────────────────────────────────────────
-   §8  FILTER / SEARCH BAR
+   §5  SEARCH / FILTER BAR  (matches AdminOrders §5)
    ───────────────────────────────────────────────────────────────────── */
-.mnu-filter-bar {
+.admin-dashboard .filter-bar {
   display: flex;
   align-items: center;
-  gap: var(--mnu-sp-sm);
-  margin-bottom: var(--mnu-sp-lg);
-  padding: 0.85rem 1.1rem;
-  background: rgba(251,243,226,.65);
-  border: 1.5px solid rgba(212,163,115,.25);
-  border-radius: var(--mnu-r-lg);
-  box-shadow: var(--mnu-sh-xs);
-  backdrop-filter: blur(3px);
+  gap: var(--sp-xs);
+  background: var(--oj-cream);
+  border: var(--bd-warm);
+  border-radius: var(--r-md);
+  padding: 0.6rem 0.75rem;
+  box-shadow: var(--sh-card);
 }
-
-.mnu-search-wrap {
-  position: relative;
+.admin-dashboard .filter-bar .mnu-search-input {
   flex: 1;
   min-width: 0;
-}
-
-.mnu-search-icon {
-  position: absolute;
-  left: 0.85rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--mnu-gold);
-  font-size: 0.85rem;
-  pointer-events: none;
-  transition: color var(--mnu-t-fast);
-}
-
-.mnu-search-input {
-  width: 100%;
-  padding: 0.58rem 0.9rem 0.58rem 2.45rem;
-  font-family: var(--mnu-f-ui);
+  border: none;
+  background: transparent;
+  font-family: var(--f-body);
   font-size: 0.88rem;
-  font-weight: 600;
-  color: var(--mnu-ink);
-  background: rgba(255,255,255,.72);
-  border: 1.5px solid rgba(107,62,38,.22);
-  border-radius: var(--mnu-r-pill);
+  color: var(--oj-wood);
+  padding: 0.2rem 0.2rem 0.2rem 2rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='%23C4996A' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 0.3rem center;
+  background-size: 15px;
   outline: none;
-  box-shadow: var(--mnu-sh-xs);
-  transition: border-color var(--mnu-t-fast), box-shadow var(--mnu-t-fast),
-              background var(--mnu-t-fast);
 }
-.mnu-search-input::placeholder { color: var(--mnu-gold); font-style: italic; }
-.mnu-search-input:focus {
-  border-color: var(--mnu-amber);
-  background: rgba(255,255,255,.92);
-  box-shadow: 0 0 0 3px rgba(212,146,42,.15), var(--mnu-sh-xs);
+.admin-dashboard .filter-bar .mnu-search-input::placeholder { color: var(--oj-tan); }
+.admin-dashboard .filter-bar .mnu-search-input:focus {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='%23C4622D' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
 }
-.mnu-search-input:focus ~ .mnu-search-icon,
-.mnu-search-wrap:focus-within .mnu-search-icon {
-  color: var(--mnu-amber);
-}
-
-.mnu-result-count {
-  font-family: var(--mnu-f-ui);
-  font-size: 0.79rem;
-  font-weight: 800;
-  color: var(--mnu-copper);
+.admin-dashboard .filter-bar .btn-secondary {
+  font-family: var(--f-body);
+  font-size: 0.78rem;
+  font-weight: 600;
   white-space: nowrap;
   flex-shrink: 0;
-  letter-spacing: 0.3px;
+  padding: 0.35rem 0.85rem;
+  border-radius: var(--r-pill);
+  border: var(--bd-strong);
+  background: var(--oj-smoke);
+  color: var(--oj-leather);
+  cursor: pointer;
+  transition: all var(--t-fast);
 }
-
-/* ─────────────────────────────────────────────────────────────────────
-   §9  TABLE SECTION CARD
-   ───────────────────────────────────────────────────────────────────── */
-.mnu-table-section {
-  background:
-    linear-gradient(160deg, rgba(255,255,255,.72) 0%, rgba(255,255,255,.40) 100%);
-  border: 1.5px solid rgba(212,163,115,.28);
-  border-radius: var(--mnu-r-lg);
-  box-shadow: var(--mnu-sh-md);
-  overflow: hidden;
-  backdrop-filter: blur(4px);
+.admin-dashboard .filter-bar .btn-secondary:hover {
+  background: var(--oj-saddle);
+  color: var(--oj-sand);
+  border-color: var(--oj-saddle);
 }
-
-.mnu-section-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1.1rem var(--mnu-sp-lg);
-  background: linear-gradient(135deg, rgba(255,255,255,.55) 0%, rgba(250,243,228,.38) 100%);
-  border-bottom: 1.5px solid rgba(212,163,115,.18);
-}
-
-.mnu-section-title {
-  font-family: var(--mnu-f-heading);
-  font-size: 1.05rem;
+.admin-dashboard .mnu-result-count {
+  font-family: var(--f-body);
+  font-size: 0.75rem;
   font-weight: 700;
-  color: var(--mnu-wood);
-  letter-spacing: 0.01em;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-.mnu-section-title::before {
-  content: '';
-  display: inline-block;
-  width: 4px;
-  height: 18px;
-  border-radius: var(--mnu-r-pill);
-  background: linear-gradient(180deg, var(--mnu-amber), var(--mnu-copper));
+  color: var(--oj-tan);
+  white-space: nowrap;
   flex-shrink: 0;
+  padding-left: 0.5rem;
+  border-left: var(--bd-warm);
 }
 
+
 /* ─────────────────────────────────────────────────────────────────────
-   §10  TABLE — layout, alignment, all column classes
+   §6  TABLE SECTION WRAPPER  (matches AdminOrders §6)
    ───────────────────────────────────────────────────────────────────── */
-.mnu-table-wrapper {
+.admin-dashboard .admin-table-section {
+  background: var(--oj-cream);
+  border: var(--bd-warm);
+  border-radius: var(--r-lg);
+  box-shadow: var(--sh-card);
+  overflow: hidden;
+}
+.admin-dashboard .admin-table-section > h2 {
+  font-family: var(--f-body);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2.5px;
+  color: var(--oj-tan);
+  padding: 0.85rem var(--sp-md);
+  margin: 0;
+  border-bottom: var(--bd-warm);
+  background: linear-gradient(180deg, var(--oj-cream) 0%, var(--oj-parchment) 100%);
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+.admin-dashboard .admin-table-section > h2::before {
+  content: '✦';
+  color: var(--oj-gold);
+  font-size: 0.65rem;
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §7  TABLE LAYOUT  (matches AdminOrders §7)
+   ───────────────────────────────────────────────────────────────────── */
+.admin-dashboard .admin-table-wrapper {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
 }
-
-.mnu-table {
+.admin-dashboard .admin-table {
   table-layout: fixed;
   width: 100%;
-  min-width: 820px;
+  min-width: 860px;
   border-collapse: collapse;
 }
 
-/* ── Column widths (set on th, honoured via fixed layout) ── */
-.mnu-table th.mnu-col-img    { width: var(--mnu-w-img);    }
-.mnu-table th.mnu-col-cat    { width: var(--mnu-w-cat);    }
-.mnu-table th.mnu-col-price  { width: var(--mnu-w-price);  }
-.mnu-table th.mnu-col-prep   { width: var(--mnu-w-prep);   }
-.mnu-table th.mnu-col-stock  { width: var(--mnu-w-stock);  }
-.mnu-table th.mnu-col-action { width: var(--mnu-w-action); }
-/* mnu-col-name is auto — fills remaining */
 
-/* ── Header row ── */
-.mnu-table thead {
-  background: linear-gradient(135deg, #3D2210 0%, #5C3418 50%, #3D2210 100%);
+/* ─────────────────────────────────────────────────────────────────────
+   §8  COLUMN WIDTHS  (on <th> only; table-layout:fixed propagates)
+   ───────────────────────────────────────────────────────────────────── */
+.admin-dashboard .admin-table th.mnu-col-img    { width: var(--mnu-col-img);    }
+.admin-dashboard .admin-table th.mnu-col-name   { width: var(--mnu-col-name);   }
+.admin-dashboard .admin-table th.mnu-col-cat    { width: var(--mnu-col-cat);    }
+.admin-dashboard .admin-table th.mnu-col-price  { width: var(--mnu-col-price);  }
+.admin-dashboard .admin-table th.mnu-col-prep   { width: var(--mnu-col-prep);   }
+.admin-dashboard .admin-table th.mnu-col-stock  { width: var(--mnu-col-stock);  }
+.admin-dashboard .admin-table th.mnu-col-action { width: var(--mnu-col-action); }
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §9  HEADER ROW  (matches AdminOrders §9)
+   ───────────────────────────────────────────────────────────────────── */
+.admin-dashboard .admin-table thead {
+  background: linear-gradient(180deg, var(--oj-wood) 0%, #2d1f0f 100%);
   position: sticky;
   top: 0;
-  z-index: 4;
-  box-shadow: 0 2px 10px rgba(10,4,0,.22);
+  z-index: 3;
+  box-shadow: 0 2px 6px rgba(0,0,0,.25);
 }
-
-.mnu-table th {
-  padding: 0.95rem var(--mnu-cell-px);
-  font-family: var(--mnu-f-ui);
-  font-size: 0.6rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 2.2px;
-  color: var(--mnu-sand);
+.admin-dashboard .admin-table th {
+  padding: 0.9rem var(--mnu-col-pad);
   text-align: left;
+  font-family: var(--f-body);
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--oj-amber);
   white-space: nowrap;
-  text-shadow: 0 1px 2px rgba(0,0,0,.45);
-  border-right: 1px solid rgba(255,255,255,.07);
+  overflow: hidden;
   vertical-align: middle;
+  border-right: 1px solid rgba(255,255,255,.05);
+}
+.admin-dashboard .admin-table th:last-child  { border-right: none; }
+.admin-dashboard .admin-table th.mnu-col-img    { text-align: center; }
+.admin-dashboard .admin-table th.mnu-col-price  { text-align: right; }
+.admin-dashboard .admin-table th.mnu-col-action { text-align: center; }
+
+/* Reset positional — column classes own all sizing */
+.admin-dashboard .admin-table th:first-child,
+.admin-dashboard .admin-table td:first-child { padding-left: var(--mnu-col-pad); }
+.admin-dashboard .admin-table th:last-child,
+.admin-dashboard .admin-table td:last-child  { padding-right: var(--mnu-col-pad); }
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §10  BODY CELLS  (matches AdminOrders §10)
+   ───────────────────────────────────────────────────────────────────── */
+.admin-dashboard .admin-table td {
+  padding: 0.85rem var(--mnu-col-pad);
+  vertical-align: middle;
+  font-family: var(--f-body);
+  font-size: 0.855rem;
+  color: var(--oj-saddle);
   overflow: hidden;
   text-overflow: ellipsis;
-}
-.mnu-table th:last-child { border-right: none; }
-.mnu-table th.mnu-col-img    { text-align: center; }
-.mnu-table th.mnu-col-action { text-align: right; }
-
-/* Gold accent dot on each header */
-.mnu-table th::after {
-  content: none; /* reserved if needed */
-}
-
-/* ── Body cells ── */
-.mnu-table td {
-  padding: var(--mnu-cell-py) var(--mnu-cell-px);
-  vertical-align: middle;
-  font-family: var(--mnu-f-ui);
-  font-size: 0.875rem;
-  color: var(--mnu-leather);
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
+  border-right: 1px solid rgba(196,153,106,.08);
 }
+.admin-dashboard .admin-table td:last-child { border-right: none; }
 
-/* ── Zebra + hover ── */
-.mnu-table tbody tr {
-  border-bottom: 1px solid rgba(212,163,115,.14);
-  transition: background var(--mnu-t-fast), transform var(--mnu-t-fast);
-}
-.mnu-table tbody tr:last-child { border-bottom: none; }
-
-.mnu-table tbody tr:nth-child(even) {
-  background: rgba(240,231,210,.28);
-}
-.mnu-table tbody tr:hover {
-  background: linear-gradient(90deg, rgba(250,238,215,.85) 0%, rgba(255,248,232,.45) 100%);
-  transform: translateX(2px);
-}
-
-/* Updating/dimmed row */
-.mnu-table tbody tr.mnu-row-updating {
-  opacity: 0.55;
-  pointer-events: none;
-  filter: grayscale(0.4) blur(0.3px);
-}
 
 /* ─────────────────────────────────────────────────────────────────────
    §11  COLUMN-SPECIFIC CELL RULES
    ───────────────────────────────────────────────────────────────────── */
 
 /* IMAGE */
-.mnu-table td.mnu-col-img {
+.admin-dashboard .admin-table td.mnu-col-img {
   text-align: center;
   overflow: visible;
 }
-
-.mnu-thumb {
-  width: 50px;
-  height: 50px;
-  border-radius: var(--mnu-r-sm);
+.admin-dashboard .admin-table .product-thumb {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--r-sm);
   object-fit: cover;
-  border: 2px solid rgba(212,163,115,.35);
+  border: 2px solid rgba(196,153,106,.30);
   display: block;
   margin: 0 auto;
-  box-shadow: var(--mnu-sh-xs);
-  transition: transform var(--mnu-t-mid), box-shadow var(--mnu-t-mid), border-color var(--mnu-t-mid);
+  box-shadow: var(--sh-card);
+  transition: transform var(--t-mid), box-shadow var(--t-mid), border-color var(--t-mid);
 }
-.mnu-table tbody tr:hover .mnu-thumb {
-  transform: scale(1.14) rotate(-1.5deg);
-  box-shadow: var(--mnu-sh-md), 0 0 0 2px var(--mnu-amber);
-  border-color: var(--mnu-amber);
+.admin-dashboard .admin-table tbody tr:hover .product-thumb {
+  transform: scale(1.12) rotate(-1.5deg);
+  box-shadow: var(--sh-raised), 0 0 0 2px var(--oj-gold);
+  border-color: var(--oj-gold);
 }
-
-.mnu-img-placeholder {
-  width: 50px;
-  height: 50px;
-  border-radius: var(--mnu-r-sm);
-  background: linear-gradient(135deg, rgba(212,163,115,.18) 0%, rgba(212,163,115,.08) 100%);
-  border: 2px dashed rgba(212,163,115,.45);
+.admin-dashboard .mnu-img-placeholder {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--r-sm);
+  background: linear-gradient(135deg, var(--oj-smoke) 0%, var(--oj-parchment) 100%);
+  border: 2px dashed rgba(196,153,106,.40);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.35rem;
+  font-size: 1.4rem;
   margin: 0 auto;
-  transition: border-color var(--mnu-t-fast);
+  transition: border-color var(--t-fast);
 }
-.mnu-table tbody tr:hover .mnu-img-placeholder {
-  border-color: var(--mnu-amber);
+.admin-dashboard .admin-table tbody tr:hover .mnu-img-placeholder {
+  border-color: var(--oj-gold);
 }
 
 /* NAME */
-.mnu-table td.mnu-col-name {
+.admin-dashboard .admin-table td.mnu-col-name {
   white-space: normal;
   overflow: visible;
 }
-.mnu-item-name {
-  font-family: var(--mnu-f-heading);
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: var(--mnu-wood);
+.admin-dashboard .admin-table td.mnu-col-name strong {
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  font-family: var(--f-display);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--oj-wood);
   line-height: 1.35;
+  letter-spacing: 0.01em;
   line-clamp: 2;
 }
 
-/* CATEGORY */
-.mnu-cat-badge {
+/* CATEGORY BADGE */
+.admin-dashboard .mnu-cat-badge {
   display: inline-flex;
   align-items: center;
   padding: 0.25rem 0.7rem;
-  border-radius: var(--mnu-r-pill);
-  font-family: var(--mnu-f-ui);
+  border-radius: var(--r-pill);
+  font-family: var(--f-body);
   font-size: 0.71rem;
   font-weight: 700;
   text-transform: capitalize;
-  letter-spacing: 0.4px;
-  background: linear-gradient(135deg, rgba(139,69,19,.10) 0%, rgba(139,69,19,.05) 100%);
-  color: var(--mnu-copper);
-  border: 1.5px solid rgba(139,69,19,.22);
+  letter-spacing: 0.3px;
+  background: rgba(139,69,19,.09);
+  color: var(--oj-copper);
+  border: var(--bd-strong);
   white-space: nowrap;
-  box-shadow: var(--mnu-sh-xs);
-  vertical-align: middle;
-  transition: background var(--mnu-t-fast), border-color var(--mnu-t-fast);
+  box-shadow: var(--sh-card);
+  transition: background var(--t-fast), border-color var(--t-fast);
 }
-.mnu-table tbody tr:hover .mnu-cat-badge {
-  background: linear-gradient(135deg, rgba(212,146,42,.14) 0%, rgba(212,146,42,.08) 100%);
-  border-color: rgba(212,146,42,.40);
+.admin-dashboard .admin-table tbody tr:hover .mnu-cat-badge {
+  background: rgba(232,197,112,.18);
+  border-color: rgba(232,197,112,.50);
 }
 
 /* PRICE */
-.mnu-price {
-  font-family: var(--mnu-f-heading);
-  font-size: 0.95rem;
+.admin-dashboard .admin-table td.mnu-col-price { text-align: right; }
+.admin-dashboard .admin-table td.mnu-col-price strong {
+  font-family: var(--f-display);
+  font-size: 0.92rem;
   font-weight: 700;
-  color: var(--mnu-copper);
+  color: var(--oj-copper);
   letter-spacing: -0.01em;
 }
 
 /* PREP TIME */
-.mnu-prep-value { font-size: 0.85rem; color: var(--mnu-saddle); font-weight: 600; }
-.mnu-prep-empty { font-size: 0.85rem; color: var(--mnu-gold);   font-style: italic; }
+.admin-dashboard .mnu-prep-value {
+  font-size: 0.85rem;
+  color: var(--oj-saddle);
+  font-weight: 600;
+}
+.admin-dashboard .mnu-prep-empty {
+  font-size: 0.85rem;
+  color: var(--oj-tan);
+  font-style: italic;
+}
 
 /* STOCK BADGE */
-.mnu-stock-badge {
+.admin-dashboard .admin-table .role-badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
-  padding: 0.28rem 0.75rem;
-  border-radius: var(--mnu-r-pill);
-  font-family: var(--mnu-f-ui);
+  gap: 0.28rem;
+  padding: 0.3rem 0.8rem;
+  border-radius: var(--r-pill);
+  font-family: var(--f-body);
   font-size: 0.66rem;
-  font-weight: 800;
-  letter-spacing: 0.9px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
   text-transform: uppercase;
   white-space: nowrap;
   vertical-align: middle;
 }
-.mnu-stock-badge.in-stock {
-  background: var(--mnu-green-bg);
-  color: var(--mnu-green);
-  border: 1.5px solid rgba(45,106,79,.30);
+.admin-dashboard .admin-table .role-badge.in-stock {
+  color: #1a6b3a;
+  background: rgba(39,174,96,.13);
+  border: 1.5px solid rgba(39,174,96,.35);
 }
-.mnu-stock-badge.out-stock {
-  background: var(--mnu-red-bg);
-  color: var(--mnu-red);
-  border: 1.5px solid rgba(155,29,29,.28);
-  animation: mnu-stock-pulse 2.6s ease-in-out infinite;
+.admin-dashboard .admin-table .role-badge.out-stock {
+  color: #922b21;
+  background: rgba(192,57,43,.13);
+  border: 1.5px solid rgba(192,57,43,.35);
+  animation: mnu-stock-alert 2.8s ease-in-out infinite;
 }
-@keyframes mnu-stock-pulse {
-  0%, 100% { box-shadow: 0 2px 6px rgba(155,29,29,.22); }
-  50%       { box-shadow: 0 2px 12px rgba(155,29,29,.48), 0 0 0 3px rgba(155,29,29,.09); }
-}
-
-.mnu-stock-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: currentColor;
-  flex-shrink: 0;
+@keyframes mnu-stock-alert {
+  0%, 100% { box-shadow: 0 2px 8px rgba(192,57,43,.22); }
+  50%       { box-shadow: 0 2px 14px rgba(192,57,43,.48), 0 0 0 3px rgba(192,57,43,.09); }
 }
 
 /* ACTIONS */
-.mnu-table td.mnu-col-action {
-  text-align: right;
+.admin-dashboard .admin-table td.mnu-col-action {
+  text-align: center;
   overflow: visible;
   white-space: nowrap;
 }
-.mnu-action-btns {
-  display: flex;
+.admin-dashboard .mnu-action-btns {
+  display: inline-flex;
   gap: 0.4rem;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
   flex-wrap: nowrap;
 }
 
+
 /* ─────────────────────────────────────────────────────────────────────
-   §12  LOADING STATE
+   §12  TABLE ROWS  (matches AdminOrders §12)
    ───────────────────────────────────────────────────────────────────── */
-.mnu-loading {
-  display: flex;
-  flex-direction: column;
+.admin-dashboard .admin-table tbody tr {
+  border-bottom: 1px solid rgba(196,153,106,.10);
+  transition: background var(--t-fast), transform var(--t-fast);
+  background: var(--oj-cream);
+}
+.admin-dashboard .admin-table tbody tr:last-child { border-bottom: none; }
+.admin-dashboard .admin-table tbody tr:nth-child(even) {
+  background: rgba(245,230,200,.45);
+}
+.admin-dashboard .admin-table tbody tr:hover {
+  background: linear-gradient(90deg, rgba(232,197,112,.18) 0%, rgba(245,230,200,.40) 100%);
+  transform: translateX(2px);
+}
+.admin-dashboard .admin-table tbody tr[style*="opacity: 0.6"],
+.admin-dashboard .admin-table tbody tr[style*="opacity:0.6"] {
+  pointer-events: none;
+  filter: grayscale(0.4);
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §13  ACTION BUTTONS  (mirrors AdminOrders btn-view style)
+   ───────────────────────────────────────────────────────────────────── */
+
+/* Mark Out (btn-delete) */
+.admin-dashboard .mnu-action-btns .btn-delete {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 1rem;
-  padding: 5rem 2rem;
-  font-family: var(--mnu-f-ui);
-  font-size: 1.05rem;
+  gap: 0.3rem;
+  font-family: var(--f-body);
+  font-size: 0.7rem;
   font-weight: 700;
-  color: var(--mnu-saddle);
   letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 0.38rem 0.85rem;
+  border-radius: var(--r-pill);
+  border: 1.5px solid rgba(192,57,43,.40);
+  background: rgba(192,57,43,.10);
+  color: #922b21;
+  cursor: pointer;
+  transition: all var(--t-fast);
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-shadow: var(--sh-card);
+}
+.admin-dashboard .mnu-action-btns .btn-delete:hover {
+  background: rgba(192,57,43,.18);
+  border-color: rgba(192,57,43,.60);
+  box-shadow: 0 3px 10px rgba(192,57,43,.25);
+  transform: translateY(-1px);
 }
 
-.mnu-loading-spinner {
-  width: 42px;
-  height: 42px;
-  border: 3px solid rgba(196,98,45,.15);
-  border-top-color: var(--mnu-copper);
-  border-radius: 50%;
-  animation: mnu-spin 0.8s linear infinite;
-}
-@keyframes mnu-spin {
-  to { transform: rotate(360deg); }
-}
-
-/* ─────────────────────────────────────────────────────────────────────
-   §13  EMPTY STATE
-   ───────────────────────────────────────────────────────────────────── */
-.mnu-empty {
-  display: flex;
-  flex-direction: column;
+/* Mark In (btn-view) */
+.admin-dashboard .mnu-action-btns .btn-view {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  padding: 4rem 2rem;
+  gap: 0.3rem;
+  font-family: var(--f-body);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 0.38rem 0.85rem;
+  border-radius: var(--r-pill);
+  border: 1.5px solid rgba(39,174,96,.40);
+  background: rgba(39,174,96,.10);
+  color: #1a6b3a;
+  cursor: pointer;
+  transition: all var(--t-fast);
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-shadow: var(--sh-card);
 }
-.mnu-empty-icon {
-  font-size: 3rem;
-  opacity: 0.55;
-  filter: grayscale(.3);
-}
-.mnu-empty-text {
-  font-family: var(--mnu-f-ui);
-  font-size: 0.92rem;
-  color: var(--mnu-gold);
-  font-weight: 600;
-  letter-spacing: 0.4px;
+.admin-dashboard .mnu-action-btns .btn-view:hover {
+  background: rgba(39,174,96,.18);
+  border-color: rgba(39,174,96,.60);
+  box-shadow: 0 3px 10px rgba(39,174,96,.22);
+  transform: translateY(-1px);
 }
 
+/* Edit button — dark leather fill (matches AdminOrders btn-view fill style) */
+.admin-dashboard .mnu-edit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-family: var(--f-body);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 0.38rem 0.85rem;
+  border-radius: var(--r-pill);
+  border: 1.5px solid var(--oj-leather);
+  background: linear-gradient(135deg, var(--oj-leather) 0%, var(--oj-wood) 100%);
+  color: var(--oj-sand);
+  cursor: pointer;
+  transition: all var(--t-fast);
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-shadow: 0 1px 4px rgba(59,42,26,.25);
+}
+.admin-dashboard .mnu-edit-btn:hover {
+  background: linear-gradient(135deg, var(--oj-copper) 0%, var(--oj-leather) 100%);
+  border-color: var(--oj-copper);
+  box-shadow: 0 3px 10px rgba(196,98,45,.35);
+  transform: translateY(-1px);
+}
+.admin-dashboard .mnu-edit-btn:active { transform: translateY(0); }
+
+/* Disabled state */
+.admin-dashboard .mnu-action-btns button:disabled,
+.admin-dashboard .mnu-edit-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(0.4);
+  transform: none !important;
+}
+/* Focus rings */
+.admin-dashboard .mnu-action-btns button:focus-visible,
+.admin-dashboard .mnu-edit-btn:focus-visible {
+  outline: 2px solid var(--oj-gold);
+  outline-offset: 2px;
+}
+
+
 /* ─────────────────────────────────────────────────────────────────────
-   §14  RESPONSIVE — 1200px
+   §14  NOTICES & ERRORS  (matches AdminOrders §15)
+   ───────────────────────────────────────────────────────────────────── */
+.admin-dashboard .admin-notice {
+  padding: 0.75rem 1rem;
+  background: rgba(39,174,96,.12);
+  border: 1px solid rgba(39,174,96,.30);
+  border-radius: var(--r-md);
+  font-family: var(--f-body);
+  font-size: 0.84rem;
+  color: #1e6b3a;
+  animation: slide-down 300ms ease both;
+}
+.admin-dashboard .error-message {
+  padding: 0.75rem 1rem;
+  background: rgba(192,57,43,.10);
+  border: 1px solid rgba(192,57,43,.30);
+  border-radius: var(--r-md);
+  font-family: var(--f-body);
+  font-size: 0.84rem;
+  color: #922b21;
+}
+@keyframes slide-down {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §15  EMPTY & LOADING STATES  (matches AdminOrders §16)
+   ───────────────────────────────────────────────────────────────────── */
+.admin-dashboard .empty-state {
+  padding: 4rem 2rem;
+  text-align: center;
+}
+.admin-dashboard .empty-state-icon {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 1rem;
+  animation: float-idle 4s ease-in-out infinite;
+}
+@keyframes float-idle {
+  0%, 100% { transform: translateY(0) rotate(-3deg); }
+  50%       { transform: translateY(-8px) rotate(3deg); }
+}
+.admin-dashboard .empty-state p {
+  font-family: var(--f-display);
+  font-style: italic;
+  color: var(--oj-tan);
+  font-size: 0.95rem;
+}
+.admin-dashboard .admin-loading {
+  padding: 3rem;
+  text-align: center;
+  font-family: var(--f-display);
+  font-style: italic;
+  color: var(--oj-saddle);
+}
+
+
+/* ─────────────────────────────────────────────────────────────────────
+   §16  RESPONSIVE — 1200px
    ───────────────────────────────────────────────────────────────────── */
 @media (max-width: 1200px) {
   :root {
-    --mnu-w-cat:    128px;
-    --mnu-w-price:  104px;
-    --mnu-w-prep:   100px;
-    --mnu-w-stock:  120px;
-    --mnu-w-action: 185px;
+    --mnu-col-cat:    130px;
+    --mnu-col-price:  105px;
+    --mnu-col-prep:   100px;
+    --mnu-col-stock:  120px;
+    --mnu-col-action: 160px;
   }
+  .admin-dashboard .admin-table { min-width: 800px; }
 }
 
+
 /* ─────────────────────────────────────────────────────────────────────
-   §15  RESPONSIVE — 1024px  (hide prep-time column)
+   §17  RESPONSIVE — 1024px  (hide prep-time column)
    ───────────────────────────────────────────────────────────────────── */
 @media (max-width: 1024px) {
-  .mnu-table th.mnu-col-prep,
-  .mnu-table td.mnu-col-prep { display: none; }
-  :root { --mnu-w-action: 175px; }
+  .admin-dashboard .admin-table th.mnu-col-prep,
+  .admin-dashboard .admin-table td.mnu-col-prep { display: none; }
+  :root { --mnu-col-action: 150px; }
+  .admin-dashboard .admin-table { min-width: 700px; }
 }
 
-/* ─────────────────────────────────────────────────────────────────────
-   §16  RESPONSIVE — 900px
-   ───────────────────────────────────────────────────────────────────── */
-@media (max-width: 900px) {
-  .mnu-stats-grid { grid-template-columns: repeat(2, 1fr); }
-  .mnu-page { padding: var(--mnu-sp-lg) var(--mnu-sp-md); }
-}
 
 /* ─────────────────────────────────────────────────────────────────────
-   §17  RESPONSIVE — 768px  (stacked card layout)
+   §18  RESPONSIVE — 768px  (stacked card layout, matches AdminOrders §18)
    ───────────────────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
-  .mnu-table { table-layout: auto; }
-  .mnu-table,
-  .mnu-table tbody,
-  .mnu-table tr,
-  .mnu-table td { display: block; width: 100%; box-sizing: border-box; }
-  .mnu-table thead { display: none; }
+  .admin-dashboard .admin-container { padding: var(--sp-sm); gap: var(--sp-sm); }
+  .admin-dashboard .admin-table { table-layout: auto; min-width: unset; }
+  .admin-dashboard .admin-table,
+  .admin-dashboard .admin-table tbody,
+  .admin-dashboard .admin-table tr,
+  .admin-dashboard .admin-table td { display: block; width: 100%; }
+  .admin-dashboard .admin-table thead { display: none; }
 
-  .mnu-table tbody tr {
-    background: #fff;
-    border-radius: var(--mnu-r-md);
-    margin-bottom: 0.85rem;
-    border: 1.5px solid rgba(212,163,115,.25);
-    box-shadow: var(--mnu-sh-sm);
-    overflow: hidden;
+  .admin-dashboard .admin-table tbody tr {
+    background: var(--oj-cream);
+    border-radius: var(--r-md);
+    margin-bottom: 0.75rem;
+    border: var(--bd-warm);
+    box-shadow: var(--sh-card);
+    padding: 0.9rem;
     transform: none !important;
-    padding: 0;
   }
-  .mnu-table tbody tr:nth-child(even) { background: #fff; }
+  .admin-dashboard .admin-table tbody tr:nth-child(even) { background: var(--oj-cream); }
 
-  /* Full-width image hero */
-  .mnu-table td.mnu-col-img {
+  .admin-dashboard .admin-table td.mnu-col-img {
     padding: 0; width: 100%; overflow: hidden; white-space: normal;
+    margin-bottom: 0.6rem;
   }
-  .mnu-table td.mnu-col-img .mnu-thumb {
-    width: 100%; height: 150px; border-radius: 0; border: none; margin: 0; object-fit: cover;
+  .admin-dashboard .admin-table td.mnu-col-img .product-thumb {
+    width: 100%; height: 150px;
+    border-radius: var(--r-sm) var(--r-sm) 0 0;
+    border: none; margin: 0; object-fit: cover;
   }
-  .mnu-table td.mnu-col-img .mnu-img-placeholder {
-    width: 100%; height: 110px; border-radius: 0; border: none; margin: 0; font-size: 2.5rem;
+  .admin-dashboard .admin-table td.mnu-col-img .mnu-img-placeholder {
+    width: 100%; height: 110px;
+    border-radius: var(--r-sm) var(--r-sm) 0 0;
+    border: none; margin: 0; font-size: 2.5rem;
   }
 
-  /* Each cell gets label prefix from data-label */
-  .mnu-table td {
-    padding: 0.55rem 1rem;
-    border-bottom: 1px solid rgba(212,163,115,.12);
+  .admin-dashboard .admin-table td {
+    padding: 0.4rem 0;
+    border: none; border-right: none;
     max-width: 100%; white-space: normal; overflow: visible;
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
   }
-  .mnu-table td::before {
-    content: attr(data-label);
-    font-family: var(--mnu-f-ui);
-    font-size: 0.67rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 1.4px;
-    color: var(--mnu-gold);
-    min-width: 72px;
-    flex-shrink: 0;
+  .admin-dashboard .admin-table td:first-child,
+  .admin-dashboard .admin-table td:last-child { padding-left: 0; padding-right: 0; }
+
+  .admin-dashboard .admin-table td.mnu-col-price { text-align: left; }
+  .admin-dashboard .admin-table td.mnu-col-action {
+    padding-top: 0.55rem;
+    border-top: var(--bd-warm);
+    margin-top: 0.3rem;
+    text-align: left;
+    overflow: visible;
   }
-  .mnu-table td.mnu-col-img::before { display: none; }
-  .mnu-table td:last-child { border-bottom: none; }
-
-  .mnu-table td.mnu-col-action { flex-direction: column; align-items: flex-start; }
-  .mnu-action-btns { justify-content: flex-start; flex-wrap: wrap; }
-
-  .mnu-header { flex-direction: column; align-items: stretch; }
-  .mnu-header-actions { justify-content: flex-start; }
-  .mnu-filter-bar { flex-direction: column; align-items: stretch; gap: 0.6rem; }
-  .mnu-result-count { text-align: right; }
+  .admin-dashboard .mnu-action-btns { justify-content: flex-start; flex-wrap: wrap; }
+  .admin-dashboard .mnu-stats { grid-template-columns: repeat(2, 1fr); }
+  .admin-dashboard .dashboard-header { flex-direction: column; align-items: stretch; }
+  .admin-dashboard .mnu-header-actions { flex-direction: row; flex-wrap: wrap; gap: 0.4rem; }
+  .admin-dashboard .filter-bar { flex-wrap: wrap; }
 }
 
+
 /* ─────────────────────────────────────────────────────────────────────
-   §18  RESPONSIVE — 480px
+   §19  RESPONSIVE — 480px
    ───────────────────────────────────────────────────────────────────── */
 @media (max-width: 480px) {
-  .mnu-stats-grid { grid-template-columns: 1fr 1fr; }
-  .mnu-tab-btn { font-size: 0.73rem; padding: 0.42rem 0.75rem; }
-  .mnu-btn.mnu-btn-sm { font-size: 0.67rem; padding: 0.34rem 0.72rem; }
+  .admin-dashboard .mnu-stats { grid-template-columns: 1fr 1fr; }
+  .admin-dashboard .admin-tabs button { font-size: 0.72rem; padding: 0.4rem 0.7rem; }
+  .admin-dashboard .ord-stat-value { font-size: 1.3rem; }
+  .admin-dashboard .mnu-action-btns .btn-delete,
+  .admin-dashboard .mnu-action-btns .btn-view,
+  .admin-dashboard .mnu-edit-btn { font-size: 0.67rem; padding: 0.34rem 0.72rem; }
 }
 
+
 /* ─────────────────────────────────────────────────────────────────────
-   §19  REDUCED MOTION
+   §20  REDUCED MOTION
    ───────────────────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
-  .mnu-page *,
-  .mnu-page *::before,
-  .mnu-page *::after {
+  .admin-dashboard *,
+  .admin-dashboard *::before,
+  .admin-dashboard *::after {
     animation-duration:        0.01ms !important;
     animation-iteration-count: 1      !important;
     transition-duration:       0.01ms !important;

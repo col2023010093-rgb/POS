@@ -9,15 +9,15 @@ import './AdminMenu.css'
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
 const AdminMenu = () => {
-  const navigate      = useNavigate()
-  const { user }      = useAuth()
-  const [products,    setProducts]  = useState([])
-  const [loading,     setLoading]   = useState(true)
-  const [error,       setError]     = useState(null)
-  const [notice,      setNotice]    = useState('')
-  const [selectedCat, setSelectedCat] = useState('all')
-  const [search,      setSearch]    = useState('')
-  const [updating,    setUpdating]  = useState(null)
+  const navigate        = useNavigate()
+  const { user }        = useAuth()
+  const [products,      setProducts]  = useState([])
+  const [loading,       setLoading]   = useState(true)
+  const [error,         setError]     = useState(null)
+  const [notice,        setNotice]    = useState('')
+  const [selectedCat,   setSelectedCat] = useState('all')
+  const [search,        setSearch]    = useState('')
+  const [updating,      setUpdating]  = useState(null)
 
   /* ────────────────── GUARDS & DATA FETCH ────────────────── */
   useEffect(() => {
@@ -100,12 +100,9 @@ const AdminMenu = () => {
   /* ────────────────── LOADING ────────────────── */
   if (loading) {
     return (
-      <div className="mnu-page">
-        <div className="mnu-container">
-          <div className="mnu-loading">
-            <div className="mnu-loading-spinner" />
-            🔥 Loading the smokehouse menu…
-          </div>
+      <div className="admin-dashboard">
+        <div className="admin-container">
+          <div className="admin-loading">🔥 Loading the smokehouse menu…</div>
         </div>
       </div>
     )
@@ -113,147 +110,91 @@ const AdminMenu = () => {
 
   /* ────────────────── RENDER ────────────────── */
   return (
-    <div className="mnu-page">
-      <div className="mnu-container">
+    <div className="admin-dashboard">
+      <div className="admin-container">
 
         {/* ══════════════════════════════════════════════
             PAGE HEADER
         ════════════════════════════════════════════════ */}
-        <header className="mnu-header">
-          <div className="mnu-header-title-group">
-            {/* Eyebrow label */}
-            <div className="mnu-header-eyebrow">
-              <span className="mnu-header-eyebrow-icon">🤠</span>
-              Texas Joe's  ·  Admin Panel
-            </div>
+        <div className="dashboard-header">
+          <div>
             <h1>Menu Management</h1>
-            <p className="mnu-header-subtitle">
-              {products.length} items on the menu —&nbsp;
-              {inStockCount} in stock,&nbsp;{outStockCount} out
+            <p className="dashboard-subtitle">
+              {products.length} items on the menu — {inStockCount} in stock, {outStockCount} out
             </p>
           </div>
-
-          {/* Action buttons */}
           <div className="mnu-header-actions">
-            <button
-              className="mnu-btn mnu-btn-secondary"
-              onClick={fetchProducts}
-              title="Refresh menu data"
-            >
-              ↻ Refresh
-            </button>
-            <button
-              className="mnu-btn mnu-btn-primary"
-              onClick={() => navigate('/admin/products')}
-              title="Add a new menu item"
-            >
+            <button className="btn-secondary" onClick={fetchProducts}>↻ Refresh</button>
+            <button className="btn-primary" onClick={() => navigate('/admin/products')}>
               + Add Item
             </button>
           </div>
-        </header>
+        </div>
 
-        {/* ── Notice / Error banners ── */}
-        {notice && (
-          <div className="mnu-notice" role="status" aria-live="polite">
-            {notice}
-          </div>
-        )}
-        {error && (
-          <div className="mnu-error" role="alert">
-            ⚠ {error}
-          </div>
-        )}
+        {/* ── Notices ── */}
+        {notice && <div className="admin-notice">{notice}</div>}
+        {error  && <div className="error-message">⚠ {error}</div>}
 
         {/* ══════════════════════════════════════════════
-            STAT CARDS
+            STAT CARDS  (ord-stat-card markup = AdminOrders)
         ════════════════════════════════════════════════ */}
-        <div className="mnu-stats-grid" aria-label="Menu statistics">
-          <div className="mnu-stat-card">
-            <span className="mnu-stat-icon">🍖</span>
-            <div className="mnu-stat-label">Total Items</div>
-            <div className="mnu-stat-value">{products.length}</div>
+        <div className="mnu-stats">
+          <div className="ord-stat-card stat-total">
+            <span className="ord-stat-label">Total Items</span>
+            <span className="ord-stat-value">{products.length}</span>
+            <span className="ord-stat-sub">on the menu</span>
           </div>
-          <div className="mnu-stat-card mnu-stat-success">
-            <span className="mnu-stat-icon">✅</span>
-            <div className="mnu-stat-label">In Stock</div>
-            <div className="mnu-stat-value">{inStockCount}</div>
+          <div className="ord-stat-card stat-instock">
+            <span className="ord-stat-label">In Stock</span>
+            <span className="ord-stat-value">{inStockCount}</span>
+            <span className="ord-stat-sub">available now</span>
           </div>
-          <div className="mnu-stat-card mnu-stat-alert">
-            <span className="mnu-stat-icon">🚫</span>
-            <div className="mnu-stat-label">Out of Stock</div>
-            <div className="mnu-stat-value">{outStockCount}</div>
+          <div className="ord-stat-card stat-outstock">
+            <span className="ord-stat-label">Out of Stock</span>
+            <span className="ord-stat-value">{outStockCount}</span>
+            <span className="ord-stat-sub">unavailable</span>
           </div>
-          <div className="mnu-stat-card">
-            <span className="mnu-stat-icon">🏷️</span>
-            <div className="mnu-stat-label">Categories</div>
-            <div className="mnu-stat-value">{categories.length - 1}</div>
+          <div className="ord-stat-card stat-categories">
+            <span className="ord-stat-label">Categories</span>
+            <span className="ord-stat-value">{categories.length - 1}</span>
+            <span className="ord-stat-sub">on the menu</span>
           </div>
         </div>
 
         {/* ══════════════════════════════════════════════
             CATEGORY TABS
         ════════════════════════════════════════════════ */}
-        <nav className="mnu-tabs-bar" aria-label="Filter by category">
+        <div className="admin-tabs">
           {categories.map(cat => (
             <button
               key={cat}
-              className={`mnu-tab-btn${selectedCat === cat ? ' active' : ''}`}
+              className={selectedCat === cat ? 'active' : ''}
               onClick={() => setSelectedCat(cat)}
-              aria-pressed={selectedCat === cat}
             >
               {cat.charAt(0).toUpperCase() + cat.slice(1)}
-              <span className="mnu-tab-count">
-                {cat === 'all'
-                  ? products.length
-                  : products.filter(p => p.category === cat).length
-                }
-              </span>
+              {cat === 'all'
+                ? ` (${products.length})`
+                : ` (${products.filter(p => p.category === cat).length})`
+              }
             </button>
           ))}
-        </nav>
+        </div>
 
         {/* ══════════════════════════════════════════════
             SEARCH / FILTER BAR
         ════════════════════════════════════════════════ */}
-        <div className="mnu-filter-bar" role="search">
-          <div className="mnu-search-wrap">
-            {/* SVG icon — inline so no external request */}
-            <svg
-              className="mnu-search-icon"
-              viewBox="0 0 24 24"
-              width="15" height="15"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.35-4.35" />
-            </svg>
-            <input
-              id="mnu-search"
-              type="text"
-              placeholder="Search menu items…"
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              className="mnu-search-input"
-              aria-label="Search menu items"
-            />
-          </div>
-
+        <div className="filter-bar">
+          <input
+            type="text"
+            placeholder="Search menu items…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="mnu-search-input"
+          />
           {search && (
-            <button
-              className="mnu-btn mnu-btn-secondary mnu-btn-sm"
-              onClick={() => setSearch('')}
-              aria-label="Clear search"
-            >
-              ✕ Clear
-            </button>
+            <button className="btn-secondary" onClick={() => setSearch('')}>✕ Clear</button>
           )}
-
-          <span className="mnu-result-count" aria-live="polite">
+          <span className="mnu-result-count">
             {visible.length} item{visible.length !== 1 ? 's' : ''}
           </span>
         </div>
@@ -261,25 +202,17 @@ const AdminMenu = () => {
         {/* ══════════════════════════════════════════════
             MENU ITEMS TABLE
         ════════════════════════════════════════════════ */}
-        <section className="mnu-table-section" aria-label="Menu items table">
+        <div className="admin-table-section">
+          <h2>Menu Items</h2>
 
-          {/* Section heading */}
-          <div className="mnu-section-heading">
-            <h2 className="mnu-section-title">Menu Items</h2>
-          </div>
-
-          {/* Empty state */}
           {visible.length === 0 ? (
-            <div className="mnu-empty">
-              <div className="mnu-empty-icon">🍽️</div>
-              <p className="mnu-empty-text">No items found for this category.</p>
+            <div className="empty-state">
+              <div className="empty-state-icon">🍽️</div>
+              <p>No items found for this category.</p>
             </div>
           ) : (
-            /* Table wrapper — enables horizontal scroll on small screens */
-            <div className="mnu-table-wrapper">
-              <table className="mnu-table" aria-label="Menu items">
-
-                {/* ── THEAD ── */}
+            <div className="admin-table-wrapper">
+              <table className="admin-table">
                 <thead>
                   <tr>
                     <th className="mnu-col-img"    scope="col">Img</th>
@@ -291,78 +224,62 @@ const AdminMenu = () => {
                     <th className="mnu-col-action" scope="col">Actions</th>
                   </tr>
                 </thead>
-
-                {/* ── TBODY ── */}
                 <tbody>
                   {visible.map(p => (
-                    <tr
-                      key={p._id}
-                      className={updating === p._id ? 'mnu-row-updating' : ''}
-                    >
+                    <tr key={p._id} style={{ opacity: updating === p._id ? 0.6 : 1 }}>
 
                       {/* — Image — */}
-                      <td className="mnu-col-img" data-label="Image">
+                      <td className="mnu-col-img">
                         {imgSrc(p) ? (
-                          <img
-                            src={imgSrc(p)}
-                            alt={p.name}
-                            className="mnu-thumb"
-                            loading="lazy"
-                          />
+                          <img src={imgSrc(p)} alt={p.name} className="product-thumb" loading="lazy" />
                         ) : (
-                          <div className="mnu-img-placeholder" aria-hidden="true">🍖</div>
+                          <div className="mnu-img-placeholder">🍖</div>
                         )}
                       </td>
 
                       {/* — Name — */}
-                      <td className="mnu-col-name" data-label="Name">
-                        <span className="mnu-item-name">{p.name}</span>
+                      <td className="mnu-col-name">
+                        <strong>{p.name}</strong>
                       </td>
 
                       {/* — Category — */}
-                      <td className="mnu-col-cat" data-label="Category">
+                      <td className="mnu-col-cat">
                         <span className="mnu-cat-badge">{p.category}</span>
                       </td>
 
                       {/* — Price — */}
-                      <td className="mnu-col-price" data-label="Price">
-                        <span className="mnu-price">{formatPHP(p.price)}</span>
+                      <td className="mnu-col-price">
+                        <strong>{formatPHP(p.price)}</strong>
                       </td>
 
                       {/* — Prep Time — */}
-                      <td className="mnu-col-prep" data-label="Prep Time">
+                      <td className="mnu-col-prep">
                         {formatPrepTime(p.prepTime)
                           ? <span className="mnu-prep-value">{formatPrepTime(p.prepTime)}</span>
                           : <span className="mnu-prep-empty">—</span>
                         }
                       </td>
 
-                      {/* — Stock Status — */}
-                      <td className="mnu-col-stock" data-label="Stock">
-                        <span className={`mnu-stock-badge ${p.inStock ? 'in-stock' : 'out-stock'}`}>
-                          <span className="mnu-stock-dot" aria-hidden="true" />
+                      {/* — Stock Badge — */}
+                      <td className="mnu-col-stock">
+                        <span className={`role-badge ${p.inStock ? 'in-stock' : 'out-stock'}`}>
                           {p.inStock ? 'In Stock' : 'Out of Stock'}
                         </span>
                       </td>
 
                       {/* — Actions — */}
-                      <td className="mnu-col-action" data-label="Actions">
+                      <td className="mnu-col-action">
                         <div className="mnu-action-btns">
-                          {/* Toggle availability */}
                           <button
-                            className={`mnu-btn mnu-btn-sm ${p.inStock ? 'mnu-btn-danger' : 'mnu-btn-success'}`}
+                            className={p.inStock ? 'btn-delete' : 'btn-view'}
                             onClick={() => handleToggleStock(p)}
                             disabled={updating === p._id}
-                            aria-label={`Mark ${p.name} as ${p.inStock ? 'out of stock' : 'in stock'}`}
                           >
                             {p.inStock ? 'Mark Out' : 'Mark In'}
                           </button>
-
-                          {/* Edit */}
                           <button
-                            className="mnu-btn mnu-btn-secondary mnu-btn-sm"
+                            className="mnu-edit-btn"
                             onClick={() => navigate(`/admin/products?edit=${p._id}`)}
-                            aria-label={`Edit ${p.name}`}
                           >
                             ✎ Edit
                           </button>
@@ -372,14 +289,13 @@ const AdminMenu = () => {
                     </tr>
                   ))}
                 </tbody>
-
               </table>
             </div>
           )}
-        </section>
+        </div>
 
-      </div>{/* /mnu-container */}
-    </div>/* /mnu-page */
+      </div>
+    </div>
   )
 }
 
