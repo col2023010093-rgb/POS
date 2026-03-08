@@ -39,12 +39,15 @@
   --mnu-col-pad: 1.1rem;
 
   /* Explicit column widths (applied on <th>, honoured by table-layout:fixed) */
-  --mnu-w-img:     80px;
-  --mnu-w-cat:    150px;
+  --mnu-w-img:    100px;
+  --mnu-w-cat:    145px;
   --mnu-w-price:  110px;
-  --mnu-w-prep:   110px;
-  --mnu-w-stock:  130px;
-  --mnu-w-action: 210px;
+  --mnu-w-prep:   105px;
+  --mnu-w-stock:  120px;
+  --mnu-w-action: 215px;
+  /* name col = auto (fills remaining)
+     total fixed = 100+145+110+105+120+215 = 795px
+     min-width set to 860px so name col gets ≥65px */
 }
 
 
@@ -54,6 +57,7 @@
 .admin-dashboard .admin-table {
   table-layout: fixed;
   width: 100%;
+  min-width: 860px;
   border-collapse: collapse;
 }
 
@@ -100,12 +104,22 @@
   white-space: nowrap;
   text-shadow: 0 1px 0 rgba(0,0,0,.40);
   border-bottom: none;
+  border-right: 1px solid rgba(255,255,255,.07);
   vertical-align: middle;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.admin-dashboard .admin-table th:last-child {
+  border-right: none;
+}
 
 /* ACTIONS header — right-align to match button cluster */
+.admin-dashboard .admin-table th.mnu-col-img {
+  text-align: center;
+}
+.admin-dashboard .admin-table td.mnu-col-img {
+  text-align: center;
+}
 .admin-dashboard .admin-table th.mnu-col-action {
   text-align: right;
 }
@@ -145,9 +159,14 @@
    §5  COLUMN-SPECIFIC CELL RULES
    ───────────────────────────────────────────────────────────────────── */
 
-/* IMAGE — thumbnail centred vertically */
+/* IMAGE — thumbnail + header centred */
 .admin-dashboard .admin-table td.mnu-col-img {
   vertical-align: middle;
+  text-align: center;
+}
+.admin-dashboard .admin-table .product-thumb,
+.admin-dashboard .mnu-img-placeholder {
+  margin: 0 auto;
 }
 
 /* NAME — flex column, allow text wrap */

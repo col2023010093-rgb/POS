@@ -68,7 +68,6 @@ const AdminMenu = () => {
   const formatPrepTime = val => {
     if (!val && val !== 0) return null
     const str = String(val).trim()
-    // Strip any existing "min" / "mins" suffix so we never double-render
     const num = str.replace(/\s*mins?\s*$/i, '').trim()
     return `${num} min`
   }
@@ -201,7 +200,7 @@ const AdminMenu = () => {
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th className="mnu-col-img">Image</th>
+                    <th className="mnu-col-img">Img</th>
                     <th className="mnu-col-name">Name</th>
                     <th className="mnu-col-cat">Category</th>
                     <th className="mnu-col-price">Price</th>
