@@ -1,26 +1,41 @@
 const Reservation = require('../models/Reservation');
 const Notification = require('../models/Notification');
 
-const MAX_PER_SLOT = 5; // Max bookings per time slot
+// ─── Constants ────────────────────────────────────────────────────────────────
+// FIX #1: Guest-based capacity instead of booking count
+// 5 bookings × 9 guests = 45 guests could overflow — use total guest cap instead
+const MAX_GUESTS_PER_SLOT = 50;
+const MAX_DAYS_AHEAD       = 30;
+
+// FIX #4: Simple in-memory rate limiter (per IP, 5 submissions per 15 min)
+// If you have express-rate-limit installed, use that as middleware in the router instead
+const _rateMap  = new Map();
+const WINDOW_MS = 15 * 60 * 1000;
+const MAX_HITS  = 5;
+function isRateLimited(ip) {
+  const now  = Date.now();
+  const hits = (_rateMap.get(ip) || []).filter(t => now - t < WINDOW_MS);
+  hits.push(now);
+  _rateMap.set(ip, hits);
+  return hits.length > MAX_HITS;
+}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-/**
- * Normalise a YYYY-MM-DD string into a [start, end) Date range
- * so MongoDB $gte / $lt comparisons work correctly regardless of timezone.
- */
 const dateRange = (dateStr) => {
   const [y, m, d] = dateStr.split('-').map(Number);
-  const start = new Date(y, m - 1, d, 0, 0, 0, 0);
+  const start = new Date(y, m - 1, d,  0,  0,  0,   0);
   const end   = new Date(y, m - 1, d, 23, 59, 59, 999);
   return { start, end };
 };
 
+// FIX #7: Sanitize string inputs — trim + length cap
+const s = (v, max = 100) =>
+  typeof v === 'string' ? v.trim().slice(0, max) : '';
+
 // ─── Public: check availability ───────────────────────────────────────────────
 /**
  * GET /api/reservations/availability?date=YYYY-MM-DD
- * Returns { bookedSlots: ['6:00 PM', ...] } — slots that have reached MAX_PER_SLOT.
- * No auth required (called before the user submits the form).
+ * Returns { bookedSlots: ['6:00 PM', ...] }
  */
 exports.getAvailability = async (req, res) => {
   try {
@@ -32,23 +47,24 @@ exports.getAvailability = async (req, res) => {
 
     const { start, end } = dateRange(date);
 
+    // FIX #2: Select guests too — slot is full when total GUESTS hit capacity
     const reservations = await Reservation.find({
       date:   { $gte: start, $lte: end },
       status: { $nin: ['cancelled'] },
-    }).select('time');
+    }).select('time guests');
 
-    // Count bookings per slot
-    const counts = {};
+    // Sum guests per slot (not booking count)
+    const guestTotals = {};
     reservations.forEach(r => {
-      counts[r.time] = (counts[r.time] || 0) + 1;
+      guestTotals[r.time] = (guestTotals[r.time] || 0) + (Number(r.guests) || 0);
     });
 
-    // Return only the fully-booked ones
-    const bookedSlots = Object.entries(counts)
-      .filter(([, count]) => count >= MAX_PER_SLOT)
+    const bookedSlots = Object.entries(guestTotals)
+      .filter(([, total]) => total >= MAX_GUESTS_PER_SLOT)
       .map(([time]) => time);
 
     return res.json({ bookedSlots });
+
   } catch (error) {
     console.error('❌ Error fetching availability:', error);
     return res.status(500).json({ message: error.message });
@@ -58,113 +74,151 @@ exports.getAvailability = async (req, res) => {
 // ─── Public: create reservation ───────────────────────────────────────────────
 /**
  * POST /api/reservations
- * Body: { firstName, lastName, email, phone, date, time, guests,
- *         occasion?, seatingPreference?, specialRequests? }
- * Optional auth: if a logged-in user sends their JWT the reservation is linked
- * to their account via `userId`.
  */
 exports.createReservation = async (req, res) => {
   try {
+    // FIX #4: Rate limit check
+    const ip = req.ip || req.headers['x-forwarded-for'] || 'unknown';
+    if (isRateLimited(ip)) {
+      return res.status(429).json({
+        message: 'Too many requests. Please wait 15 minutes before trying again.',
+      });
+    }
+
     const {
       firstName, lastName, email, phone,
       date, time, guests,
       occasion, seatingPreference, specialRequests,
     } = req.body;
 
-    // ── Server-side validation ────────────────────────────────────────────────
+    // ── Validation ────────────────────────────────────────────────────────────
     const errors = {};
 
-    if (!firstName?.trim()) errors.firstName = 'First name is required.';
-    if (!lastName?.trim())  errors.lastName  = 'Last name is required.';
-    if (!email?.trim())     errors.email     = 'Email is required.';
-    else if (!/\S+@\S+\.\S+/.test(email)) errors.email = 'Invalid email address.';
-    if (!phone?.trim())     errors.phone     = 'Phone number is required.';
-    if (!date)              errors.date      = 'Date is required.';
-    if (!time)              errors.time      = 'Time is required.';
-    if (!guests)            errors.guests    = 'Number of guests is required.';
+    // FIX #7: Sanitize before validating
+    const cleanFirst = s(firstName, 50);
+    const cleanLast  = s(lastName,  50);
+    const cleanEmail = s(email,    100).toLowerCase();
+    const cleanPhone = s(phone,     20);
+    const cleanDate  = s(date,      10);
+    const cleanTime  = s(time,      10);
+
+    if (!cleanFirst || cleanFirst.length < 2) errors.firstName = 'First name must be at least 2 characters.';
+    if (!cleanLast  || cleanLast.length  < 2) errors.lastName  = 'Last name must be at least 2 characters.';
+
+    if (!cleanEmail) {
+      errors.email = 'Email is required.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      errors.email = 'Enter a valid email address.';
+    }
+
+    // FIX #5: Proper PH phone validation (10–11 digits)
+    const digits = cleanPhone.replace(/\D/g, '');
+    if (!digits) {
+      errors.phone = 'Phone number is required.';
+    } else if (digits.length < 10 || digits.length > 11) {
+      errors.phone = 'Enter a valid Philippine phone number (10–11 digits).';
+    }
+
+    if (!cleanDate) {
+      errors.date = 'Date is required.';
+    } else {
+      // Past date check
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      const { start: slotDay } = dateRange(cleanDate);
+      if (slotDay < today) errors.date = 'Reservation date cannot be in the past.';
+
+      // FIX #6: Max 30 days ahead
+      const maxDate = new Date(); maxDate.setDate(maxDate.getDate() + MAX_DAYS_AHEAD);
+      if (slotDay > maxDate) errors.date = `Reservations can only be made up to ${MAX_DAYS_AHEAD} days in advance.`;
+    }
+
+    if (!cleanTime) errors.time = 'Time is required.';
+
+    const guestNum = parseInt(guests, 10);
+    if (!guests || isNaN(guestNum) || guestNum < 1 || guestNum > 9) {
+      errors.guests = 'Guest count must be between 1 and 9.';
+    }
 
     if (Object.keys(errors).length) {
       return res.status(400).json({ message: 'Validation failed.', errors });
     }
 
-    // ── Date: must not be in the past ─────────────────────────────────────────
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const { start: slotDay } = dateRange(date);
-    if (slotDay < today) {
-      return res.status(400).json({ message: 'Reservation date cannot be in the past.' });
-    }
+    const { start, end } = dateRange(cleanDate);
+    const { start: slotDay } = dateRange(cleanDate);
 
-    // ── Slot capacity check ───────────────────────────────────────────────────
-    const { start, end } = dateRange(date);
-    const slotCount = await Reservation.countDocuments({
+    // ── Duplicate guard ───────────────────────────────────────────────────────
+    const duplicate = await Reservation.findOne({
+      email:  cleanEmail,
       date:   { $gte: start, $lte: end },
-      time,
+      time:   cleanTime,
       status: { $nin: ['cancelled'] },
     });
-
-    if (slotCount >= MAX_PER_SLOT) {
+    if (duplicate) {
       return res.status(409).json({
-        message: 'That time slot is fully booked. Please choose another.',
-        field: 'time',
+        field:   'duplicate',
+        message: 'You already have a reservation for this date and time.',
       });
     }
 
-    // ── Duplicate guard: same email + date + time ─────────────────────────────
-    const duplicate = await Reservation.findOne({
-      email: email.toLowerCase().trim(),
-      date:  { $gte: start, $lte: end },
-      time,
+    // ── FIX #1 & #2: Capacity check by total guests, not booking count ────────
+    const slotBookings = await Reservation.find({
+      date:   { $gte: start, $lte: end },
+      time:   cleanTime,
       status: { $nin: ['cancelled'] },
-    });
+    }).select('guests');
 
-    if (duplicate) {
+    const totalGuestsBooked = slotBookings.reduce(
+      (sum, r) => sum + (Number(r.guests) || 0), 0
+    );
+    if (totalGuestsBooked + guestNum > MAX_GUESTS_PER_SLOT) {
       return res.status(409).json({
-        message: 'A reservation for this email at that date and time already exists.',
+        field:   'time',
+        message: 'That time slot is fully booked. Please choose another.',
       });
     }
 
     // ── Build document ────────────────────────────────────────────────────────
     const reservationData = {
-      firstName: firstName.trim(),
-      lastName:  lastName.trim(),
-      email:     email.toLowerCase().trim(),
-      phone:     phone.trim(),
-      date:      slotDay,     // normalised midnight local time
-      time,
-      guests:    Number(guests),
+      firstName: cleanFirst,
+      lastName:  cleanLast,
+      email:     cleanEmail,
+      phone:     digits,              // store digits only
+      date:      slotDay,             // normalised midnight local
+      time:      cleanTime,
+      guests:    guestNum,
       status:    'pending',
     };
 
-    if (occasion && occasion !== 'none')  reservationData.occasion          = occasion;
-    if (seatingPreference)                reservationData.seatingPreference  = seatingPreference;
-    if (specialRequests?.trim())          reservationData.specialRequests    = specialRequests.trim();
-
-    // Link to user account if the request is authenticated (optional JWT)
-    if (req.user?._id) reservationData.userId = req.user._id;
+    if (occasion && occasion !== 'none') reservationData.occasion         = s(occasion, 20);
+    if (seatingPreference)               reservationData.seatingPreference = s(seatingPreference, 20);
+    if (specialRequests?.trim())         reservationData.specialRequests   = s(specialRequests, 500);
+    if (req.user?._id)                   reservationData.userId            = req.user._id;
 
     const reservation = await Reservation.create(reservationData);
 
-    // ── Notify user if logged in ──────────────────────────────────────────────
+    // ── Notify logged-in user ─────────────────────────────────────────────────
     if (reservationData.userId) {
       try {
         const notif = await Notification.create({
           userId:  reservationData.userId,
           title:   'Reservation Received',
-          message: `Your table for ${reservation.guests} on ${date} at ${time} is pending confirmation.`,
+          message: `Your table for ${guestNum} on ${cleanDate} at ${cleanTime} is pending confirmation.`,
           type:    'reservation',
         });
-
-        const io = req.app.get('io');
-        io?.to(String(reservationData.userId)).emit('notification', notif);
+        req.app.get('io')?.to(String(reservationData.userId)).emit('notification', notif);
       } catch (notifErr) {
-        // Non-fatal — log but don't fail the request
         console.warn('⚠️ Notification creation failed:', notifErr.message);
       }
     }
 
     console.log('✅ Reservation created:', reservation._id);
-    return res.status(201).json(reservation);
+
+    // FIX #8: Return reservationId + reference so the success screen can show them
+    return res.status(201).json({
+      ...reservation.toObject(),
+      reservationId: reservation._id,
+      reference:     String(reservation._id).slice(-8).toUpperCase(),
+    });
 
   } catch (error) {
     console.error('❌ Error creating reservation:', error);
@@ -175,14 +229,7 @@ exports.createReservation = async (req, res) => {
 // ─── Protected: get reservations ─────────────────────────────────────────────
 /**
  * GET /api/reservations
- * Admin → all reservations (sorted newest-first, with optional filters).
- * Customer → only their own reservations.
- *
- * Query params (admin only):
- *   status   = pending | confirmed | cancelled | completed
- *   date     = YYYY-MM-DD
- *   page     = 1  (default)
- *   limit    = 20 (default)
+ * Admin → all (filterable). Customer → own only.
  */
 exports.getReservations = async (req, res) => {
   try {
@@ -190,12 +237,9 @@ exports.getReservations = async (req, res) => {
     const { status, date, page = 1, limit = 20 } = req.query;
 
     const filter = {};
-
     if (!isAdmin) {
-      // Customers only see their own reservations
       filter.userId = req.user._id;
     } else {
-      // Admin can filter by status and/or date
       if (status) filter.status = status;
       if (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
         const { start, end } = dateRange(date);
@@ -228,9 +272,6 @@ exports.getReservations = async (req, res) => {
 };
 
 // ─── Protected: get single reservation ───────────────────────────────────────
-/**
- * GET /api/reservations/:id
- */
 exports.getReservationById = async (req, res) => {
   try {
     const reservation = await Reservation.findById(req.params.id)
@@ -240,7 +281,6 @@ exports.getReservationById = async (req, res) => {
       return res.status(404).json({ message: 'Reservation not found.' });
     }
 
-    // Non-admin users can only view their own reservation
     const isAdmin = req.user?.role === 'admin';
     if (!isAdmin && String(reservation.userId) !== String(req.user._id)) {
       return res.status(403).json({ message: 'Access denied.' });
@@ -254,15 +294,10 @@ exports.getReservationById = async (req, res) => {
 };
 
 // ─── Protected: update reservation ───────────────────────────────────────────
-/**
- * PATCH /api/reservations/:id
- * Body may include any updatable fields.
- */
 exports.updateReservation = async (req, res) => {
   try {
     const isAdmin = req.user?.role === 'admin';
 
-    // Find first so we can authorise
     const existing = await Reservation.findById(req.params.id);
     if (!existing) {
       return res.status(404).json({ message: 'Reservation not found.' });
@@ -272,9 +307,17 @@ exports.updateReservation = async (req, res) => {
       return res.status(403).json({ message: 'Access denied.' });
     }
 
-    // Non-admin users may NOT change status directly
-    const update = { ...req.body };
-    if (!isAdmin) delete update.status;
+    // FIX #9: Whitelist updatable fields — no mass assignment
+    const ADMIN_FIELDS    = ['status', 'date', 'time', 'guests', 'seatingPreference', 'occasion', 'specialRequests'];
+    const CUSTOMER_FIELDS = ['seatingPreference', 'occasion', 'specialRequests'];
+    const allowed         = isAdmin ? ADMIN_FIELDS : CUSTOMER_FIELDS;
+
+    const update = {};
+    for (const field of allowed) {
+      if (req.body[field] !== undefined) {
+        update[field] = req.body[field];
+      }
+    }
 
     const reservation = await Reservation.findByIdAndUpdate(
       req.params.id,
@@ -291,9 +334,7 @@ exports.updateReservation = async (req, res) => {
           message: `Your reservation on ${reservation.date.toDateString()} at ${reservation.time} is now ${reservation.status}.`,
           type:    'reservation',
         });
-
-        const io = req.app.get('io');
-        io?.to(String(reservation.userId)).emit('notification', notif);
+        req.app.get('io')?.to(String(reservation.userId)).emit('notification', notif);
       } catch (notifErr) {
         console.warn('⚠️ Notification creation failed:', notifErr.message);
       }
@@ -301,6 +342,7 @@ exports.updateReservation = async (req, res) => {
 
     console.log('✅ Reservation updated:', reservation._id);
     return res.json(reservation);
+
   } catch (error) {
     console.error('❌ Error updating reservation:', error);
     return res.status(500).json({ message: error.message });
@@ -308,10 +350,6 @@ exports.updateReservation = async (req, res) => {
 };
 
 // ─── Protected: delete reservation ───────────────────────────────────────────
-/**
- * DELETE /api/reservations/:id
- * Admin only.
- */
 exports.deleteReservation = async (req, res) => {
   try {
     if (req.user?.role !== 'admin') {
@@ -325,6 +363,7 @@ exports.deleteReservation = async (req, res) => {
 
     console.log('✅ Reservation deleted:', reservation._id);
     return res.json({ message: 'Reservation deleted successfully.' });
+
   } catch (error) {
     console.error('❌ Error deleting reservation:', error);
     return res.status(500).json({ message: error.message });
