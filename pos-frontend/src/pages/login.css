@@ -3,6 +3,7 @@
    ========================================================================== */
 
 @import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Rye&display=swap");
 
 /* Remove fragile offset positioning and use natural spacing */
 .login-page .container form > * {
@@ -1814,8 +1815,6 @@
    Mobile: single card layout
    Desktop (1024px+): original split-panel layout
    ========================================================================== */
-
-@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&family=Rye&display=swap");
 
 /* ── Reset ── */
 .login-page *, .login-page *::before, .login-page *::after {
