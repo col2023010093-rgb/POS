@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
-import { FaUser, FaChevronDown, FaBars, FaTimes, FaBell, FaSignInAlt, FaUserShield } from "react-icons/fa"
+import { FaUser, FaChevronDown, FaBars, FaTimes, FaBell, FaSignInAlt } from "react-icons/fa"
 import { io } from "socket.io-client"
 import logo from "../../assets/logo.png"
 import "./HeaderGuest.css"
@@ -10,19 +10,17 @@ import { api } from "../../utils/api"
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
 const HeaderGuest = () => {
-  const [isLoaded, setIsLoaded] = useState(false)
+  const [isLoaded,         setIsLoaded]         = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [isProfileOpen, setIsProfileOpen] = useState(false)
-  const [isNotifOpen, setIsNotifOpen] = useState(false)
-  const [notifications, setNotifications] = useState([])
-  const location = useLocation()
-  const navigate = useNavigate()
+  const [isProfileOpen,    setIsProfileOpen]    = useState(false)
+  const [isNotifOpen,      setIsNotifOpen]      = useState(false)
+  const [notifications,    setNotifications]    = useState([])
+  const location   = useLocation()
+  const navigate   = useNavigate()
   const { user, token, logout } = useAuth()
   const profileRef = useRef(null)
-  const notifRef = useRef(null)
-  const socketRef = useRef(null)
-
-  const isAdmin = user?.role === 'admin'
+  const notifRef   = useRef(null)
+  const socketRef  = useRef(null)
 
   const navItems = [
     { path: '/',             label: 'Home'         },
@@ -32,25 +30,19 @@ const HeaderGuest = () => {
     { path: '/reservations', label: 'Reservations' },
   ]
 
-  // Admins browsing the public site still get public nav
-  // Their main workspace is AdminHeader — keep this simple
-  const displayedNavItems = navItems
-
-  useEffect(() => {
-    setTimeout(() => setIsLoaded(true), 100)
-  }, [])
+  useEffect(() => { setTimeout(() => setIsLoaded(true), 100) }, [])
 
   // Close dropdowns on outside click
   useEffect(() => {
-    const onClickOutside = (e) => {
+    const handler = (e) => {
       if (profileRef.current && !profileRef.current.contains(e.target)) setIsProfileOpen(false)
-      if (notifRef.current  && !notifRef.current.contains(e.target))  setIsNotifOpen(false)
+      if (notifRef.current   && !notifRef.current.contains(e.target))   setIsNotifOpen(false)
     }
-    document.addEventListener('mousedown', onClickOutside)
-    return () => document.removeEventListener('mousedown', onClickOutside)
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  // Reset dropdowns on logout
+  // Reset state on logout
   useEffect(() => {
     if (!user) {
       setIsProfileOpen(false)
@@ -66,12 +58,12 @@ const HeaderGuest = () => {
 
     const loadNotifications = async () => {
       try {
-        const response = await api.get('/api/notifications', {
+        const res = await api.get('/api/notifications', {
           headers: { Authorization: `Bearer ${token}` }
         })
-        if (Array.isArray(response.data)) setNotifications(response.data)
-      } catch (error) {
-        console.warn('Notifications unavailable:', error.message)
+        if (Array.isArray(res.data)) setNotifications(res.data)
+      } catch (err) {
+        console.warn('Notifications unavailable:', err.message)
         setNotifications([])
       }
     }
@@ -82,12 +74,8 @@ const HeaderGuest = () => {
       transports: ['websocket', 'polling'],
       withCredentials: true,
     })
-    socketRef.current.on('connect', () => {
-      socketRef.current.emit('register', userId)
-    })
-    socketRef.current.on('notification', (n) => {
-      setNotifications(prev => [n, ...prev])
-    })
+    socketRef.current.on('connect', () => socketRef.current.emit('register', userId))
+    socketRef.current.on('notification', (n) => setNotifications(prev => [n, ...prev]))
 
     return () => socketRef.current?.disconnect()
   }, [user, token])
@@ -108,15 +96,7 @@ const HeaderGuest = () => {
 
   const handleUserClick = (e) => {
     e.stopPropagation()
-    if (!user) {
-      navigate('/login')
-      return
-    }
-    // Admin: clicking the avatar goes straight to dashboard
-    if (isAdmin) {
-      navigate('/admin/dashboard')
-      return
-    }
+    if (!user) { navigate('/login'); return }
     setIsProfileOpen(prev => !prev)
   }
 
@@ -146,7 +126,7 @@ const HeaderGuest = () => {
 
         {/* CENTER — Navigation */}
         <nav className={`header-nav ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
-          {displayedNavItems.map((item, index) => (
+          {navItems.map((item, index) => (
             <Link
               key={item.path}
               to={item.path}
@@ -162,7 +142,7 @@ const HeaderGuest = () => {
         {/* RIGHT — Notifications + User */}
         <div className="header-right">
 
-          {/* Notifications — logged-in users only */}
+          {/* Notifications — logged-in only */}
           {user && (
             <div className="notif-wrapper" ref={notifRef}>
               <button
@@ -171,9 +151,7 @@ const HeaderGuest = () => {
                 aria-label="Notifications"
               >
                 <FaBell />
-                {unreadCount > 0 && (
-                  <span className="notif-badge">{unreadCount}</span>
-                )}
+                {unreadCount > 0 && <span className="notif-badge">{unreadCount}</span>}
               </button>
 
               {isNotifOpen && (
@@ -200,26 +178,16 @@ const HeaderGuest = () => {
           )}
 
           {/* User profile / Sign In */}
-          <div
-            className={`user-info ${isAdmin ? 'user-info--admin' : ''}`}
-            onClick={handleUserClick}
-            ref={profileRef}
-            title={isAdmin ? 'Go to Admin Dashboard' : undefined}
-          >
+          <div className="user-info" onClick={handleUserClick} ref={profileRef}>
             <div className="user-avatar">
-              {!user   && <FaSignInAlt />}
-              {user && !isAdmin && <FaUser />}
-              {isAdmin && <FaUserShield />}
+              {user ? <FaUser /> : <FaSignInAlt />}
             </div>
-
             <div className="user-text">
               <h1>{user ? user.firstName : 'Sign In'}</h1>
-              {/* ── KEY FIX: admins see "Administrator", others see "My Account" ── */}
-              {user && <p>{isAdmin ? 'Administrator' : 'My Account'}</p>}
+              {user && <p>My Account</p>}
             </div>
 
-            {/* Chevron + dropdown — regular users only; admins click straight to dashboard */}
-            {user && !isAdmin && (
+            {user && (
               <>
                 <FaChevronDown className={`dropdown-arrow ${isProfileOpen ? 'open' : ''}`} />
                 {isProfileOpen && (
@@ -229,28 +197,6 @@ const HeaderGuest = () => {
                     </button>
                     <button className="dropdown-item" onClick={() => navigate('/orders')}>
                       Orders
-                    </button>
-                    <button className="dropdown-item danger" onClick={handleLogout}>
-                      Logout
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
-
-            {/* Admin: separate small dropdown with dashboard link + logout */}
-            {isAdmin && (
-              <>
-                <FaChevronDown className={`dropdown-arrow ${isProfileOpen ? 'open' : ''}`}
-                  onClick={(e) => { e.stopPropagation(); setIsProfileOpen(p => !p) }}
-                />
-                {isProfileOpen && (
-                  <div className="profile-dropdown">
-                    <button
-                      className="dropdown-item"
-                      onClick={(e) => { e.stopPropagation(); navigate('/admin/dashboard') }}
-                    >
-                      Admin Dashboard
                     </button>
                     <button className="dropdown-item danger" onClick={handleLogout}>
                       Logout
@@ -271,9 +217,7 @@ const HeaderGuest = () => {
           </button>
         </div>
 
-        {isMobileMenuOpen && (
-          <div className="mobile-overlay" onClick={closeMobileMenu} />
-        )}
+        {isMobileMenuOpen && <div className="mobile-overlay" onClick={closeMobileMenu} />}
       </header>
 
       <div className="header-spacer" />

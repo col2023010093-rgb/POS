@@ -9,9 +9,9 @@ import Auth from './pages/Auth';
 import Orders from './pages/Orders';
 import Login from './pages/Login';
 import Menu from './pages/Menu';
-import About from './pages/about';             // lowercase
-import Reservation from './pages/reservation'; // lowercase
-import Checkout from './pages/checkout';       // lowercase
+import About from './pages/about';
+import Reservation from './pages/reservation';
+import Checkout from './pages/checkout';
 import AdminDashboard from './pages/AdminDashboard/AdminDashboard';
 import AdminOrders from './pages/AdminDashboard/AdminOrders';
 import AdminMenu from './pages/AdminDashboard/AdminMenu';
@@ -24,41 +24,64 @@ import { CartProvider } from './context/CartContext';
 import Contact from './pages/Contact/Contact';
 import Profile from './pages/Profile/Profile';
 import SignUpWithVerification from './pages/SignUpWithVerification';
-
+import { useAuth } from './context/AuthContext';  // ← ADD THIS
 
 function AppWrapper() {
   const location = useLocation();
+  const { user } = useAuth();  // ← ADD THIS
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [location.pathname]);
 
-  const hideHeader = location.pathname === '/login';
+  const hideHeader   = location.pathname === '/login';
   const isAdminRoute = location.pathname.startsWith('/admin');
+  const isAdmin      = user?.role === 'admin';  // ← ADD THIS
+
+  // ── CHANGE THIS ONE LINE ──────────────────────────────────────────────────
+  // Before: !hideHeader && (isAdminRoute ? <AdminHeader /> : <HeaderGuest />)
+  // After:  check role, not just the path
+  const showAdminHeader = !hideHeader && (isAdminRoute || isAdmin);
 
   return (
     <>
-      {!hideHeader && (isAdminRoute ? <AdminHeader /> : <HeaderGuest />)}
+      {showAdminHeader ? <AdminHeader /> : (!hideHeader && <HeaderGuest />)}
+
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/auth" element={<Auth />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/menu" element={<Menu />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/contact" element={<Contact />} />
-        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-        <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
-        <Route path="/checkout" element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
+        <Route path="/"             element={<Home />} />
+        <Route path="/auth"         element={<Auth />} />
+        <Route path="/login"        element={<Login />} />
+        <Route path="/menu"         element={<Menu />} />
+        <Route path="/about"        element={<About />} />
+        <Route path="/contact"      element={<Contact />} />
+        <Route path="/profile"      element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+        <Route path="/orders"       element={<ProtectedRoute><Orders /></ProtectedRoute>} />
+        <Route path="/checkout"     element={<ProtectedRoute><Checkout /></ProtectedRoute>} />
         <Route path="/reservations" element={<ProtectedRoute><Reservation /></ProtectedRoute>} />
 
-        <Route path="/admin/dashboard" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-        <Route path="/admin/orders" element={<ProtectedRoute><AdminOrders /></ProtectedRoute>} />
-        <Route path="/admin/menu" element={<ProtectedRoute><AdminMenu /></ProtectedRoute>} />
+        <Route path="/admin/dashboard"    element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+        <Route path="/admin/orders"       element={<ProtectedRoute><AdminOrders /></ProtectedRoute>} />
+        <Route path="/admin/menu"         element={<ProtectedRoute><AdminMenu /></ProtectedRoute>} />
         <Route path="/admin/reservations" element={<ProtectedRoute><AdminReservations /></ProtectedRoute>} />
-        <Route path="/admin/products" element={<ProtectedRoute><AdminProducts /></ProtectedRoute>} />
-        <Route path="/admin/reports" element={<ProtectedRoute><AdminReports /></ProtectedRoute>} />
-        <Route path="/admin/users" element={<ProtectedRoute><AdminUsers /></ProtectedRoute>} />
+        <Route path="/admin/products"     element={<ProtectedRoute><AdminProducts /></ProtectedRoute>} />
+/*************  ✨ Windsurf Command ⭐  *************/
+/**
+ * The main App component.
+ *
+ * This component renders the application's routes and providers.
+ *
+ * It is the top-level component that is rendered by the React Router.
+ *
+ * It provides the CartProvider context to its children, which allows
+ * them to access the cart state and dispatch actions to update it.
+ *
+ * It also renders the AppWrapper component, which is responsible for
+ * rendering the application's header, footer, and routes.
+ */
+/*******  2e5f90b2-9563-4d61-b854-545ad577d9cc  *******/        <Route path="/admin/reports"      element={<ProtectedRoute><AdminReports /></ProtectedRoute>} />
+        <Route path="/admin/users"        element={<ProtectedRoute><AdminUsers /></ProtectedRoute>} />
       </Routes>
+
       <Bottomnav />
     </>
   );
@@ -73,7 +96,7 @@ function App() {
         </CartProvider>
       </Router>
     </div>
-  )
+  );
 }
 
 export default App;
