@@ -992,8 +992,6 @@ const Reservation = () => {
         </div>
       </section>
 
-    </div>
-  )
       {/* ── Login prompt overlay ── */}
       {showLoginPrompt && (
         <div
@@ -1025,8 +1023,11 @@ const Reservation = () => {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
     </div>
   )
 }
-}
+
 export default Reservation
