@@ -162,4 +162,22 @@ exports.deleteUser = async (req, res) => {
     console.error('❌ Error deleting user:', error);
     res.status(500).json({ message: error.message });
   }
+
+// ✅ Update product (inStock toggle + full edit)
+exports.updateProduct = async (req, res) => {
+  try {
+    const updated = await Product.findByIdAndUpdate(
+      req.params.id,
+      { $set: req.body },
+      { new: true, runValidators: true }
+    );
+    if (!updated) return res.status(404).json({ message: 'Product not found' });
+    console.log('✅ Product updated:', updated._id, req.body);
+    res.json(updated);
+  } catch (error) {
+    console.error('❌ Error updating product:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
 };
