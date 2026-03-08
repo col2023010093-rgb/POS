@@ -225,10 +225,11 @@
    §8  COLUMN-SPECIFIC CELL RULES
    ───────────────────────────────────────────────────────────────────── */
 
-/* ORDER # — never truncate, shows full order number */
+/* ORDER # — clips at column boundary, never bleeds into Customer */
 .admin-dashboard .admin-table td.ord-col-id {
   white-space: nowrap;
-  overflow: visible;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .admin-dashboard .admin-table td.ord-col-id strong {
   font-family: var(--f-heading);
@@ -239,12 +240,16 @@
   white-space: nowrap;
 }
 
-/* CUSTOMER — stacked name + email, both truncated with ellipsis */
+/* CUSTOMER — push content right so it doesn't crowd Order # */
 .admin-dashboard .admin-table td.ord-col-customer {
   white-space: normal;
   overflow: hidden;
   vertical-align: middle;
   line-height: 1;
+  padding-left: 2rem;
+}
+.admin-dashboard .admin-table th.ord-col-customer {
+  padding-left: 2rem;
 }
 .admin-dashboard .ord-customer-name {
   font-weight: 700;
@@ -785,7 +790,3 @@
     transition-duration:       0.01ms !important;
   }
 }
-
-td.ord-col-customer  { padding-left: 2rem; }   /* shifts content right */
-th.ord-col-customer  { padding-left: 2rem; }   /* keeps header aligned */
-td.ord-col-id        { overflow: hidden; text-overflow: ellipsis; }  /* clips long order #s */
