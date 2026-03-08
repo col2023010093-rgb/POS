@@ -713,7 +713,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1.1rem var(--sp-md);
+  padding: 0.6rem var(--sp-md);
   background: linear-gradient(135deg, var(--oj-wood) 0%, var(--oj-leather) 100%);
   border-radius: var(--r-lg) var(--r-lg) 0 0;
   position: sticky;
