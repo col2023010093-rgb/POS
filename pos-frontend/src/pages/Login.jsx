@@ -15,7 +15,7 @@
  *   3. VerificationModal mounts (outside .container, covers full viewport)
  *   4. User enters code  →  POST /api/auth/verify
  *   5a. Correct: account verified → auto-login → redirect to /
- *   5b. Wrong code: banner error + attempt counter (max 5)
+ *   5b. Wrong code: banner error shown, user can retry freely
  *   5c. Expired: prompt resend
  *   6. Resend: POST /api/auth/resend  (60-second client cooldown)
  *   7. Cancel: POST /api/auth/delete-unverified  (best-effort)
@@ -48,7 +48,6 @@ const LOCKOUT_LS_KEY      = 'login_lockout';
 const ATTEMPTS_LS_KEY     = 'login_attempts';
 const CODE_LENGTH         = 6;
 const RESEND_COOLDOWN_SEC = 60;
-const MAX_VERIFY_ATTEMPTS = 5;                 // wrong-code attempts before forced resend
 
 // ─── Lockout helpers — persisted in localStorage so they survive refresh ──────
 
@@ -185,13 +184,11 @@ function VerificationModal({ verifyEmail, password, loginFn, onSuccess, onCancel
   const [success,     setSuccess]     = useState('');
   const [fieldError,  setFieldError]  = useState('');
   const [cooldown,    setCooldown]    = useState(0);
-  const [badAttempts, setBadAttempts] = useState(0); // wrong-code counter
   const inputRefs = useRef([]);
 
   // Derived: string representation of entered code
   const code        = digits.join('');
   const isComplete  = digits.every(d => d !== '');
-  const isExhausted = badAttempts >= MAX_VERIFY_ATTEMPTS;
 
   // ── Resend cooldown ticker ─────────────────────────────────────────────────
   useEffect(() => {
@@ -257,11 +254,6 @@ function VerificationModal({ verifyEmail, password, loginFn, onSuccess, onCancel
       return;
     }
 
-    if (isExhausted) {
-      setError('Too many incorrect attempts. Please request a new code below.');
-      return;
-    }
-
     setLoading(true);
     try {
       await api.post('/api/auth/verify', {
@@ -298,15 +290,7 @@ function VerificationModal({ verifyEmail, password, loginFn, onSuccess, onCancel
           setDigits(Array(CODE_LENGTH).fill(''));
           setTimeout(() => inputRefs.current[0]?.focus(), 50);
         } else {
-          // Wrong code — track attempts
-          const next = badAttempts + 1;
-          setBadAttempts(next);
-          const rem = MAX_VERIFY_ATTEMPTS - next;
-          setError(
-            rem > 0
-              ? `Incorrect code — ${rem} attempt${rem !== 1 ? 's' : ''} remaining.`
-              : 'Too many incorrect attempts. Please request a new code below.'
-          );
+          setError('Incorrect code. Please try again.');
           setDigits(Array(CODE_LENGTH).fill(''));
           setTimeout(() => inputRefs.current[0]?.focus(), 50);
         }
@@ -437,7 +421,7 @@ function VerificationModal({ verifyEmail, password, loginFn, onSuccess, onCancel
           <button
             type="submit"
             className="btn-verify"
-            disabled={loading || !isComplete || isExhausted}
+            disabled={loading || !isComplete}
             aria-busy={loading}
           >
             {loading
