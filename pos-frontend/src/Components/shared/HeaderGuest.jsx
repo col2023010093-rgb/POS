@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
-import { FaUser, FaChevronDown, FaBars, FaTimes, FaBell, FaSignInAlt } from "react-icons/fa"
+import { FaUser, FaChevronDown, FaBars, FaTimes, FaBell, FaSignInAlt, FaUserShield } from "react-icons/fa"
 import { io } from "socket.io-client"
 import logo from "../../assets/logo.png"
 import "./HeaderGuest.css"
@@ -22,45 +22,35 @@ const HeaderGuest = () => {
   const notifRef = useRef(null)
   const socketRef = useRef(null)
 
+  const isAdmin = user?.role === 'admin'
+
   const navItems = [
-    { path: '/', label: 'Home' },
-    { path: '/menu', label: 'Menu' },
-    { path: '/about', label: 'About' },
-    { path: '/contact', label: 'Contact' },
-    { path: '/reservations', label: 'Reservations' }
+    { path: '/',             label: 'Home'         },
+    { path: '/menu',         label: 'Menu'         },
+    { path: '/about',        label: 'About'        },
+    { path: '/contact',      label: 'Contact'      },
+    { path: '/reservations', label: 'Reservations' },
   ]
 
-  const adminNavItems = [
-    { path: '/', label: 'Home' },
-    { path: '/menu', label: 'Menu' },
-    { path: '/admin/dashboard', label: 'Dashboard' },
-    { path: '/orders', label: 'Orders' },
-    { path: '/reservations', label: 'Reservation' },
-    { path: '/admin/users', label: 'Users' },
-    { path: '/admin/products', label: 'Products' }
-  ]
-
-  const displayedNavItems = user?.role === 'admin' ? adminNavItems : navItems
+  // Admins browsing the public site still get public nav
+  // Their main workspace is AdminHeader — keep this simple
+  const displayedNavItems = navItems
 
   useEffect(() => {
     setTimeout(() => setIsLoaded(true), 100)
   }, [])
 
-  // Close dropdowns when clicking outside
+  // Close dropdowns on outside click
   useEffect(() => {
     const onClickOutside = (e) => {
-      if (profileRef.current && !profileRef.current.contains(e.target)) {
-        setIsProfileOpen(false)
-      }
-      if (notifRef.current && !notifRef.current.contains(e.target)) {
-        setIsNotifOpen(false)
-      }
+      if (profileRef.current && !profileRef.current.contains(e.target)) setIsProfileOpen(false)
+      if (notifRef.current  && !notifRef.current.contains(e.target))  setIsNotifOpen(false)
     }
     document.addEventListener('mousedown', onClickOutside)
     return () => document.removeEventListener('mousedown', onClickOutside)
   }, [])
 
-  // Close dropdown immediately on logout
+  // Reset dropdowns on logout
   useEffect(() => {
     if (!user) {
       setIsProfileOpen(false)
@@ -69,10 +59,9 @@ const HeaderGuest = () => {
     }
   }, [user])
 
-  // Socket.io + notifications — only when logged in
+  // Socket.io + notifications
   useEffect(() => {
     if (!user || !token) return
-
     const userId = user._id || user.id
 
     const loadNotifications = async () => {
@@ -80,9 +69,7 @@ const HeaderGuest = () => {
         const response = await api.get('/api/notifications', {
           headers: { Authorization: `Bearer ${token}` }
         })
-        if (Array.isArray(response.data)) {
-          setNotifications(response.data)
-        }
+        if (Array.isArray(response.data)) setNotifications(response.data)
       } catch (error) {
         console.warn('Notifications unavailable:', error.message)
         setNotifications([])
@@ -93,43 +80,41 @@ const HeaderGuest = () => {
     socketRef.current = io(BASE_URL, {
       path: '/socket.io',
       transports: ['websocket', 'polling'],
-      withCredentials: true
+      withCredentials: true,
     })
-
     socketRef.current.on('connect', () => {
-      console.log('✅ Socket connected')
       socketRef.current.emit('register', userId)
     })
-
-    socketRef.current.on('notification', (newNotification) => {
-      setNotifications(prev => [newNotification, ...prev])
+    socketRef.current.on('notification', (n) => {
+      setNotifications(prev => [n, ...prev])
     })
 
-    return () => {
-      socketRef.current?.disconnect()
-    }
+    return () => socketRef.current?.disconnect()
   }, [user, token])
 
   const unreadCount = notifications.filter(n => !n.read).length
 
-  // ✅ Fixed: uses BASE_URL instead of localhost
   const markRead = async (id) => {
     try {
       await fetch(`${BASE_URL}/api/notifications/${id}/read`, {
         method: 'PATCH',
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       })
       setNotifications(prev => prev.map(n => n._id === id ? { ...n, read: true } : n))
-    } catch (error) {
-      console.error('Error marking notification as read:', error)
+    } catch (err) {
+      console.error('Error marking notification as read:', err)
     }
   }
 
   const handleUserClick = (e) => {
     e.stopPropagation()
-    // ✅ If not logged in, go to login — never open dropdown
     if (!user) {
       navigate('/login')
+      return
+    }
+    // Admin: clicking the avatar goes straight to dashboard
+    if (isAdmin) {
+      navigate('/admin/dashboard')
       return
     }
     setIsProfileOpen(prev => !prev)
@@ -147,7 +132,8 @@ const HeaderGuest = () => {
   return (
     <>
       <header className={`header ${isLoaded ? 'loaded' : ''}`}>
-        {/* LEFT - Logo & Title */}
+
+        {/* LEFT — Logo */}
         <div className="header-left">
           <Link to="/" className="logo-link">
             <img src={logo} alt="Logo" className="header-logo" />
@@ -158,7 +144,7 @@ const HeaderGuest = () => {
           </Link>
         </div>
 
-        {/* CENTER - Navigation */}
+        {/* CENTER — Navigation */}
         <nav className={`header-nav ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
           {displayedNavItems.map((item, index) => (
             <Link
@@ -173,10 +159,10 @@ const HeaderGuest = () => {
           ))}
         </nav>
 
-        {/* RIGHT - User & Actions */}
+        {/* RIGHT — Notifications + User */}
         <div className="header-right">
 
-          {/* Notifications - only show when logged in */}
+          {/* Notifications — logged-in users only */}
           {user && (
             <div className="notif-wrapper" ref={notifRef}>
               <button
@@ -193,48 +179,79 @@ const HeaderGuest = () => {
               {isNotifOpen && (
                 <div className="notif-dropdown">
                   <div className="notif-title">Notifications</div>
-                  {notifications.length === 0 && (
-                    <div className="notif-empty">No notifications</div>
-                  )}
-                  {notifications.map(n => (
-                    <div
-                      key={n._id}
-                      className={`notif-item ${n.read ? '' : 'unread'}`}
-                      onClick={() => markRead(n._id)}
-                    >
-                      <div className="notif-message">{n.message}</div>
-                      <div className="notif-time">
-                        {new Date(n.createdAt).toLocaleString()}
-                      </div>
-                    </div>
-                  ))}
+                  {notifications.length === 0
+                    ? <div className="notif-empty">No notifications</div>
+                    : notifications.map(n => (
+                        <div
+                          key={n._id}
+                          className={`notif-item ${n.read ? '' : 'unread'}`}
+                          onClick={() => markRead(n._id)}
+                        >
+                          <div className="notif-message">{n.message}</div>
+                          <div className="notif-time">
+                            {new Date(n.createdAt).toLocaleString()}
+                          </div>
+                        </div>
+                      ))
+                  }
                 </div>
               )}
             </div>
           )}
 
-          {/* ✅ User Profile - shows Sign In button if not logged in */}
+          {/* User profile / Sign In */}
           <div
-            className="user-info"
+            className={`user-info ${isAdmin ? 'user-info--admin' : ''}`}
             onClick={handleUserClick}
             ref={profileRef}
+            title={isAdmin ? 'Go to Admin Dashboard' : undefined}
           >
             <div className="user-avatar">
-              {user ? <FaUser /> : <FaSignInAlt />}
-            </div>
-            <div className="user-text">
-              <h1>{user ? user.firstName : 'Sign In'}</h1>
-              {user && <p>My Account</p>}
+              {!user   && <FaSignInAlt />}
+              {user && !isAdmin && <FaUser />}
+              {isAdmin && <FaUserShield />}
             </div>
 
-            {/* ✅ Only show chevron and dropdown when logged in */}
-            {user && (
+            <div className="user-text">
+              <h1>{user ? user.firstName : 'Sign In'}</h1>
+              {/* ── KEY FIX: admins see "Administrator", others see "My Account" ── */}
+              {user && <p>{isAdmin ? 'Administrator' : 'My Account'}</p>}
+            </div>
+
+            {/* Chevron + dropdown — regular users only; admins click straight to dashboard */}
+            {user && !isAdmin && (
               <>
                 <FaChevronDown className={`dropdown-arrow ${isProfileOpen ? 'open' : ''}`} />
                 {isProfileOpen && (
                   <div className="profile-dropdown">
-                    <button className="dropdown-item" onClick={() => navigate('/profile')}>Profile</button>
-                    <button className="dropdown-item" onClick={() => navigate('/orders')}>Orders</button>
+                    <button className="dropdown-item" onClick={() => navigate('/profile')}>
+                      Profile
+                    </button>
+                    <button className="dropdown-item" onClick={() => navigate('/orders')}>
+                      Orders
+                    </button>
+                    <button className="dropdown-item danger" onClick={handleLogout}>
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Admin: separate small dropdown with dashboard link + logout */}
+            {isAdmin && (
+              <>
+                <FaChevronDown className={`dropdown-arrow ${isProfileOpen ? 'open' : ''}`}
+                  onClick={(e) => { e.stopPropagation(); setIsProfileOpen(p => !p) }}
+                />
+                {isProfileOpen && (
+                  <div className="profile-dropdown">
+                    <button
+                      className="dropdown-item"
+                      onClick={(e) => { e.stopPropagation(); navigate('/admin/dashboard') }}
+                    >
+                      Admin Dashboard
+                    </button>
                     <button className="dropdown-item danger" onClick={handleLogout}>
                       Logout
                     </button>
@@ -244,7 +261,7 @@ const HeaderGuest = () => {
             )}
           </div>
 
-          {/* Mobile Menu Toggle */}
+          {/* Mobile toggle */}
           <button
             className="mobile-menu-toggle"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -254,14 +271,12 @@ const HeaderGuest = () => {
           </button>
         </div>
 
-        {/* Mobile Menu Overlay */}
         {isMobileMenuOpen && (
-          <div className="mobile-overlay" onClick={closeMobileMenu}></div>
+          <div className="mobile-overlay" onClick={closeMobileMenu} />
         )}
       </header>
 
-      {/* Spacer for fixed header */}
-      <div className="header-spacer"></div>
+      <div className="header-spacer" />
     </>
   )
 }
