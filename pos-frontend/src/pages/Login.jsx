@@ -279,16 +279,12 @@ function VerificationModal({ verifyEmail, password, loginFn, onSuccess, onCancel
       }, 1100);
 
     } catch (err) {
-      const msg    = err.response?.data?.message || err.response?.data?.error || '';
+      const msg    = (err.response?.data?.message || err.response?.data?.error || '').toLowerCase();
       const status = err.response?.status;
 
       if (status === 429) {
         setError('Too many attempts. Please wait before trying again.');
-      } else if (msg.toLowerCase().includes('expired')) {
-        setError('This code has expired. Request a new one below.');
-        setDigits(Array(CODE_LENGTH).fill(''));
-        setTimeout(() => inputRefs.current[0]?.focus(), 50);
-      } else if (msg.toLowerCase().includes('already verified')) {
+      } else if (msg.includes('already verified')) {
         setSuccess('Your account is already verified. Signing in…');
         localStorage.removeItem('verifyEmail');
         setTimeout(async () => {
@@ -296,19 +292,26 @@ function VerificationModal({ verifyEmail, password, loginFn, onSuccess, onCancel
           onSuccess(result?.success ?? false);
         }, 1100);
       } else if (status === 400 || status === 401) {
-        // Wrong code — track attempts
-        const next = badAttempts + 1;
-        setBadAttempts(next);
-        const rem = MAX_VERIFY_ATTEMPTS - next;
-        setError(
-          rem > 0
-            ? `Incorrect code — ${rem} attempt${rem !== 1 ? 's' : ''} remaining.`
-            : 'Too many incorrect attempts. Please request a new code below.'
-        );
-        setDigits(Array(CODE_LENGTH).fill(''));
-        setTimeout(() => inputRefs.current[0]?.focus(), 50);
+        // Status-first: 400/401 means wrong code OR expired — check message to distinguish
+        if (msg.includes('expired')) {
+          setError('This code has expired. Please request a new one below.');
+          setDigits(Array(CODE_LENGTH).fill(''));
+          setTimeout(() => inputRefs.current[0]?.focus(), 50);
+        } else {
+          // Wrong code — track attempts
+          const next = badAttempts + 1;
+          setBadAttempts(next);
+          const rem = MAX_VERIFY_ATTEMPTS - next;
+          setError(
+            rem > 0
+              ? `Incorrect code — ${rem} attempt${rem !== 1 ? 's' : ''} remaining.`
+              : 'Too many incorrect attempts. Please request a new code below.'
+          );
+          setDigits(Array(CODE_LENGTH).fill(''));
+          setTimeout(() => inputRefs.current[0]?.focus(), 50);
+        }
       } else {
-        setError('Verification failed. Please try again.');
+        setError(msg || 'Verification failed. Please try again.');
       }
     } finally {
       setLoading(false);
