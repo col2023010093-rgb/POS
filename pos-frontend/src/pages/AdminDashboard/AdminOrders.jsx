@@ -61,11 +61,28 @@ const AdminOrders = () => {
       ? `#${order.orderNumber}`
       : `#ORD-${order._id.slice(-6).toUpperCase()}`
 
+  /**
+   * Resolves the customer object from whichever field your backend uses.
+   * Handles: customerId, userId, user, customer — populated or just an ID string.
+   */
+  const resolveCustomer = order =>
+    order.customerId || order.userId || order.user || order.customer || null
+
   const getCustomerName = order => {
-    const c = order.customerId
-    if (!c) return '—'
+    const c = resolveCustomer(order)
+    // No customer object at all — try flat fields on the order itself
+    if (!c) return order.customerName || order.guestName || '—'
+    // Just an unpopulated ID string
+    if (typeof c === 'string') return order.customerName || order.customerEmail || '—'
+    // Populated object
     const name = `${c.firstName || ''} ${c.lastName || ''}`.trim()
-    return name || c.email || '—'
+    return name || c.name || c.email || '—'
+  }
+
+  const getCustomerEmail = order => {
+    const c = resolveCustomer(order)
+    if (!c || typeof c === 'string') return order.customerEmail || null
+    return c.email || null
   }
 
   /* ── filtered + searched list ── */
@@ -78,7 +95,7 @@ const AdminOrders = () => {
         (o.orderNumber || '').toLowerCase().includes(q) ||
         (o._id || '').toLowerCase().includes(q) ||
         getCustomerName(o).toLowerCase().includes(q) ||
-        (o.customerId?.email || '').toLowerCase().includes(q)
+        (getCustomerEmail(o) || '').toLowerCase().includes(q)
       )
     }
     return list
@@ -174,7 +191,7 @@ const AdminOrders = () => {
                   {visible.map(order => (
                     <tr key={order._id} style={{ opacity: updating === order._id ? 0.6 : 1 }}>
 
-                      {/* Order # — single line, no wrap */}
+                      {/* Order # */}
                       <td className="ord-col-id">
                         <strong>{getOrderLabel(order)}</strong>
                       </td>
@@ -182,8 +199,8 @@ const AdminOrders = () => {
                       {/* Customer — name + email sub-line */}
                       <td className="ord-col-customer">
                         <div className="ord-customer-name">{getCustomerName(order)}</div>
-                        {order.customerId?.email && (
-                          <div className="ord-customer-email">{order.customerId.email}</div>
+                        {getCustomerEmail(order) && (
+                          <div className="ord-customer-email">{getCustomerEmail(order)}</div>
                         )}
                       </td>
 
@@ -271,11 +288,11 @@ const AdminOrders = () => {
                 <div className="ord-modal-customer-name">
                   {getCustomerName(viewOrder)}
                 </div>
-                {viewOrder.customerId?.email && (
-                  <div className="ord-modal-meta">{viewOrder.customerId.email}</div>
+                {getCustomerEmail(viewOrder) && (
+                  <div className="ord-modal-meta">{getCustomerEmail(viewOrder)}</div>
                 )}
-                {viewOrder.customerId?.phone && (
-                  <div className="ord-modal-meta">{viewOrder.customerId.phone}</div>
+                {resolveCustomer(viewOrder)?.phone && (
+                  <div className="ord-modal-meta">{resolveCustomer(viewOrder).phone}</div>
                 )}
               </div>
 

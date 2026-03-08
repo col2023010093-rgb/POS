@@ -42,8 +42,8 @@
      space predictably. Customer gets a fixed width (not free remainder).
      Adjust these if your table wrapper changes width.                  */
   --ord-col-pad:   1.1rem;   /* uniform h-padding for both th and td   */
-  --ord-w-id:      160px;    /* #ORD-XXXXXX-XXXX                        */
-  --ord-w-customer:220px;    /* name + email stacked                    */
+  --ord-w-id:      220px;    /* #ORD-XXXXXX-XXXX — wide enough for full number */
+  --ord-w-customer:180px;    /* name + email stacked                    */
   --ord-w-items:    80px;    /* "X items" — compact                     */
   --ord-w-total:   115px;    /* ₱XX.XX                                  */
   --ord-w-status:  155px;    /* status select                           */
@@ -225,11 +225,10 @@
    §8  COLUMN-SPECIFIC CELL RULES
    ───────────────────────────────────────────────────────────────────── */
 
-/* ORDER # — clips at column boundary, never bleeds into Customer */
+/* ORDER # — never clips, always shows full order number */
 .admin-dashboard .admin-table td.ord-col-id {
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  overflow: visible;
 }
 .admin-dashboard .admin-table td.ord-col-id strong {
   font-family: var(--f-heading);
@@ -661,8 +660,8 @@
    ───────────────────────────────────────────────────────────────────── */
 @media (max-width: 1200px) {
   :root {
-    --ord-w-id:      145px;
-    --ord-w-customer:190px;
+    --ord-w-id:      200px;
+    --ord-w-customer:170px;
     --ord-w-items:    75px;
     --ord-w-total:   108px;
     --ord-w-status:  148px;
@@ -679,8 +678,8 @@
   .admin-dashboard .admin-table th.ord-col-items,
   .admin-dashboard .admin-table td.ord-col-items { display: none; }
   :root {
-    --ord-w-id:      135px;
-    --ord-w-customer:180px;
+    --ord-w-id:      190px;
+    --ord-w-customer:160px;
     --ord-w-status:  142px;
     --ord-w-date:    108px;
     --ord-w-actions:  90px;
