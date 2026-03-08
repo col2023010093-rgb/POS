@@ -3,19 +3,21 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { api } from '../../utils/api'
 import './AdminDashboard.css'
+import './AdminProducts.css'
+import './AdminMenu.css'
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:4000'
 
 const AdminMenu = () => {
   const navigate        = useNavigate()
-  const { user, token } = useAuth()
-  const [products,      setProducts]      = useState([])
-  const [loading,       setLoading]       = useState(true)
-  const [error,         setError]         = useState(null)
-  const [notice,        setNotice]        = useState('')
-  const [selectedCat,   setSelectedCat]   = useState('all')
-  const [search,        setSearch]        = useState('')
-  const [updating,      setUpdating]      = useState(null)
+  const { user }        = useAuth()
+  const [products,      setProducts]  = useState([])
+  const [loading,       setLoading]   = useState(true)
+  const [error,         setError]     = useState(null)
+  const [notice,        setNotice]    = useState('')
+  const [selectedCat,   setSelectedCat] = useState('all')
+  const [search,        setSearch]    = useState('')
+  const [updating,      setUpdating]  = useState(null)
 
   useEffect(() => {
     if (!user?.role || user?.role !== 'admin') { navigate('/'); return }
@@ -55,21 +57,36 @@ const AdminMenu = () => {
   const formatPHP = v =>
     new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(Number(v || 0))
 
+  /* ── Image src helper ── */
   const imgSrc = p => {
     if (!p.image) return null
     if (p.image.startsWith('http')) return p.image
     return `${API_BASE}${p.image}`
   }
 
-  /* ── categories & filtered list ── */
-  const categories = useMemo(() => ['all', ...new Set(products.map(p => p.category).filter(Boolean))], [products])
+  /* ── Prep time display — handles "5", "5 min", "5 mins" from backend ── */
+  const formatPrepTime = val => {
+    if (!val && val !== 0) return null
+    const str = String(val).trim()
+    // Strip any existing "min" / "mins" suffix so we never double-render
+    const num = str.replace(/\s*mins?\s*$/i, '').trim()
+    return `${num} min`
+  }
+
+  /* ── Categories & filtered list ── */
+  const categories = useMemo(
+    () => ['all', ...new Set(products.map(p => p.category).filter(Boolean))],
+    [products]
+  )
 
   const visible = useMemo(() => {
     let list = [...products]
     if (selectedCat !== 'all') list = list.filter(p => p.category === selectedCat)
     if (search.trim()) {
       const q = search.toLowerCase()
-      list = list.filter(p => p.name?.toLowerCase().includes(q) || p.category?.toLowerCase().includes(q))
+      list = list.filter(p =>
+        p.name?.toLowerCase().includes(q) || p.category?.toLowerCase().includes(q)
+      )
     }
     return list
   }, [products, selectedCat, search])
@@ -77,6 +94,7 @@ const AdminMenu = () => {
   const inStockCount  = products.filter(p => p.inStock).length
   const outStockCount = products.filter(p => !p.inStock).length
 
+  /* ────────────────────── LOADING ────────────────────── */
   if (loading) {
     return (
       <div className="admin-dashboard">
@@ -87,6 +105,7 @@ const AdminMenu = () => {
     )
   }
 
+  /* ────────────────────── RENDER ────────────────────── */
   return (
     <div className="admin-dashboard">
       <div className="admin-container">
@@ -99,7 +118,7 @@ const AdminMenu = () => {
               {products.length} items on the menu — {inStockCount} in stock, {outStockCount} out
             </p>
           </div>
-          <div style={{ display: 'flex', gap: '0.6rem' }}>
+          <div className="mnu-header-actions">
             <button className="btn-secondary" onClick={fetchProducts}>↻ Refresh</button>
             <button className="btn-primary" onClick={() => navigate('/admin/products')}>
               + Add Item
@@ -111,7 +130,7 @@ const AdminMenu = () => {
         {error  && <div className="error-message">⚠ {error}</div>}
 
         {/* ── Stats row ── */}
-        <div className="stats-grid" style={{ marginBottom: '1.5rem' }}>
+        <div className="stats-grid mnu-stats">
           <div className="stat-card">
             <span className="stat-icon">🍖</span>
             <h3>Total Items</h3>
@@ -143,8 +162,10 @@ const AdminMenu = () => {
               onClick={() => setSelectedCat(cat)}
             >
               {cat.charAt(0).toUpperCase() + cat.slice(1)}
-              {cat !== 'all' && ` (${products.filter(p => p.category === cat).length})`}
-              {cat === 'all' && ` (${products.length})`}
+              {cat === 'all'
+                ? ` (${products.length})`
+                : ` (${products.filter(p => p.category === cat).length})`
+              }
             </button>
           ))}
         </div>
@@ -156,12 +177,12 @@ const AdminMenu = () => {
             placeholder="Search menu items…"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            style={{ flex: 1, minWidth: 200 }}
+            className="mnu-search-input"
           />
           {search && (
             <button className="btn-secondary" onClick={() => setSearch('')}>✕ Clear</button>
           )}
-          <span style={{ marginLeft: 'auto', fontSize: '0.82rem', color: 'var(--brand-tan)', fontWeight: 600 }}>
+          <span className="mnu-result-count">
             {visible.length} item{visible.length !== 1 ? 's' : ''}
           </span>
         </div>
@@ -192,55 +213,65 @@ const AdminMenu = () => {
                 <tbody>
                   {visible.map(p => (
                     <tr key={p._id} style={{ opacity: updating === p._id ? 0.6 : 1 }}>
-                      <td>
+
+                      {/* Image */}
+                      <td className="mnu-col-img">
                         {imgSrc(p) ? (
                           <img src={imgSrc(p)} alt={p.name} className="product-thumb" />
                         ) : (
-                          <div style={{
-                            width: 48, height: 48, borderRadius: 10,
-                            background: 'var(--brand-smoke)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontSize: '1.3rem', border: '1.5px solid rgba(196,168,130,.3)'
-                          }}>🍖</div>
+                          <div className="mnu-img-placeholder">🍖</div>
                         )}
                       </td>
-                      <td><strong>{p.name}</strong></td>
-                      <td>
-                        <span style={{
-                          display: 'inline-block', padding: '0.25rem 0.65rem',
-                          borderRadius: 50, fontSize: '0.75rem', fontWeight: 700,
-                          background: 'var(--brand-smoke)', color: 'var(--brand-copper)',
-                          textTransform: 'capitalize', border: '1px solid rgba(196,168,130,.35)'
-                        }}>
-                          {p.category}
-                        </span>
+
+                      {/* Name */}
+                      <td className="mnu-col-name">
+                        <strong>{p.name}</strong>
                       </td>
-                      <td><strong>{formatPHP(p.price)}</strong></td>
-                      <td>{p.prepTime ? `${p.prepTime} min` : <span style={{ color: 'var(--brand-tan)' }}>—</span>}</td>
-                      <td>
+
+                      {/* Category */}
+                      <td className="mnu-col-cat">
+                        <span className="mnu-cat-badge">{p.category}</span>
+                      </td>
+
+                      {/* Price */}
+                      <td className="mnu-col-price">
+                        <strong>{formatPHP(p.price)}</strong>
+                      </td>
+
+                      {/* Prep time */}
+                      <td className="mnu-col-prep">
+                        {formatPrepTime(p.prepTime)
+                          ? <span className="mnu-prep-value">{formatPrepTime(p.prepTime)}</span>
+                          : <span className="mnu-prep-empty">—</span>
+                        }
+                      </td>
+
+                      {/* Stock badge */}
+                      <td className="mnu-col-stock">
                         <span className={`role-badge ${p.inStock ? 'in-stock' : 'out-stock'}`}>
                           {p.inStock ? 'In Stock' : 'Out of Stock'}
                         </span>
                       </td>
-                      <td>
-                        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+
+                      {/* Actions */}
+                      <td className="mnu-col-actions">
+                        <div className="mnu-action-btns">
                           <button
                             className={p.inStock ? 'btn-delete' : 'btn-view'}
                             onClick={() => handleToggleStock(p)}
                             disabled={updating === p._id}
-                            style={{ fontSize: '0.75rem', padding: '0.4rem 0.85rem' }}
                           >
                             {p.inStock ? 'Mark Out' : 'Mark In'}
                           </button>
                           <button
-                            className="btn-secondary"
+                            className="btn-secondary mnu-edit-btn"
                             onClick={() => navigate(`/admin/products?edit=${p._id}`)}
-                            style={{ fontSize: '0.75rem', padding: '0.4rem 0.85rem' }}
                           >
                             Edit
                           </button>
                         </div>
                       </td>
+
                     </tr>
                   ))}
                 </tbody>
