@@ -399,8 +399,7 @@ const Menu = () => {
             </p>
             <div className="menu-login-modal__actions">
               <button
-                className="checkout-btn"
-                style={{ width: 'auto', padding: '0.9rem 2rem' }}
+                className="menu-login-signin-btn"
                 onClick={() => navigate('/login', { state: { from: '/menu' } })}
               >
                 Sign In
