@@ -1079,7 +1079,7 @@
   position: fixed;
   inset: 0;
   z-index: 9999;
-  background: rgba(14, 10, 6, 0.65);
+  background: rgba(26, 12, 5, 0.72);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1088,7 +1088,7 @@
 }
 
 .rv-login-modal {
-  background: var(--c-white);
+  background: linear-gradient(160deg, #fffdf5 0%, var(--parchment) 100%);
   border: 1px solid var(--c-border);
   border-radius: var(--radius-lg);
   padding: 3rem 2.5rem;
@@ -1117,9 +1117,9 @@
 }
 
 .rv-login-modal__body {
-  font-family: var(--font-ui);
-  font-size: 0.93rem;
-  color: var(--c-muted);
+  font-family: var(--font-body);
+  font-size: 0.97rem;
+    color: var(--ash);
   line-height: 1.65;
   margin-bottom: 2rem;
 }

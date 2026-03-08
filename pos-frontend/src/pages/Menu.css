@@ -1873,7 +1873,7 @@
 .menu-login-overlay {
   position: fixed;
   inset: 0;
-  z-index: 2000;
+  z-index: 9999;
   background: rgba(26, 12, 5, 0.72);
   backdrop-filter: blur(4px);
   display: flex;
@@ -1885,8 +1885,8 @@
 
 .menu-login-modal {
   background: linear-gradient(160deg, #fffdf5 0%, var(--parchment) 100%);
-  border: 2px solid var(--parchment-deep);
-  border-radius: 12px;
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-lg);
   padding: 3rem 2.5rem;
   box-shadow: var(--shadow-xl);
   max-width: 420px;
@@ -1904,10 +1904,11 @@
 
 .menu-login-modal__title {
   font-family: var(--font-display);
-  font-size: 1.5rem;
+  font-size: 1.6rem;
   font-weight: 700;
+  text-transform: uppercase;
   letter-spacing: 1px;
-  color: var(--leather);
+  color: var(--c-leather);
   margin-bottom: 0.75rem;
 }
 
