@@ -856,7 +856,6 @@
   transition: all 0.25s ease;
   position: absolute;
   right: 1.5rem;
-  top: 50%;
 }
 
 .close-cart:hover {
