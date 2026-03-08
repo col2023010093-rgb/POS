@@ -26,6 +26,7 @@
  */
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import ReactDOM from 'react-dom';
 import { useNavigate }          from 'react-router-dom';
 import { useAuth }              from '../context/AuthContext';
 import api                      from '../api';
@@ -473,7 +474,9 @@ function VerificationModal({ verifyEmail, password, loginFn, onSuccess, onCancel
 
 const Login = () => {
   const { user, login, logout, loading: authLoading } = useAuth();
-  const navigate = useNavigate();
+  const navigate = useNavigate()
+  const location  = useLocation()
+  const returnTo  = location.state?.from || null;
 
   // ── UI state ───────────────────────────────────────────────────────────────
   const [step,             setStep]             = useState('login');  // 'login' | 'verify'
@@ -564,20 +567,45 @@ const Login = () => {
     setLoading(true);
     setApiMsg({ type: '', text: '' });
 
-    const result = await login(loginEmail.trim(), loginPassword);
+    try {
+      const result = await login(loginEmail.trim(), loginPassword);
 
-    if (result.success) {
-      clearLoginLockout();
-      setApiMsg({ type: 'success', text: 'Login successful! Redirecting…' });
-      setTimeout(() => {
-        const role = result.user?.role || result.data?.role;
-        navigate(role === 'admin' ? '/admin/dashboard' : '/');
-      }, 500);
-    } else {
-      if (result.code === 'TOO_MANY_REQUESTS' || String(result.error).includes('429')) {
+      if (result.success) {
+        clearLoginLockout();
+        setApiMsg({ type: 'success', text: 'Login successful! Redirecting…' });
+        setTimeout(() => {
+          const role = result.user?.role || result.data?.role;
+          navigate(role === 'admin' ? '/admin/dashboard' : (returnTo || '/'));
+        }, 500);
+      } else {
+        if (result.code === 'TOO_MANY_REQUESTS' || String(result.error).includes('429')) {
+          setLockoutRemaining(LOCKOUT_DURATION_MS);
+          setApiMsg({ type: 'error', text: 'Too many failed attempts. Please wait 15 minutes.' });
+        } else {
+          const newAttempts = recordFailedLoginAttempt();
+          const left        = MAX_LOGIN_ATTEMPTS - newAttempts;
+          if (newAttempts >= MAX_LOGIN_ATTEMPTS) {
+            setLockoutRemaining(LOCKOUT_DURATION_MS);
+            setApiMsg({ type: 'error', text: 'Too many failed attempts. Account locked for 15 minutes.' });
+          } else {
+            setAttemptsLeft(left);
+            setApiMsg({
+              type: 'error',
+              text: result.code === 'EMAIL_NOT_VERIFIED'
+                ? '⚠️ Please verify your email before signing in.'
+                : 'Invalid email or password.',
+            });
+          }
+        }
+      }
+    } catch (err) {
+      // AuthContext threw instead of returning { success: false }
+      // This prevents the page from refreshing on a network/auth error
+      const status = err?.response?.status;
+      if (status === 429) {
         setLockoutRemaining(LOCKOUT_DURATION_MS);
         setApiMsg({ type: 'error', text: 'Too many failed attempts. Please wait 15 minutes.' });
-      } else {
+      } else if (status === 401 || status === 400) {
         const newAttempts = recordFailedLoginAttempt();
         const left        = MAX_LOGIN_ATTEMPTS - newAttempts;
         if (newAttempts >= MAX_LOGIN_ATTEMPTS) {
@@ -585,16 +613,14 @@ const Login = () => {
           setApiMsg({ type: 'error', text: 'Too many failed attempts. Account locked for 15 minutes.' });
         } else {
           setAttemptsLeft(left);
-          setApiMsg({
-            type: 'error',
-            text: result.code === 'EMAIL_NOT_VERIFIED'
-              ? '⚠️ Please verify your email before signing in.'
-              : 'Invalid email or password.',
-          });
+          setApiMsg({ type: 'error', text: 'Invalid email or password.' });
         }
+      } else {
+        setApiMsg({ type: 'error', text: 'Something went wrong. Please try again.' });
       }
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   // ── Sign-up field change ───────────────────────────────────────────────────
@@ -926,25 +952,23 @@ const Login = () => {
       </div>
 
       {/* ════════════════════════════════════════════════════════════════════
-          VERIFICATION MODAL — rendered OUTSIDE .container
-          Covers the full viewport; VerificationModal manages its own state.
-          Login.jsx only provides: email, password, login function, callbacks.
+          MODALS — rendered via portal directly into document.body
+          Escapes .login-page overflow:hidden which traps fixed overlays.
           ════════════════════════════════════════════════════════════════════ */}
-      {step === 'verify' && verifyEmail && (
+      {step === 'verify' && verifyEmail && ReactDOM.createPortal(
         <VerificationModal
           verifyEmail={verifyEmail}
           password={formData.password}
           loginFn={login}
           onSuccess={handleVerifySuccess}
           onCancel={handleVerifyCancel}
-        />
+        />,
+        document.body
       )}
 
-      {/* ════════════════════════════════════════════════════════════════════
-          FORGOT PASSWORD MODAL — rendered OUTSIDE .container
-          ════════════════════════════════════════════════════════════════════ */}
-      {showForgotModal && (
-        <ForgotPasswordModal onClose={() => setShowForgotModal(false)} />
+      {showForgotModal && ReactDOM.createPortal(
+        <ForgotPasswordModal onClose={() => setShowForgotModal(false)} />,
+        document.body
       )}
 
     </div>
