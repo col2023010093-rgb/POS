@@ -3,6 +3,8 @@ const router = express.Router();
 const authMiddleware = require('../middleware/auth');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
+const User = require('../models/User');
+const Notification = require('../models/Notification');
 
 // Get user orders
 router.get('/', authMiddleware, async (req, res) => {
@@ -102,16 +104,30 @@ router.post('/', authMiddleware, async (req, res) => {
       status: 'pending'
     });
 
-    await order.save();
-    console.log('✅ Order created:', orderNumber);
+await order.save();
+console.log('✅ Order created:', orderNumber);
 
-    const io = req.app.get('io');
-    if (io) {
-      io.emit('product_updated', { message: 'Stock updated' });
-      io.emit('order_created', { order });
-    }
+const io = req.app.get('io');
 
-    res.status(201).json({ success: true, order });
+// ✅ Notify all admins of new order
+const admins = await User.find({ role: 'admin' }).select('_id');
+for (const admin of admins) {
+  const notif = await Notification.create({
+    userId: admin._id,
+    title: 'New Order Received',
+    message: `Order ${orderNumber} was placed for ₱${totalAmount}.`,
+    type: 'order',
+    read: false
+  });
+  io?.to(`user_${admin._id}`).emit('notification', notif);
+}
+
+if (io) {
+  io.emit('product_updated', { message: 'Stock updated' });
+  io.emit('order_created', { order });
+}
+
+res.status(201).json({ success: true, order });
   } catch (error) {
     console.error('Order creation error:', error);
     res.status(500).json({ message: error.message });
